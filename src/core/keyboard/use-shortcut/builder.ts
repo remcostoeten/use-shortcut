@@ -7,7 +7,14 @@
  * Uses Proxy for dynamic property access with full type safety.
  */
 
-import { detectPlatform, Platform, ModifierDisplaySymbols, ModifierKey } from "../constants"
+import {
+  detectPlatform,
+  Platform,
+  ModifierDisplaySymbols,
+  ModifierKey,
+  ModifierDisplayOrder,
+} from "../constants"
+import type { ModifierKeyType } from "../constants"
 import { parseShortcut, matchesShortcut } from "../parser"
 import type {
   ActionKey,
@@ -19,6 +26,7 @@ import type {
   ExceptPreset,
   ExceptPredicate,
 } from "./types"
+import type { ShortcutBuilder as IShortcutBuilder } from "./types"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -91,31 +99,48 @@ interface ShortcutRegistry {
 // FORMAT SHORTCUT FOR DISPLAY
 // ─────────────────────────────────────────────────────────────────────────────
 
+function getActiveModifierTokens(modifiers: Partial<ModifierFlags>): string[] {
+  const platform = detectPlatform()
+  const order = ModifierDisplayOrder[platform]
+
+  return order
+    .filter((key) => {
+      if (key === ModifierKey.CTRL) return modifiers.ctrl
+      if (key === ModifierKey.ALT) return modifiers.alt
+      if (key === ModifierKey.SHIFT) return modifiers.shift
+      if (key === ModifierKey.META) return modifiers.cmd
+      return false
+    })
+    .map((key) => {
+      if (key === ModifierKey.CTRL) return "ctrl"
+      if (key === ModifierKey.ALT) return "alt"
+      if (key === ModifierKey.SHIFT) return "shift"
+      if (key === ModifierKey.META) return "cmd"
+      return ""
+    })
+}
+
+function buildComboString(modifiers: Partial<ModifierFlags>, key: ActionKey): string {
+  const tokens = getActiveModifierTokens(modifiers)
+  return [...tokens, key].join("+")
+}
+
 function formatCombo(modifiers: Partial<ModifierFlags>, key: ActionKey): string {
   const platform = detectPlatform()
   const symbols = ModifierDisplaySymbols[platform]
-  const parts: string[] = []
+  const tokens = getActiveModifierTokens(modifiers)
 
-  if (modifiers.ctrl) parts.push(symbols[ModifierKey.CTRL])
-  if (modifiers.alt) parts.push(symbols[ModifierKey.ALT])
-  if (modifiers.shift) parts.push(symbols[ModifierKey.SHIFT])
-  if (modifiers.cmd) parts.push(symbols[ModifierKey.META])
+  const parts = tokens.map((t) => {
+    if (t === "ctrl") return symbols[ModifierKey.CTRL]
+    if (t === "alt") return symbols[ModifierKey.ALT]
+    if (t === "shift") return symbols[ModifierKey.SHIFT]
+    if (t === "cmd") return symbols[ModifierKey.META]
+    return t
+  })
 
   parts.push(key.length === 1 ? key.toUpperCase() : key)
 
   return platform === Platform.MAC ? parts.join("") : parts.join("+")
-}
-
-function buildComboString(modifiers: Partial<ModifierFlags>, key: ActionKey): string {
-  const parts: string[] = []
-
-  if (modifiers.ctrl) parts.push("ctrl")
-  if (modifiers.alt) parts.push("alt")
-  if (modifiers.shift) parts.push("shift")
-  if (modifiers.cmd) parts.push("cmd")
-  parts.push(key)
-
-  return parts.join("+")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -264,7 +289,7 @@ function createBinding(
         entry.attemptCallbacks.add(callback)
         return () => entry.attemptCallbacks.delete(callback)
       }
-      return () => {}
+      return () => { }
     },
   }
 }
@@ -274,7 +299,7 @@ function createBinding(
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function createShortcutBuilder(options: UseShortcutOptions = {}): {
-  builder: any
+  builder: IShortcutBuilder
   registry: ShortcutRegistry
 } {
   const registry: ShortcutRegistry = {

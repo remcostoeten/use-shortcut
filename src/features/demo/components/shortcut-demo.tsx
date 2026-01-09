@@ -5,6 +5,10 @@ import { useState, useCallback, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
 import { Badge } from "@/shared/components/ui/badge"
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TYPES
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface ShortcutLog {
   id: number
   combo: string
@@ -21,6 +25,45 @@ interface KeyState {
   key: string | null
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// SUB-COMPONENTS
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface KeyCapProps {
+  label: string
+  isPressed: boolean
+  variant?: "small" | "large"
+}
+
+function KeyCap({ label, isPressed, variant = "large" }: KeyCapProps) {
+  const isMac = typeof navigator !== "undefined" && navigator.platform.toLowerCase().includes("mac")
+
+  const displayLabel =
+    label.toLowerCase() === "cmd" || label.toLowerCase() === "mod"
+      ? isMac
+        ? "⌘"
+        : "Ctrl"
+      : label.toLowerCase() === "shift"
+        ? "⇧"
+        : label.toLowerCase() === "alt" || label.toLowerCase() === "option"
+          ? "⌥"
+          : label.toLowerCase() === "ctrl"
+            ? "⌃"
+            : label.toUpperCase()
+
+  const baseStyles = "inline-flex items-center justify-center rounded border font-mono transition-all duration-100"
+  const sizeStyles = variant === "small" ? "h-6 min-w-[1.5rem] px-1.5 text-[10px]" : "h-8 min-w-[3rem] px-2 text-xs"
+  const stateStyles = isPressed
+    ? "border-emerald-500 bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+    : "border-zinc-700 bg-zinc-800/50 text-zinc-500"
+
+  return <kbd className={`${baseStyles} ${sizeStyles} ${stateStyles}`}>{displayLabel}</kbd>
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN COMPONENT
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function ShortcutDemo() {
   const [logs, setLogs] = useState<ShortcutLog[]>([])
   const [counter, setCounter] = useState(0)
@@ -34,6 +77,18 @@ export function ShortcutDemo() {
   })
   const [highlightedCombo, setHighlightedCombo] = useState<string | null>(null)
   const editorRef = useRef<HTMLTextAreaElement>(null)
+
+  const isKeyPressed = useCallback(
+    (key: string) => {
+      const k = key.toLowerCase()
+      if (k === "cmd" || k === "meta" || k === "mod") return pressedKeys.meta
+      if (k === "ctrl" || k === "control") return pressedKeys.ctrl
+      if (k === "shift") return pressedKeys.shift
+      if (k === "alt" || k === "option") return pressedKeys.alt
+      return pressedKeys.key === k || pressedKeys.key === key
+    },
+    [pressedKeys],
+  )
 
   // Track pressed keys for visual feedback
   useEffect(() => {
@@ -88,43 +143,21 @@ export function ShortcutDemo() {
 
   const $ = useShortcut({ debug: true })
 
-  // Single modifier + key
-  const save = $.cmd.key("s").on(() => addLog("cmd+s", "Save"), { description: "Save document" })
-
-  // Multiple modifiers
-  const commandPalette = $.cmd.shift.key("p").on(() => addLog("cmd+shift+p", "Command Palette"), {
-    description: "Open command palette",
-  })
-
-  // All modifiers
-  const superCombo = $.ctrl.shift.alt.cmd.key("a").on(() => addLog("ctrl+shift+alt+cmd+a", "Super Combo!"), {
-    description: "Super combo!",
-  })
-
-  // Cross-platform
-  const crossPlatform = $.mod.key("k").on(() => addLog("mod+k", "Search"), {
-    description: "Cross-platform shortcut",
-  })
-
-  // With delay
+  // Shortcuts registration
+  const save = $.cmd.key("s").on(() => addLog("cmd+s", "Save"))
+  const commandPalette = $.cmd.shift.key("p").on(() => addLog("cmd+shift+p", "Command Palette"))
+  const superCombo = $.ctrl.shift.alt.cmd.key("a").on(() => addLog("ctrl+shift+alt+cmd+a", "Super Combo!"))
+  const crossPlatform = $.mod.key("k").on(() => addLog("mod+k", "Search"))
   const delayed = $.mod.shift.key("d").on(
     () => {
       setCounter((c) => c + 1)
       addLog("mod+shift+d", "Delayed +1", "success")
     },
-    { delay: 500, description: "Delayed by 500ms" },
+    { delay: 500 },
   )
-
-  // Function key
-  const help = $.key("f1").on(() => addLog("f1", "Help opened"), { description: "Show help" })
-
-  // Escape key
-  const escape = $.key("escape").on(() => addLog("escape", "Cancelled"), { description: "Escape/Cancel" })
-
-  // NEW: Using .except() - "/" focuses editor EXCEPT when typing
-  const slashFocus = $.key("slash")
-    .except("typing")
-    .on(focusEditor, { description: "Focus editor (except when typing)" })
+  const help = $.key("f1").on(() => addLog("f1", "Help opened"))
+  const escape = $.key("escape").on(() => addLog("escape", "Cancelled"))
+  const slashFocus = $.key("slash").except("typing").on(focusEditor)
 
   const shortcuts = [
     { result: save, name: "Save", keys: ["cmd", "s"] },
@@ -137,15 +170,6 @@ export function ShortcutDemo() {
     { result: slashFocus, name: "Focus Editor", keys: ["/"], hasExcept: true },
   ]
 
-  const isKeyPressed = (key: string) => {
-    const k = key.toLowerCase()
-    if (k === "cmd" || k === "meta" || k === "mod") return pressedKeys.meta
-    if (k === "ctrl" || k === "control") return pressedKeys.ctrl
-    if (k === "shift") return pressedKeys.shift
-    if (k === "alt" || k === "option") return pressedKeys.alt
-    return pressedKeys.key === k || pressedKeys.key === key
-  }
-
   return (
     <div className="space-y-6">
       {/* Live Key Visualizer */}
@@ -156,27 +180,13 @@ export function ShortcutDemo() {
         <CardContent>
           <div className="flex flex-wrap gap-2">
             {["Ctrl", "Shift", "Alt", "Cmd"].map((mod) => (
-              <kbd
-                key={mod}
-                className={`inline-flex h-8 min-w-[3rem] items-center justify-center rounded border px-2 font-mono text-xs transition-all duration-100 ${isKeyPressed(mod)
-                    ? "border-emerald-500 bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
-                    : "border-zinc-700 bg-zinc-800/50 text-zinc-500"
-                  }`}
-              >
-                {mod}
-              </kbd>
+              <KeyCap key={mod} label={mod} isPressed={isKeyPressed(mod)} />
             ))}
             <span className="mx-2 flex items-center text-zinc-600">+</span>
-            <kbd
-              className={`inline-flex h-8 min-w-[3rem] items-center justify-center rounded border px-3 font-mono text-xs transition-all duration-100 ${pressedKeys.key && !["Control", "Shift", "Alt", "Meta"].includes(pressedKeys.key)
-                  ? "border-emerald-500 bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
-                  : "border-zinc-700 bg-zinc-800/50 text-zinc-500"
-                }`}
-            >
-              {pressedKeys.key && !["Control", "Shift", "Alt", "Meta"].includes(pressedKeys.key)
-                ? pressedKeys.key.toUpperCase()
-                : "Key"}
-            </kbd>
+            <KeyCap
+              label={pressedKeys.key && !["Control", "Shift", "Alt", "Meta"].includes(pressedKeys.key) ? pressedKeys.key : "Key"}
+              isPressed={!!pressedKeys.key && !["Control", "Shift", "Alt", "Meta"].includes(pressedKeys.key)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -216,24 +226,7 @@ export function ShortcutDemo() {
                       {keys.map((key, i) => (
                         <span key={i} className="flex items-center gap-1">
                           {i > 0 && <span className="text-zinc-600 text-xs">+</span>}
-                          <kbd
-                            className={`inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded border px-1.5 font-mono text-[10px] transition-all ${isKeyPressed(key)
-                                ? "border-emerald-500 bg-emerald-500/20 text-emerald-400"
-                                : "border-zinc-700 bg-zinc-800 text-zinc-400"
-                              }`}
-                          >
-                            {key === "cmd"
-                              ? "⌘"
-                              : key === "mod"
-                                ? "⌘"
-                                : key === "shift"
-                                  ? "⇧"
-                                  : key === "alt"
-                                    ? "⌥"
-                                    : key === "ctrl"
-                                      ? "⌃"
-                                      : key.toUpperCase()}
-                          </kbd>
+                          <KeyCap label={key} isPressed={isKeyPressed(key)} variant="small" />
                         </span>
                       ))}
                     </div>
@@ -295,16 +288,12 @@ export function ShortcutDemo() {
         </Card>
       </div>
 
-      {/* Editor Demo - shows .except("typing") in action */}
       <Card className="border-zinc-800 bg-zinc-900/80 backdrop-blur">
         <CardHeader>
           <CardTitle className="text-zinc-100">Editor Demo</CardTitle>
           <CardDescription className="text-zinc-500">
-            Press{" "}
-            <kbd className="mx-1 rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 font-mono text-xs text-emerald-400">
-              /
-            </kbd>
-            outside to focus • typing "/" inside won't trigger the shortcut
+            Press <KeyCap label="/" isPressed={isKeyPressed("/")} variant="small" /> outside to focus • typing "/" inside
+            won't trigger the shortcut
           </CardDescription>
         </CardHeader>
         <CardContent>

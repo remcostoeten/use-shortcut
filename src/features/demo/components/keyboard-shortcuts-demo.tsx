@@ -1,53 +1,53 @@
 "use client"
 
 import { useState } from "react"
-import { useKeyboardShortcuts, ModifierAliases, ModifierKey, ModifierDisplaySymbols } from "@/core/keyboard"
+import { useShortcut, detectPlatform, formatShortcut, ModifierAliases, ModifierKey, ModifierDisplaySymbols } from "@/core/keyboard"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/components/ui/card"
 import { Badge } from "@/shared/components/ui/badge"
 
 export function KeyboardShortcutsDemo() {
   const [lastAction, setLastAction] = useState<string | null>(null)
   const [actionCount, setActionCount] = useState(0)
-
-  const shortcuts = [
-    {
-      shortcut: "mod+s",
-      handler: () => logAction("Save"),
-      description: "Save document",
-    },
-    {
-      shortcut: "mod+shift+p",
-      handler: () => logAction("Command Palette"),
-      description: "Open command palette",
-    },
-    {
-      shortcut: ["mod+k", "mod+/"],
-      handler: () => logAction("Search"),
-      description: "Quick search",
-    },
-    {
-      shortcut: "mod+shift+n",
-      handler: () => logAction("New Window"),
-      description: "Open new window",
-    },
-    {
-      shortcut: "mod+alt+t",
-      handler: () => logAction("Terminal"),
-      description: "Toggle terminal",
-    },
-    {
-      shortcut: "escape",
-      handler: () => logAction("Escape"),
-      description: "Close/Cancel",
-    },
-  ]
-
-  const { formatShortcut, platform } = useKeyboardShortcuts(shortcuts)
+  const platform = detectPlatform()
+  const $ = useShortcut()
 
   function logAction(action: string) {
     setLastAction(action)
     setActionCount((c) => c + 1)
   }
+
+  const shortcuts = [
+    {
+      display: $.mod.key("s").on(() => logAction("Save")),
+      description: "Save document",
+      keys: ["mod+s"],
+    },
+    {
+      display: $.mod.shift.key("p").on(() => logAction("Command Palette")),
+      description: "Open command palette",
+      keys: ["mod+shift+p"],
+    },
+    {
+      display: $.mod.key("k").on(() => logAction("Search")),
+      description: "Quick search",
+      keys: ["mod+k", "mod+/"],
+    },
+    {
+      display: $.mod.shift.key("n").on(() => logAction("New Window")),
+      description: "Open new window",
+      keys: ["mod+shift+n"],
+    },
+    {
+      display: $.mod.alt.key("t").on(() => logAction("Terminal")),
+      description: "Toggle terminal",
+      keys: ["mod+alt+t"],
+    },
+    {
+      display: $.key("escape").on(() => logAction("Escape")),
+      description: "Close/Cancel",
+      keys: ["escape"],
+    },
+  ]
 
   const symbols = ModifierDisplaySymbols[platform]
 
@@ -77,15 +77,15 @@ export function KeyboardShortcutsDemo() {
         <CardContent>
           <div className="grid gap-3">
             {shortcuts.map((shortcut, i) => {
-              const keys = Array.isArray(shortcut.shortcut) ? shortcut.shortcut : [shortcut.shortcut]
+              const keys = shortcut.keys
 
               return (
                 <div key={i} className="flex items-center justify-between rounded-lg border p-3">
                   <span className="font-medium">{shortcut.description}</span>
                   <div className="flex gap-2">
-                    {keys.map((key) => (
+                    {keys.map((key: string) => (
                       <kbd key={key} className="bg-muted rounded-md px-2 py-1 font-mono text-sm">
-                        {formatShortcut(key)}
+                        {formatShortcut(key, platform)}
                       </kbd>
                     ))}
                   </div>

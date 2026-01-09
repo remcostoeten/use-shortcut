@@ -13,13 +13,10 @@ export {
   detectPlatform,
 } from "./constants"
 
-// Types - Legacy
+// Core Library Types
 export type {
   ModifierState,
   ParsedShortcut,
-  ShortcutDefinition,
-  KeyboardShortcutOptions,
-  UseKeyboardShortcutsReturn,
 } from "./types"
 
 export type {
@@ -53,5 +50,4 @@ export {
 // Formatter
 export { formatShortcut, getModifierSymbols } from "./formatter"
 
-export { useKeyboardShortcuts } from "./use-keyboard-shortcuts"
 export { useShortcut, createShortcut } from "./use-shortcut"
