@@ -1,7 +1,7 @@
 'use client';
 
 import { CodeBlock } from './code-block';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/lib/utils';
 import { useState } from 'react';
 import { GitBranch, ArrowLeftRight } from 'lucide-react';
 

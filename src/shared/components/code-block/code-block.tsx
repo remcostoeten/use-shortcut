@@ -44,7 +44,7 @@ import {
 import { getLanguageIcon } from "./language-icons";
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from "react";
 import { PrismAsyncLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import { cn } from "@/lib/utils";
+import { cn } from "@/shared/lib/utils";
 import type { CSSProperties } from "react";
 
 // ============================================================================

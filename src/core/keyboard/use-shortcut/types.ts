@@ -109,13 +109,8 @@ export interface ModifierFlags {
   cmd: boolean
 }
 
-/** Default modifier state (all false) */
-export type EmptyModifiers = {
-  ctrl: false
-  shift: false
-  alt: false
-  cmd: false
-}
+/** Default modifier state (empty) */
+export type EmptyModifiers = {}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HANDLER TYPES
@@ -199,15 +194,15 @@ export type RemainingModifiers<Used extends Partial<ModifierFlags>> = Exclude<
  */
 export interface ModifierChain<Used extends Partial<ModifierFlags>> {
   /** Chain with Ctrl modifier */
-  ctrl: Used extends { ctrl: true } ? never : ModifierChain<Used & { ctrl: true }>
+  ctrl: Used["ctrl"] extends true ? never : ModifierChain<Used & { ctrl: true }>
   /** Chain with Shift modifier */
-  shift: Used extends { shift: true } ? never : ModifierChain<Used & { shift: true }>
+  shift: Used["shift"] extends true ? never : ModifierChain<Used & { shift: true }>
   /** Chain with Alt/Option modifier */
-  alt: Used extends { alt: true } ? never : ModifierChain<Used & { alt: true }>
+  alt: Used["alt"] extends true ? never : ModifierChain<Used & { alt: true }>
   /** Chain with Cmd/Meta modifier */
-  cmd: Used extends { cmd: true } ? never : ModifierChain<Used & { cmd: true }>
+  cmd: Used["cmd"] extends true ? never : ModifierChain<Used & { cmd: true }>
   /** Chain with Mod (Cmd on Mac, Ctrl on Windows/Linux) */
-  mod: Used extends { cmd: true } ? never : ModifierChain<Used & { cmd: true }>
+  mod: Used["cmd"] extends true ? never : ModifierChain<Used & { cmd: true }>
 
   /** Complete the chain with an action key */
   key: <K extends ActionKey>(key: K) => KeyChain<Used, K>
@@ -243,15 +238,15 @@ export interface KeyChainWithExcept<Used extends Partial<ModifierFlags>, Key ext
  */
 export interface ShortcutBuilder extends ModifierChain<EmptyModifiers> {
   /** Start with Ctrl */
-  ctrl: ModifierChain<{ ctrl: true; shift: false; alt: false; cmd: false }>
+  ctrl: ModifierChain<{ ctrl: true }>
   /** Start with Shift */
-  shift: ModifierChain<{ ctrl: false; shift: true; alt: false; cmd: false }>
+  shift: ModifierChain<{ shift: true }>
   /** Start with Alt/Option */
-  alt: ModifierChain<{ ctrl: false; shift: false; alt: true; cmd: false }>
+  alt: ModifierChain<{ alt: true }>
   /** Start with Cmd/Meta */
-  cmd: ModifierChain<{ ctrl: false; shift: false; alt: false; cmd: true }>
+  cmd: ModifierChain<{ cmd: true }>
   /** Start with Mod (cross-platform) */
-  mod: ModifierChain<{ ctrl: false; shift: false; alt: false; cmd: true }>
+  mod: ModifierChain<{ cmd: true }>
   /** Start directly with a key (no modifiers) */
   key: <K extends ActionKey>(key: K) => KeyChain<EmptyModifiers, K>
 }

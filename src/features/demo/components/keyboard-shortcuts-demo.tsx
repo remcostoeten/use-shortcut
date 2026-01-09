@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { useKeyboardShortcuts, ModifierAliases, ModifierKey, ModifierDisplaySymbols } from "@/lib/keyboard"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useKeyboardShortcuts, ModifierAliases, ModifierKey, ModifierDisplaySymbols } from "@/core/keyboard"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/shared/components/ui/card"
+import { Badge } from "@/shared/components/ui/badge"
 
 export function KeyboardShortcutsDemo() {
   const [lastAction, setLastAction] = useState<string | null>(null)

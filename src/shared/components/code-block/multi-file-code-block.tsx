@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { CodeBlock } from './code-block';
-import { cn } from '@/lib/utils';
+import { cn } from '@/shared/lib/utils';
 import { getLanguageIcon } from './language-icons';
 
 export type TFile = {

@@ -1,9 +1,9 @@
 "use client"
 
-import { useShortcut } from "@/lib/keyboard"
+import { useShortcut } from "@/core/keyboard"
 import { useState, useCallback, useEffect, useRef } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/card"
+import { Badge } from "@/shared/components/ui/badge"
 
 interface ShortcutLog {
   id: number
@@ -158,22 +158,20 @@ export function ShortcutDemo() {
             {["Ctrl", "Shift", "Alt", "Cmd"].map((mod) => (
               <kbd
                 key={mod}
-                className={`inline-flex h-8 min-w-[3rem] items-center justify-center rounded border px-2 font-mono text-xs transition-all duration-100 ${
-                  isKeyPressed(mod)
+                className={`inline-flex h-8 min-w-[3rem] items-center justify-center rounded border px-2 font-mono text-xs transition-all duration-100 ${isKeyPressed(mod)
                     ? "border-emerald-500 bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
                     : "border-zinc-700 bg-zinc-800/50 text-zinc-500"
-                }`}
+                  }`}
               >
                 {mod}
               </kbd>
             ))}
             <span className="mx-2 flex items-center text-zinc-600">+</span>
             <kbd
-              className={`inline-flex h-8 min-w-[3rem] items-center justify-center rounded border px-3 font-mono text-xs transition-all duration-100 ${
-                pressedKeys.key && !["Control", "Shift", "Alt", "Meta"].includes(pressedKeys.key)
+              className={`inline-flex h-8 min-w-[3rem] items-center justify-center rounded border px-3 font-mono text-xs transition-all duration-100 ${pressedKeys.key && !["Control", "Shift", "Alt", "Meta"].includes(pressedKeys.key)
                   ? "border-emerald-500 bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
                   : "border-zinc-700 bg-zinc-800/50 text-zinc-500"
-              }`}
+                }`}
             >
               {pressedKeys.key && !["Control", "Shift", "Alt", "Meta"].includes(pressedKeys.key)
                 ? pressedKeys.key.toUpperCase()
@@ -199,13 +197,12 @@ export function ShortcutDemo() {
                 return (
                   <div
                     key={result.combo}
-                    className={`flex items-center justify-between rounded-lg border p-3 transition-all duration-150 ${
-                      isHighlighted
+                    className={`flex items-center justify-between rounded-lg border p-3 transition-all duration-150 ${isHighlighted
                         ? "border-emerald-500 bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.2)]"
                         : allKeysPressed
                           ? "border-amber-500/50 bg-amber-500/5"
                           : "border-zinc-800 bg-zinc-950/50"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-zinc-300">{name}</span>
@@ -220,11 +217,10 @@ export function ShortcutDemo() {
                         <span key={i} className="flex items-center gap-1">
                           {i > 0 && <span className="text-zinc-600 text-xs">+</span>}
                           <kbd
-                            className={`inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded border px-1.5 font-mono text-[10px] transition-all ${
-                              isKeyPressed(key)
+                            className={`inline-flex h-6 min-w-[1.5rem] items-center justify-center rounded border px-1.5 font-mono text-[10px] transition-all ${isKeyPressed(key)
                                 ? "border-emerald-500 bg-emerald-500/20 text-emerald-400"
                                 : "border-zinc-700 bg-zinc-800 text-zinc-400"
-                            }`}
+                              }`}
                           >
                             {key === "cmd"
                               ? "⌘"
@@ -262,33 +258,30 @@ export function ShortcutDemo() {
                 logs.map((log) => (
                   <div
                     key={log.id}
-                    className={`flex items-center justify-between rounded border p-2 ${
-                      log.status === "success"
+                    className={`flex items-center justify-between rounded border p-2 ${log.status === "success"
                         ? "border-emerald-500/30 bg-emerald-500/5"
                         : log.status === "late"
                           ? "border-amber-500/30 bg-amber-500/5"
                           : "border-red-500/30 bg-red-500/5"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-2">
                       <span
-                        className={`h-2 w-2 rounded-full ${
-                          log.status === "success"
+                        className={`h-2 w-2 rounded-full ${log.status === "success"
                             ? "bg-emerald-500"
                             : log.status === "late"
                               ? "bg-amber-500"
                               : "bg-red-500"
-                        }`}
+                          }`}
                       />
                       <Badge
                         variant="outline"
-                        className={`font-mono text-xs ${
-                          log.status === "success"
+                        className={`font-mono text-xs ${log.status === "success"
                             ? "border-emerald-500/30 text-emerald-400"
                             : log.status === "late"
                               ? "border-amber-500/30 text-amber-400"
                               : "border-red-500/30 text-red-400"
-                        }`}
+                          }`}
                       >
                         {log.display}
                       </Badge>

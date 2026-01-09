@@ -1,5 +1,5 @@
-import { ShortcutDemo } from "@/components/shortcut-demo"
-import { CodeBlock } from "@/components/code-block"
+import { ShortcutDemo } from "@/features/demo/components/shortcut-demo"
+import { CodeBlock } from "@/shared/components/code-block/code-block"
 
 export default function Page() {
   return (
