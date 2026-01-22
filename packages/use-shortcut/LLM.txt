@@ -1,0 +1,1294 @@
+File: package.json
+{
+    "name": "@remcostoeten/use-shortcut",
+    "version": "1.0.0",
+    "description": "Chainable keyboard shortcuts for React with perfect TypeScript intellisense",
+    "author": "Remco Stoeten",
+    "license": "MIT",
+    "homepage": "https://github.com/remcostoeten/use-shortcut#readme",
+    "bugs": {
+        "url": "https://github.com/remcostoeten/use-shortcut/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/remcostoeten/use-shortcut.git"
+    },
+    "keywords": [
+        "keyboard",
+        "shortcuts",
+        "hotkeys",
+        "react",
+        "hooks",
+        "typescript",
+        "chainable"
+    ],
+    "sideEffects": false,
+    "bin": {
+        "use-shortcut": "./dist/cli/index.mjs"
+    },
+    "main": "./dist/index.js",
+    "module": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.mts",
+                "default": "./dist/index.mjs"
+            },
+            "require": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            }
+        }
+    },
+    "files": [
+        "dist",
+        "src",
+        "README.md",
+        "LICENSE",
+        "CHANGELOG.md"
+    ],
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist",
+        "prepublishOnly": "npm run build"
+    },
+    "peerDependencies": {
+        "react": ">=18.0.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.2.9",
+        "react": "^19.0.0",
+        "tsup": "^8.0.0",
+        "typescript": "^5.0.0"
+    }
+}
+
+File: README.md
+# @remcostoeten/use-shortcut
+
+Chainable keyboard shortcuts for React with **perfect TypeScript intellisense**.
+
+```tsx
+const $ = useShortcut()
+
+$.cmd.shift.key("s").on(() => save())
+$.mod.key("k").on(() => search())
+$.key("/").except("typing").on(() => focusSearch())
+```
+
+## Features
+
+- **Chainable API** - Fluent, readable shortcut definitions
+- **Perfect TypeScript** - Intellisense at every step of the chain
+- **Cross-platform** - `mod` maps to ⌘ on Mac, Ctrl on Windows/Linux
+- **Context-aware** - Skip shortcuts in inputs with `.except()`
+- **Zero dependencies** - Only React as peer dependency
+- **Tiny footprint** - ~3KB gzipped
+
+## Installation
+
+### npm/pnpm/bun
+
+```bash
+bun add @remcostoeten/use-shortcut
+npm install @remcostoeten/use-shortcut
+pnpm add @remcostoeten/use-shortcut
+```
+
+### Copy-paste (shadcn-style)
+
+```bash
+npx @remcostoeten/use-shortcut init
+# or
+bunx @remcostoeten/use-shortcut init
+```
+
+This copies the source files directly into your project at `hooks/use-shortcut/`.
+
+## Quick Start
+
+```typescript
+"use client"
+
+import { useShortcut } from "@remcostoeten/use-shortcut"
+
+export function App() {
+  const $ = useShortcut()
+
+  $.cmd.key("s").on(() => {
+    console.log("Save!")
+  })
+
+  $.mod.key("k").on(() => {
+    console.log("Search!")
+  })
+
+  return <div>Press ⌘+S or ⌘+K</div>
+}
+```
+
+## API
+
+### Modifiers
+
+Chain modifiers before calling `.key()`:
+
+```tsx
+$.ctrl.key("s")           // Ctrl+S
+$.shift.key("enter")      // Shift+Enter
+$.alt.key("n")            // Alt+N
+$.cmd.key("k")            // ⌘+K (Mac) or Ctrl+K (Windows)
+$.mod.key("k")            // Cross-platform: ⌘ on Mac, Ctrl on Windows/Linux
+
+// Multiple modifiers
+$.ctrl.shift.key("p")     // Ctrl+Shift+P
+$.cmd.shift.alt.key("a")  // ⌘+Shift+Alt+A
+```
+
+### Keys
+
+Supports all standard keys:
+
+```tsx
+// Letters
+$.mod.key("s")            // a-z
+
+// Numbers
+$.mod.key("1")            // 0-9
+
+// Function keys
+$.key("f1")               // f1-f12
+
+// Special keys
+$.key("escape")           // escape, enter, space, tab
+$.key("backspace")        // backspace, delete
+$.mod.key("up")           // up, down, left, right
+$.key("home")             // home, end, pageup, pagedown
+
+// Symbols
+$.mod.key("slash")        // slash, backslash, comma, period
+$.mod.key("/")            // Also works with actual symbol
+```
+
+### Exception Handling
+
+Skip shortcuts in certain contexts:
+
+```tsx
+// Built-in presets
+$.key("/").except("input").on(handler)     // Skip in <input>, <textarea>, <select>
+$.key("/").except("editable").on(handler)  // Skip in contenteditable
+$.key("/").except("typing").on(handler)    // Skip in any text input
+$.key("escape").except("modal").on(handler) // Skip when modal is open
+$.key("enter").except("disabled").on(handler) // Skip on disabled elements
+
+// Multiple presets
+$.key("/").except(["input", "modal"]).on(handler)
+
+// Custom predicate
+$.key("k").except((e) => {
+  return e.target.classList.contains("no-shortcuts")
+}).on(handler)
+```
+
+### Handler Options
+
+```tsx
+$.mod.key("s").on(save, {
+  preventDefault: true,    // Prevent browser default (default: true)
+  stopPropagation: false,  // Stop event bubbling (default: false)
+  delay: 100,              // Delay before firing (ms)
+  description: "Save doc", // For accessibility
+  disabled: false,         // Temporarily disable
+})
+```
+
+### Result Object
+
+`.on()` returns a result object:
+
+```tsx
+const save = $.mod.key("s").on(handleSave)
+
+save.display    // "⌘S" on Mac, "Ctrl+S" on Windows
+save.combo      // "cmd+s"
+save.isEnabled  // true/false
+save.enable()   // Enable the shortcut
+save.disable()  // Disable the shortcut
+save.unbind()   // Remove the shortcut
+save.trigger()  // Programmatically trigger
+```
+
+### Hook Options
+
+```tsx
+const $ = useShortcut({
+  debug: true,           // Log all shortcuts to console
+  delay: 0,              // Global delay for all shortcuts
+  ignoreInputs: true,    // Ignore in form elements (default: true)
+  disabled: false,       // Disable all shortcuts
+  eventType: "keydown",  // or "keyup"
+  target: window,        // Custom event target
+})
+```
+
+## Vanilla JS (Non-React)
+
+```tsx
+import { createShortcut } from "@remcostoeten/use-shortcut"
+
+const $ = createShortcut()
+
+const save = $.mod.key("s").on(() => {
+  console.log("Saved!")
+})
+
+// Clean up when done
+save.unbind()
+```
+
+## Display Formatting
+
+```tsx
+import { formatShortcut } from "@remcostoeten/use-shortcut"
+
+formatShortcut("cmd+s")        // "⌘S" on Mac, "Ctrl+S" on Windows
+formatShortcut("ctrl+shift+p") // "⌃⇧P" on Mac, "Ctrl+Shift+P" on Windows
+```
+
+## TypeScript
+
+Full type definitions with intellisense:
+
+```tsx
+import type {
+  ShortcutBuilder,
+  ShortcutResult,
+  ShortcutHandler,
+  HandlerOptions,
+  ActionKey,
+  ModifierName,
+} from "@remcostoeten/use-shortcut"
+```
+
+## License
+
+MIT © Remco Stoeten
+
+File: src/index.ts
+export {
+    ModifierKey,
+    ModifierAliases,
+    SpecialKeyMap,
+    ModifierDisplaySymbols,
+    ModifierDisplayOrder,
+    Platform,
+    detectPlatform,
+} from "./constants"
+
+export type {
+    ModifierState,
+    ParsedShortcut,
+    ShortcutBuilder,
+    ShortcutResult,
+    ShortcutHandler,
+    HandlerOptions,
+    UseShortcutOptions,
+    ActionKey,
+    ModifierName,
+    ModifierFlags,
+    AlphaKey,
+    NumericKey,
+    FunctionKey,
+    NavigationKey,
+    SpecialKey,
+    SymbolKey,
+    ModifierChain,
+    KeyChain,
+    ExceptPreset,
+    ExceptPredicate,
+} from "./types"
+
+export {
+    parseShortcut,
+    parseShortcuts,
+    getModifiersFromEvent,
+    matchesShortcut,
+    matchesAnyShortcut,
+} from "./parser"
+
+export { formatShortcut, getModifierSymbols } from "./formatter"
+
+export { useShortcut, createShortcut } from "./hook"
+
+File: src/types.ts
+/** Lowercase letter keys a-z */
+export type AlphaKey =
+    | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i" | "j" | "k" | "l" | "m"
+    | "n" | "o" | "p" | "q" | "r" | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z"
+
+/** Number keys 0-9 */
+export type NumericKey = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+/** Function keys F1-F12 */
+export type FunctionKey = "f1" | "f2" | "f3" | "f4" | "f5" | "f6" | "f7" | "f8" | "f9" | "f10" | "f11" | "f12"
+
+/** Arrow and navigation keys */
+export type NavigationKey =
+    | "up" | "down" | "left" | "right"
+    | "arrowup" | "arrowdown" | "arrowleft" | "arrowright"
+    | "home" | "end" | "pageup" | "pagedown"
+
+/** Special action keys like Enter, Escape, Tab */
+export type SpecialKey =
+    | "enter" | "return" | "escape" | "esc" | "space"
+    | "tab" | "backspace" | "delete" | "del" | "insert"
+
+/** Symbol and punctuation keys */
+export type SymbolKey =
+    | "minus" | "plus" | "equal" | "equals"
+    | "bracketleft" | "bracketright" | "backslash" | "slash" | "/"
+    | "comma" | "period" | "semicolon" | "quote" | "backtick"
+
+/**
+ * All valid action keys that can be used with `.key()`
+ * @example $.mod.key("s") // "s" is an ActionKey
+ */
+export type ActionKey = AlphaKey | NumericKey | FunctionKey | NavigationKey | SpecialKey | SymbolKey
+
+/** Modifier key names used in the chainable API */
+export type ModifierName = "ctrl" | "shift" | "alt" | "cmd" | "mod"
+
+/** Internal modifier state flags */
+export type ModifierFlags = {
+    ctrl: boolean
+    shift: boolean
+    alt: boolean
+    cmd: boolean
+}
+
+/** Modifier key state from a keyboard event */
+export type ModifierState = {
+    meta: boolean
+    ctrl: boolean
+    alt: boolean
+    shift: boolean
+}
+
+/** Result of parsing a shortcut string */
+export type ParsedShortcut = {
+    modifiers: ModifierState
+    key: string
+    original: string
+}
+
+export type EmptyModifiers = {}
+
+/**
+ * Handler function called when a shortcut is triggered
+ * @param event - The keyboard event that triggered the shortcut
+ */
+export type ShortcutHandler = (event: KeyboardEvent) => void
+
+/**
+ * Custom predicate for excluding shortcuts in certain conditions
+ * @param event - The keyboard event to evaluate
+ * @returns `true` to skip the shortcut, `false` to allow it
+ */
+export type ExceptPredicate = (event: KeyboardEvent) => boolean
+
+/**
+ * Built-in exception presets for common scenarios
+ * - `"input"` - Skip when focused on input, textarea, or select
+ * - `"editable"` - Skip when focused on contentEditable elements
+ * - `"typing"` - Skip in any text input context (combines input + editable)
+ * - `"modal"` - Skip when a modal/dialog is open (checks [data-modal] or [role="dialog"])
+ * - `"disabled"` - Skip when focused element is disabled
+ */
+export type ExceptPreset = "input" | "editable" | "typing" | "modal" | "disabled"
+
+/**
+ * Options for shortcut handler registration
+ */
+export type HandlerOptions = {
+    /** Prevent the browser's default action (default: `true`) */
+    preventDefault?: boolean
+    /** Stop event propagation */
+    stopPropagation?: boolean
+    /** Delay handler execution in milliseconds */
+    delay?: number
+    /** Description for documentation/debugging */
+    description?: string
+    /** Disable this specific shortcut */
+    disabled?: boolean
+    /** Limit shortcut to a specific DOM element */
+    scope?: HTMLElement | null
+    /** Conditions to skip the shortcut */
+    except?: ExceptPreset | ExceptPreset[] | ExceptPredicate
+}
+
+/**
+ * Result object returned when registering a shortcut
+ * Provides control over the shortcut and display information
+ */
+export type ShortcutResult = {
+    /** Remove the keyboard listener */
+    unbind: () => void
+    /** Platform-aware display string (e.g., "⌘S" on Mac, "Ctrl+S" on Windows) */
+    display: string
+    /** Normalized combo string (e.g., "cmd+s") */
+    combo: string
+    /** Programmatically trigger the shortcut handler */
+    trigger: () => void
+    /** Whether the shortcut is currently enabled */
+    isEnabled: boolean
+    /** Enable the shortcut (after being disabled) */
+    enable: () => void
+    /** Temporarily disable the shortcut */
+    disable: () => void
+    /** Subscribe to shortcut attempt events (useful for visual feedback) */
+    onAttempt?: (callback: (matched: boolean, event: KeyboardEvent) => void) => () => void
+}
+
+export type RemainingModifiers<Used extends Partial<ModifierFlags>> = Exclude<
+    ModifierName,
+    | (Used extends { ctrl: true } ? "ctrl" : never)
+    | (Used extends { shift: true } ? "shift" : never)
+    | (Used extends { alt: true } ? "alt" : never)
+    | (Used extends { cmd: true } ? "cmd" | "mod" : never)
+>
+
+/**
+ * Chainable modifier builder with type-safe exhaustion
+ * Each modifier can only be used once in a chain
+ */
+export type ModifierChain<Used extends Partial<ModifierFlags>> = {
+    ctrl: Used["ctrl"] extends true ? never : ModifierChain<Used & { ctrl: true }>
+    shift: Used["shift"] extends true ? never : ModifierChain<Used & { shift: true }>
+    alt: Used["alt"] extends true ? never : ModifierChain<Used & { alt: true }>
+    cmd: Used["cmd"] extends true ? never : ModifierChain<Used & { cmd: true }>
+    mod: Used["cmd"] extends true ? never : ModifierChain<Used & { cmd: true }>
+    key: <K extends ActionKey>(key: K) => KeyChain<Used, K>
+}
+
+/**
+ * Chain state after calling `.key()` - ready to attach a handler
+ */
+export type KeyChain<Used extends Partial<ModifierFlags>, Key extends ActionKey> = {
+    /** Attach a handler to this shortcut */
+    on: (handler: ShortcutHandler, options?: HandlerOptions) => ShortcutResult
+    /** Attach a handler with inline options */
+    handle: (options: HandlerOptions & { handler: ShortcutHandler }) => ShortcutResult
+    /** Add exception conditions before attaching handler */
+    except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => KeyChainWithExcept<Used, Key>
+}
+
+/**
+ * Chain state after calling `.except()` - ready to attach a handler
+ */
+export type KeyChainWithExcept<Used extends Partial<ModifierFlags>, Key extends ActionKey> = {
+    on: (handler: ShortcutHandler, options?: Omit<HandlerOptions, "except">) => ShortcutResult
+}
+
+/**
+ * The main shortcut builder interface returned by `useShortcut()`
+ * @example
+ * const $ = useShortcut()
+ * $.mod.key("s").on(() => save())
+ * $.ctrl.shift.key("p").on(() => openPalette())
+ * $.key("/").except("typing").on(() => focusSearch())
+ */
+export type ShortcutBuilder = ModifierChain<EmptyModifiers> & {
+    ctrl: ModifierChain<{ ctrl: true }>
+    shift: ModifierChain<{ shift: true }>
+    alt: ModifierChain<{ alt: true }>
+    cmd: ModifierChain<{ cmd: true }>
+    mod: ModifierChain<{ cmd: true }>
+    key: <K extends ActionKey>(key: K) => KeyChain<EmptyModifiers, K>
+}
+
+/**
+ * Options for the `useShortcut` hook
+ */
+export type UseShortcutOptions = {
+    /** Enable debug logging to console */
+    debug?: boolean
+    /** Global delay for all handlers in milliseconds */
+    delay?: number
+    /** Skip shortcuts when focused on input elements (default: `true`) */
+    ignoreInputs?: boolean
+    /** Target element for keyboard listeners (default: `window`) */
+    target?: HTMLElement | Window | null
+    /** Keyboard event type to listen for (default: `"keydown"`) */
+    eventType?: "keydown" | "keyup"
+    /** Globally disable all shortcuts from this hook */
+    disabled?: boolean
+}
+
+File: src/constants.ts
+export const Platform = {
+    MAC: "mac",
+    WINDOWS: "windows",
+    LINUX: "linux",
+} as const
+
+export type PlatformType = (typeof Platform)[keyof typeof Platform]
+
+export function detectPlatform(): PlatformType {
+    if (typeof navigator === "undefined") return Platform.WINDOWS
+    const platform = navigator.platform.toLowerCase()
+    if (platform.includes("mac")) return Platform.MAC
+    if (platform.includes("linux")) return Platform.LINUX
+    return Platform.WINDOWS
+}
+
+export const ModifierKey = {
+    META: "meta",
+    CTRL: "ctrl",
+    ALT: "alt",
+    SHIFT: "shift",
+} as const
+
+export type ModifierKeyType = (typeof ModifierKey)[keyof typeof ModifierKey]
+
+export const ModifierAliases: Record<string, ModifierKeyType> = {
+    command: ModifierKey.META,
+    cmd: ModifierKey.META,
+    "⌘": ModifierKey.META,
+    meta: ModifierKey.META,
+    win: ModifierKey.META,
+    windows: ModifierKey.META,
+    super: ModifierKey.META,
+    mod: ModifierKey.META,
+    control: ModifierKey.CTRL,
+    ctrl: ModifierKey.CTRL,
+    "⌃": ModifierKey.CTRL,
+    ctl: ModifierKey.CTRL,
+    alt: ModifierKey.ALT,
+    option: ModifierKey.ALT,
+    opt: ModifierKey.ALT,
+    "⌥": ModifierKey.ALT,
+    shift: ModifierKey.SHIFT,
+    "⇧": ModifierKey.SHIFT,
+    shft: ModifierKey.SHIFT,
+} as const
+
+export const SpecialKeyMap: Record<string, string> = {
+    up: "ArrowUp",
+    down: "ArrowDown",
+    left: "ArrowLeft",
+    right: "ArrowRight",
+    home: "Home",
+    end: "End",
+    pageup: "PageUp",
+    pagedown: "PageDown",
+    enter: "Enter",
+    return: "Enter",
+    space: " ",
+    spacebar: " ",
+    tab: "Tab",
+    backspace: "Backspace",
+    delete: "Delete",
+    del: "Delete",
+    escape: "Escape",
+    esc: "Escape",
+    f1: "F1",
+    f2: "F2",
+    f3: "F3",
+    f4: "F4",
+    f5: "F5",
+    f6: "F6",
+    f7: "F7",
+    f8: "F8",
+    f9: "F9",
+    f10: "F10",
+    f11: "F11",
+    f12: "F12",
+    plus: "+",
+    minus: "-",
+    comma: ",",
+    period: ".",
+    slash: "/",
+    backslash: "\\",
+    bracket: "[",
+    closebracket: "]",
+} as const
+
+export const ModifierDisplaySymbols: Record<PlatformType, Record<ModifierKeyType, string>> = {
+    [Platform.MAC]: {
+        [ModifierKey.META]: "⌘",
+        [ModifierKey.CTRL]: "⌃",
+        [ModifierKey.ALT]: "⌥",
+        [ModifierKey.SHIFT]: "⇧",
+    },
+    [Platform.WINDOWS]: {
+        [ModifierKey.META]: "Ctrl",
+        [ModifierKey.CTRL]: "Ctrl",
+        [ModifierKey.ALT]: "Alt",
+        [ModifierKey.SHIFT]: "Shift",
+    },
+    [Platform.LINUX]: {
+        [ModifierKey.META]: "Super",
+        [ModifierKey.CTRL]: "Ctrl",
+        [ModifierKey.ALT]: "Alt",
+        [ModifierKey.SHIFT]: "Shift",
+    },
+} as const
+
+export const ModifierDisplayOrder: Record<PlatformType, ModifierKeyType[]> = {
+    [Platform.MAC]: [ModifierKey.CTRL, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.META],
+    [Platform.WINDOWS]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL],
+    [Platform.LINUX]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL],
+} as const
+
+File: src/formatter.ts
+import {
+    ModifierDisplayOrder,
+    ModifierDisplaySymbols,
+    Platform,
+    detectPlatform,
+    type ModifierKeyType,
+    type PlatformType,
+} from "./constants"
+import { parseShortcut } from "./parser"
+
+/**
+ * Format a shortcut string for display with platform-aware symbols
+ *
+ * @param shortcut - Shortcut string (e.g., "cmd+s")
+ * @param platform - Optional platform override (default: auto-detect)
+ * @returns Formatted display string (e.g., "⌘S" on Mac, "Ctrl+S" on Windows)
+ *
+ * @example
+ * ```ts
+ * formatShortcut("cmd+s") // "⌘S" on Mac, "Ctrl+S" on Windows
+ * formatShortcut("ctrl+shift+p", "mac") // "⌃⇧P"
+ * ```
+ */
+export function formatShortcut(shortcut: string, platform?: PlatformType): string {
+    const targetPlatform = platform ?? detectPlatform()
+    const parsed = parseShortcut(shortcut)
+    const symbols = ModifierDisplaySymbols[targetPlatform]
+    const order = ModifierDisplayOrder[targetPlatform]
+
+    const parts: string[] = []
+
+    for (const modifier of order) {
+        if (parsed.modifiers[modifier]) {
+            parts.push(symbols[modifier])
+        }
+    }
+
+    const displayKey = formatKey(parsed.key, targetPlatform)
+    parts.push(displayKey)
+
+    const separator = targetPlatform === Platform.MAC ? "" : "+"
+
+    return parts.join(separator)
+}
+
+function formatKey(key: string, platform: PlatformType): string {
+    const displayNames: Record<string, string> = {
+        ArrowUp: "↑",
+        ArrowDown: "↓",
+        ArrowLeft: "←",
+        ArrowRight: "→",
+        Enter: platform === Platform.MAC ? "↩" : "Enter",
+        Tab: platform === Platform.MAC ? "⇥" : "Tab",
+        Escape: platform === Platform.MAC ? "⎋" : "Esc",
+        Backspace: platform === Platform.MAC ? "⌫" : "Backspace",
+        Delete: platform === Platform.MAC ? "⌦" : "Del",
+        " ": platform === Platform.MAC ? "␣" : "Space",
+        Home: "Home",
+        End: "End",
+        PageUp: "PgUp",
+        PageDown: "PgDn",
+    }
+
+    return displayNames[key] || key.toUpperCase()
+}
+
+/**
+ * Get the modifier key symbols for a platform
+ *
+ * @param platform - Optional platform override (default: auto-detect)
+ * @returns Object mapping modifier keys to display symbols
+ *
+ * @example
+ * ```ts
+ * getModifierSymbols("mac") // { meta: "⌘", ctrl: "⌃", alt: "⌥", shift: "⇧" }
+ * ```
+ */
+export function getModifierSymbols(platform?: PlatformType): Record<ModifierKeyType, string> {
+    const targetPlatform = platform ?? detectPlatform()
+    return ModifierDisplaySymbols[targetPlatform]
+}
+
+File: src/parser.ts
+import { ModifierAliases, SpecialKeyMap, detectPlatform, Platform } from "./constants"
+import type { ModifierState, ParsedShortcut } from "./types"
+
+/**
+ * Parse a shortcut string into its components
+ *
+ * @param shortcut - Shortcut string (e.g., "cmd+s", "ctrl+shift+p")
+ * @returns Parsed shortcut with modifiers, key, and original string
+ *
+ * @example
+ * ```ts
+ * const parsed = parseShortcut("cmd+s")
+ * // { modifiers: { meta: true, ... }, key: "s", original: "cmd+s" }
+ * ```
+ */
+export function parseShortcut(shortcut: string): ParsedShortcut {
+    const platform = detectPlatform()
+    const normalized = shortcut.toLowerCase().trim()
+    const parts = normalized.split(/[\s+-]+/).filter(Boolean)
+
+    if (parts.length === 0) {
+        throw new Error(`Invalid shortcut: "${shortcut}"`)
+    }
+
+    const modifiers: ModifierState = {
+        meta: false,
+        ctrl: false,
+        alt: false,
+        shift: false,
+    }
+
+    let key = parts.pop()!
+
+    for (const part of parts) {
+        const modifierKey = ModifierAliases[part]
+
+        if (modifierKey) {
+            if (part === "mod") {
+                if (platform === Platform.MAC) {
+                    modifiers.meta = true
+                } else {
+                    modifiers.ctrl = true
+                }
+            } else {
+                modifiers[modifierKey] = true
+            }
+        } else {
+            key = part + key
+        }
+    }
+
+    const normalizedKey = SpecialKeyMap[key] || key
+
+    return {
+        modifiers,
+        modifiers,
+        key: normalizedKey.length === 1 ? normalizedKey.toLowerCase() : normalizedKey,
+        original: shortcut,
+    }
+}
+
+/**
+ * Parse multiple shortcut strings
+ *
+ * @param shortcuts - Single shortcut or array of shortcuts
+ * @returns Array of parsed shortcuts
+ */
+export function parseShortcuts(shortcuts: string | string[]): ParsedShortcut[] {
+    const shortcutArray = Array.isArray(shortcuts) ? shortcuts : [shortcuts]
+    return shortcutArray.map(parseShortcut)
+}
+
+/**
+ * Extract modifier state from a keyboard event
+ *
+ * @param event - The keyboard event
+ * @returns Object with meta, ctrl, alt, shift boolean flags
+ */
+export function getModifiersFromEvent(event: KeyboardEvent): ModifierState {
+    return {
+        meta: event.metaKey,
+        ctrl: event.ctrlKey,
+        alt: event.altKey,
+        shift: event.shiftKey,
+    }
+}
+
+/**
+ * Check if a keyboard event matches a parsed shortcut
+ *
+ * @param event - The keyboard event to check
+ * @param parsed - The parsed shortcut to match against
+ * @returns `true` if the event matches the shortcut
+ */
+export function matchesShortcut(event: KeyboardEvent, parsed: ParsedShortcut): boolean {
+    const eventModifiers = getModifiersFromEvent(event)
+    const eventKey = event.key.toLowerCase()
+
+    const modifiersMatch =
+        eventModifiers.meta === parsed.modifiers.meta &&
+        eventModifiers.ctrl === parsed.modifiers.ctrl &&
+        eventModifiers.alt === parsed.modifiers.alt &&
+        eventModifiers.shift === parsed.modifiers.shift
+
+    const keyMatches = eventKey === parsed.key.toLowerCase()
+
+    return modifiersMatch && keyMatches
+}
+
+/**
+ * Check if a keyboard event matches any of the parsed shortcuts
+ *
+ * @param event - The keyboard event to check
+ * @param parsedShortcuts - Array of parsed shortcuts to match against
+ * @returns `true` if the event matches any shortcut
+ */
+export function matchesAnyShortcut(event: KeyboardEvent, parsedShortcuts: ParsedShortcut[]): boolean {
+    return parsedShortcuts.some((parsed) => matchesShortcut(event, parsed))
+}
+
+File: src/hook.ts
+"use client"
+
+import { useEffect, useRef, useMemo } from "react"
+import { createShortcutBuilder } from "./builder"
+import type { ShortcutBuilder, UseShortcutOptions } from "./types"
+
+/**
+ * React hook for registering chainable keyboard shortcuts
+ *
+ * @param options - Configuration options for the hook
+ * @returns A chainable shortcut builder (`$`)
+ *
+ * @example
+ * ```tsx
+ * function App() {
+ *   const $ = useShortcut()
+ *
+ *   $.mod.key("s").on(() => save())
+ *   $.ctrl.shift.key("p").on(() => openPalette())
+ *   $.key("/").except("typing").on(() => focusSearch())
+ *
+ *   return <div>Press ⌘S to save</div>
+ * }
+ * ```
+ */
+export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
+    const optionsRef = useRef(options)
+    optionsRef.current = options
+
+    const { builder, registry } = useMemo(() => {
+        return createShortcutBuilder(optionsRef.current)
+    }, [])
+
+    useEffect(() => {
+        registry.options = optionsRef.current
+    })
+
+    useEffect(() => {
+        return () => {
+            registry.listeners.forEach((entry) => entry.unbind())
+            registry.listeners.clear()
+        }
+    }, [registry])
+
+    return builder as ShortcutBuilder
+}
+
+/**
+ * Create a shortcut builder for non-React usage
+ *
+ * Unlike `useShortcut`, this does not auto-cleanup - you must call `.unbind()` manually.
+ *
+ * @param options - Configuration options
+ * @returns A chainable shortcut builder
+ *
+ * @example
+ * ```ts
+ * const $ = createShortcut()
+ * const save = $.mod.key("s").on(() => save())
+ *
+ * // Cleanup when done
+ * save.unbind()
+ * ```
+ */
+export function createShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
+    const { builder } = createShortcutBuilder(options)
+    return builder as ShortcutBuilder
+}
+
+File: src/builder.ts
+import {
+    detectPlatform,
+    Platform,
+    ModifierDisplaySymbols,
+    ModifierKey,
+    ModifierDisplayOrder,
+} from "./constants"
+import type { ModifierKeyType } from "./constants"
+import { parseShortcut, matchesShortcut } from "./parser"
+import type {
+    ActionKey,
+    ModifierFlags,
+    ShortcutHandler,
+    HandlerOptions,
+    ShortcutResult,
+    UseShortcutOptions,
+    ExceptPreset,
+    ExceptPredicate,
+    ShortcutBuilder as IShortcutBuilder,
+} from "./types"
+
+const MODIFIER_KEYS = new Set(["ctrl", "shift", "alt", "cmd", "mod"])
+const IGNORED_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"])
+
+const EXCEPT_PREDICATES: Record<ExceptPreset, ExceptPredicate> = {
+    input: (e) => {
+        const target = e.target as HTMLElement
+        return IGNORED_TAGS.has(target.tagName)
+    },
+    editable: (e) => {
+        const target = e.target as HTMLElement
+        return target.isContentEditable
+    },
+    typing: (e) => {
+        const target = e.target as HTMLElement
+        return IGNORED_TAGS.has(target.tagName) || target.isContentEditable
+    },
+    modal: () => {
+        return document.querySelector('[data-modal="true"], [role="dialog"]') !== null
+    },
+    disabled: (e) => {
+        const target = e.target as HTMLElement
+        return target.hasAttribute("disabled") || target.getAttribute("aria-disabled") === "true"
+    },
+}
+
+function shouldExcept(event: KeyboardEvent, except?: ExceptPreset | ExceptPreset[] | ExceptPredicate): boolean {
+    if (!except) return false
+
+    if (typeof except === "function") {
+        return except(event)
+    }
+
+    if (Array.isArray(except)) {
+        return except.some((preset) => EXCEPT_PREDICATES[preset]?.(event))
+    }
+
+    return EXCEPT_PREDICATES[except]?.(event) ?? false
+}
+
+type BuilderState = {
+    modifiers: Partial<ModifierFlags>
+    key: ActionKey | null
+    options: UseShortcutOptions
+    except?: ExceptPreset | ExceptPreset[] | ExceptPredicate
+}
+
+type ShortcutRegistry = {
+    listeners: Map<
+        string,
+        {
+            listener: (e: KeyboardEvent) => void
+            userHandler: ShortcutHandler
+            unbind: () => void
+            isEnabled: boolean
+            attemptCallbacks: Set<(matched: boolean, event: KeyboardEvent) => void>
+        }
+    >
+    options: UseShortcutOptions
+}
+
+function getActiveModifierTokens(modifiers: Partial<ModifierFlags>): string[] {
+    const platform = detectPlatform()
+    const order = ModifierDisplayOrder[platform]
+
+    return order
+        .filter((key) => {
+            if (key === ModifierKey.CTRL) return modifiers.ctrl
+            if (key === ModifierKey.ALT) return modifiers.alt
+            if (key === ModifierKey.SHIFT) return modifiers.shift
+            if (key === ModifierKey.META) return modifiers.cmd
+            return false
+        })
+        .map((key) => {
+            if (key === ModifierKey.CTRL) return "ctrl"
+            if (key === ModifierKey.ALT) return "alt"
+            if (key === ModifierKey.SHIFT) return "shift"
+            if (key === ModifierKey.META) return "cmd"
+            return ""
+        })
+}
+
+function buildComboString(modifiers: Partial<ModifierFlags>, key: ActionKey): string {
+    const tokens = getActiveModifierTokens(modifiers)
+    return [...tokens, key].join("+")
+}
+
+function formatCombo(modifiers: Partial<ModifierFlags>, key: ActionKey): string {
+    const platform = detectPlatform()
+    const symbols = ModifierDisplaySymbols[platform]
+    const tokens = getActiveModifierTokens(modifiers)
+
+    const parts = tokens.map((t) => {
+        if (t === "ctrl") return symbols[ModifierKey.CTRL]
+        if (t === "alt") return symbols[ModifierKey.ALT]
+        if (t === "shift") return symbols[ModifierKey.SHIFT]
+        if (t === "cmd") return symbols[ModifierKey.META]
+        return t
+    })
+
+    parts.push(key.length === 1 ? key.toUpperCase() : key)
+
+    return platform === Platform.MAC ? parts.join("") : parts.join("+")
+}
+
+function debugLog(debug: boolean | undefined, ...args: unknown[]) {
+    if (debug) {
+        console.log("[useShortcut]", ...args)
+    }
+}
+
+function createBinding(
+    state: BuilderState,
+    handler: ShortcutHandler,
+    handlerOptions: HandlerOptions = {},
+    registry: ShortcutRegistry,
+): ShortcutResult {
+    const { modifiers, key, options, except: stateExcept } = state
+
+    if (!key) {
+        throw new Error("[useShortcut] No key specified. Use .key() to set the action key.")
+    }
+
+    const combo = buildComboString(modifiers, key)
+    const display = formatCombo(modifiers, key)
+    const parsed = parseShortcut(combo)
+    const debug = options.debug ?? false
+    const except = stateExcept ?? handlerOptions.except
+
+    const existing = registry.listeners.get(combo)
+    if (existing) {
+        debugLog(debug, "Updating existing shortcut handler:", combo)
+        existing.userHandler = handler
+        return {
+            unbind: existing.unbind,
+            display,
+            combo,
+            trigger: () => existing.userHandler(new KeyboardEvent("keydown")),
+            get isEnabled() {
+                return existing.isEnabled
+            },
+            enable: () => {
+                existing.isEnabled = true
+            },
+            disable: () => {
+                existing.isEnabled = false
+            },
+            onAttempt: (callback) => {
+                existing.attemptCallbacks.add(callback)
+                return () => existing.attemptCallbacks.delete(callback)
+            },
+        }
+    }
+
+    const isEnabled = !handlerOptions.disabled && !options.disabled
+    const delay = handlerOptions.delay ?? options.delay ?? 0
+    const attemptCallbacks = new Set<(matched: boolean, event: KeyboardEvent) => void>()
+
+    debugLog(debug, "Registering:", combo, "→", display, { modifiers, key, parsed, except: !!except })
+
+    function handleEvent(event: KeyboardEvent) {
+        const entry = registry.listeners.get(combo)
+        if (!entry?.isEnabled) return
+
+        if (options.ignoreInputs !== false && !except) {
+            const target = event.target as HTMLElement
+            if (IGNORED_TAGS.has(target.tagName) || target.isContentEditable) {
+                return
+            }
+        }
+
+        if (shouldExcept(event, except)) {
+            debugLog(debug, "Skipped due to except condition:", combo)
+            return
+        }
+
+        debugLog(debug, "Key pressed:", event.key, {
+            ctrl: event.ctrlKey,
+            alt: event.altKey,
+            shift: event.shiftKey,
+            meta: event.metaKey,
+        })
+
+        const matched = matchesShortcut(event, parsed)
+
+        entry.attemptCallbacks.forEach((cb) => cb(matched, event))
+
+        if (matched) {
+            debugLog(debug, "MATCHED:", combo, "→", display)
+
+            if (handlerOptions.preventDefault !== false) {
+                event.preventDefault()
+            }
+
+            if (handlerOptions.stopPropagation) {
+                event.stopPropagation()
+            }
+
+            const executeHandler = () => entry.userHandler(event)
+
+            if (delay > 0) {
+                debugLog(debug, "Delaying execution by", delay, "ms")
+                setTimeout(executeHandler, delay)
+            } else {
+                executeHandler()
+            }
+        }
+    }
+
+    const target = options.target ?? (typeof window !== "undefined" ? window : null)
+    const eventType = options.eventType ?? "keydown"
+
+    if (target) {
+        target.addEventListener(eventType, handleEvent as EventListener)
+        debugLog(debug, "Listener attached for:", combo)
+    }
+
+    function unbind() {
+        if (target) {
+            target.removeEventListener(eventType, handleEvent as EventListener)
+            registry.listeners.delete(combo)
+            debugLog(debug, "Unregistered:", combo)
+        }
+    }
+
+    registry.listeners.set(combo, {
+        listener: handleEvent,
+        userHandler: handler,
+        unbind,
+        isEnabled,
+        attemptCallbacks,
+    })
+
+    return {
+        unbind,
+        display,
+        combo,
+        trigger: () => handler(new KeyboardEvent(eventType)),
+        get isEnabled() {
+            return registry.listeners.get(combo)?.isEnabled ?? false
+        },
+        enable: () => {
+            const entry = registry.listeners.get(combo)
+            if (entry) entry.isEnabled = true
+        },
+        disable: () => {
+            const entry = registry.listeners.get(combo)
+            if (entry) entry.isEnabled = false
+        },
+        onAttempt: (callback) => {
+            const entry = registry.listeners.get(combo)
+            if (entry) {
+                entry.attemptCallbacks.add(callback)
+                return () => entry.attemptCallbacks.delete(callback)
+            }
+            return () => { }
+        },
+    }
+}
+
+export function createShortcutBuilder(options: UseShortcutOptions = {}): {
+    builder: IShortcutBuilder
+    registry: ShortcutRegistry
+} {
+    const registry: ShortcutRegistry = {
+        listeners: new Map(),
+        options,
+    }
+
+    debugLog(options.debug, "Builder created with options:", options)
+
+    function createProxy(currentState: BuilderState): IShortcutBuilder {
+        return new Proxy({} as IShortcutBuilder, {
+            get(_, prop: string) {
+                if (prop === "__debug") {
+                    return currentState.options.debug
+                }
+
+                if (MODIFIER_KEYS.has(prop)) {
+                    const platform = detectPlatform()
+                    const modKey = prop === "mod" ? (platform === Platform.MAC ? "cmd" : "ctrl") : prop
+
+                    const newState: BuilderState = {
+                        ...currentState,
+                        modifiers: { ...currentState.modifiers, [modKey]: true },
+                    }
+
+                    debugLog(currentState.options.debug, `Chain: +${prop} →`, newState.modifiers)
+
+                    return createProxy(newState)
+                }
+
+                if (prop === "key") {
+                    return (key: ActionKey) => {
+                        const newState: BuilderState = {
+                            ...currentState,
+                            key,
+                        }
+
+                        debugLog(currentState.options.debug, `Chain: .key("${key}")`)
+
+                        return createProxy(newState)
+                    }
+                }
+
+                if (prop === "except") {
+                    return (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => {
+                        const newState: BuilderState = {
+                            ...currentState,
+                            except: condition,
+                        }
+
+                        debugLog(currentState.options.debug, `Chain: .except()`, condition)
+
+                        return createProxy(newState)
+                    }
+                }
+
+                if (prop === "on") {
+                    return (handler: ShortcutHandler, handlerOptions?: HandlerOptions) => {
+                        return createBinding(currentState, handler, handlerOptions, registry)
+                    }
+                }
+
+                if (prop === "handle") {
+                    return (opts: HandlerOptions & { handler: ShortcutHandler }) => {
+                        const { handler, ...rest } = opts
+                        return createBinding(currentState, handler, rest, registry)
+                    }
+                }
+
+                return undefined
+            },
+        })
+    }
+
+    const initialState: BuilderState = {
+        modifiers: {},
+        key: null,
+        options,
+    }
+
+    return {
+        builder: createProxy(initialState),
+        registry,
+    }
+}
