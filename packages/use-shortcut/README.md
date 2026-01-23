@@ -1,10 +1,17 @@
 # @remcostoeten/use-shortcut
 
+[![npm version](https://img.shields.io/npm/v/@remcostoeten/use-shortcut.svg)](https://www.npmjs.com/package/@remcostoeten/use-shortcut)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
+
 Chainable keyboard shortcuts for React with **perfect TypeScript intellisense**.
+
+[**View Live Demo & Playground**](https://use-shortcuts.vercel.app)
 
 ```tsx
 const $ = useShortcut()
 
+// Chainable, typesafe, platform-aware
 $.cmd.shift.key("s").on(() => save())
 $.mod.key("k").on(() => search())
 $.key("/").except("typing").on(() => focusSearch())

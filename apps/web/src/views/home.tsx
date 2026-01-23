@@ -9,12 +9,24 @@ export default function HomeView() {
         <>
             <Header />
             <main className="min-h-screen bg-zinc-950 text-zinc-100">
-                <section className="relative">
-                    <div className="container mx-auto max-w-5xl px-4 pt-16 pb-12">
-                        <p className="text-lg text-zinc-400 max-w-xl mx-auto">
+                <section className="relative mx-auto container mx-auto max-w-4xl ">
+                    <div className="container mx-auto space-y-2 px-4 pt-16 pb-12">
+                        <h2 className="text-2xl font-semibold text-zinc-100"><pre>Elegant.kbd.docs()</pre></h2>
+                        <p className="text-lg text-zinc-400">
                             Build complex keyboard shortcuts with a fluent, chainable API.
                             Press the keys below to see it work.
                         </p>
+                        <div className="flex flex-col gap-2 w-fit">
+                            <CodeBlock
+                                disableTopBar
+                                showBottomFade={false}
+                                language="shell"
+                                code="bun add @remcostoeten/use-shortcut"
+                            />
+                            <p className="text-sm text-zinc-500">
+                                Also works with <code className="text-zinc-400">pnpm</code>, <code className="text-zinc-400">npm</code>, or <code className="text-zinc-400">yarn</code>, althrough I sincerely hope you don't use the last two in 2026.
+                            </p>
+                        </div>
                     </div>
 
                     <ShortcutPlayground />
@@ -36,18 +48,6 @@ export default function HomeView() {
                         <ApiReference />
 
                         <div className="space-y-6">
-                            <h2 className="text-2xl font-semibold text-zinc-100">Install</h2>
-                            <div className="flex flex-col gap-2">
-                                <CodeBlock
-                                    disableTopBar
-                                    showBottomFade={false}
-                                    language="shell"
-                                    code="bun add @remcostoeten/use-shortcut"
-                                />
-                                <p className="text-sm text-zinc-500">
-                                    Also works with <code className="text-zinc-400">pnpm</code>, <code className="text-zinc-400">npm</code>, or <code className="text-zinc-400">yarn</code>
-                                </p>
-                            </div>
 
                             <div className="mt-8">
                                 <CodeBlock

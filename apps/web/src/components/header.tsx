@@ -49,9 +49,6 @@ export async function Header() {
 
                         <div className="hidden sm:block h-4 w-px bg-zinc-700/50 mx-1" aria-hidden="true"></div>
 
-                        <div className="hidden sm:block">
-                            <LatestCommit />
-                        </div>
                     </nav>
 
                     <div className="flex items-center">
