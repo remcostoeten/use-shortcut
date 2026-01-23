@@ -36,7 +36,8 @@
         "./src/shared/*"
       ],
       "@/components/*": [
-        "./src/shared/components/*"
+        "./src/shared/components/*",
+        "./src/components/*"
       ]
     }
   },

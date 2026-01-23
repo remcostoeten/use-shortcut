@@ -26,3 +26,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 packages/use-shortcut/node_modules/*
+apps/web/.next/*
+apps/web/node_modules/*
+.turbo/*
+packages/use-shortcut/.turbo/*

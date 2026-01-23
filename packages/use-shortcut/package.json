@@ -1,13 +1,14 @@
 {
     "name": "@remcostoeten/use-shortcut",
     "version": "1.0.0",
-    "description": "Chainable keyboard shortcuts for React with perfect TypeScript intellisense",
+    "description": "Beautiful, intuitive, chainable syntax for executing keyboard shortcuts in React and Next.js with perfect TypeScript IntelliSense.",
     "author": "Remco Stoeten",
     "license": "MIT",
     "homepage": "https://github.com/remcostoeten/use-shortcut#readme",
     "bugs": {
         "url": "https://github.com/remcostoeten/use-shortcut/issues"
     },
+    "packageManager": "bun@1.3.3",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/remcostoeten/use-shortcut.git"

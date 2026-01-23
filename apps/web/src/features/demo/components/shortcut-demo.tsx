@@ -136,7 +136,6 @@ export function ShortcutDemo() {
     }
   }, [])
 
-  // Parse playground input
   useEffect(() => {
     try {
       const parsed = parseShortcut(playgroundInput)

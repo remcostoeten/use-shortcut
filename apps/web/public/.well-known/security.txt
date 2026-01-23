@@ -1,0 +1,3 @@
+Contact: https://github.com/remcostoeten/use-shortcut/issues
+Preferred-Languages: en
+Canonical: https://use-shortcut.dev/.well-known/security.txt
