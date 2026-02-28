@@ -24,7 +24,7 @@
     ],
     "sideEffects": false,
     "bin": {
-        "use-shortcut": "./dist/cli/index.mjs"
+        "use-shortcut": "dist/cli/index.mjs"
     },
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
