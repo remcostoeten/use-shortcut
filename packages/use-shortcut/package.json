@@ -1,6 +1,6 @@
 {
     "name": "@remcostoeten/use-shortcut",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Beautiful, intuitive, chainable syntax for executing keyboard shortcuts in React and Next.js with perfect TypeScript IntelliSense.",
     "author": "Remco Stoeten",
     "license": "MIT",
@@ -57,6 +57,7 @@
     "scripts": {
         "build": "tsup",
         "dev": "tsup --watch",
+        "test": "vitest run --environment jsdom",
         "typecheck": "tsc --noEmit",
         "clean": "rm -rf dist",
         "prepublishOnly": "npm run build"
@@ -66,8 +67,10 @@
     },
     "devDependencies": {
         "@types/react": "^19.2.9",
+        "jsdom": "^26.1.0",
         "react": "^19.0.0",
         "tsup": "^8.0.0",
-        "typescript": "^5.0.0"
+        "typescript": "^5.0.0",
+        "vitest": "^2.1.9"
     }
 }

@@ -244,6 +244,17 @@ function shouldExcept(event, except) {
   }
   return EXCEPT_PREDICATES[except]?.(event) ?? false;
 }
+function normalizeScopes(scopes) {
+  if (!scopes) return [];
+  return (Array.isArray(scopes) ? scopes : [scopes]).map((scope) => scope.trim()).filter(Boolean);
+}
+function scopeMatch(requiredScopes, activeScopes) {
+  if (requiredScopes.size === 0) return true;
+  for (const required of requiredScopes) {
+    if (activeScopes.has(required)) return true;
+  }
+  return false;
+}
 function getActiveModifierTokens(modifiers) {
   const platform = detectPlatform();
   const order = ModifierDisplayOrder[platform];
@@ -265,39 +276,88 @@ function buildComboString(modifiers, key) {
   const tokens = getActiveModifierTokens(modifiers);
   return [...tokens, key].join("+");
 }
-function formatCombo(modifiers, key) {
-  const platform = detectPlatform();
-  const symbols = ModifierDisplaySymbols[platform];
-  const tokens = getActiveModifierTokens(modifiers);
-  const parts = tokens.map((t) => {
-    if (t === "ctrl") return symbols[ModifierKey.CTRL];
-    if (t === "alt") return symbols[ModifierKey.ALT];
-    if (t === "shift") return symbols[ModifierKey.SHIFT];
-    if (t === "cmd") return symbols[ModifierKey.META];
-    return t;
-  });
-  parts.push(key.length === 1 ? key.toUpperCase() : key);
-  return platform === Platform.MAC ? parts.join("") : parts.join("+");
+function formatSequenceDisplay(steps) {
+  return steps.map((step) => formatShortcut(step)).join(" then ");
 }
 function debugLog(debug, ...args) {
   if (debug) {
     console.log("[useShortcut]", ...args);
   }
 }
+function canonicalizeParsed(parsed) {
+  const modifiers = [];
+  if (parsed.modifiers.ctrl) modifiers.push("ctrl");
+  if (parsed.modifiers.alt) modifiers.push("alt");
+  if (parsed.modifiers.shift) modifiers.push("shift");
+  if (parsed.modifiers.meta) modifiers.push("cmd");
+  return [...modifiers, parsed.key.toLowerCase()].join("+");
+}
+function isPureModifier(event) {
+  const key = event.key.toLowerCase();
+  return key === "shift" || key === "control" || key === "alt" || key === "meta";
+}
+function eventToCombo(event) {
+  const platform = detectPlatform();
+  const symbols = ModifierDisplaySymbols[platform];
+  const modifiers = [];
+  if (event.ctrlKey) modifiers.push(symbols[ModifierKey.CTRL] === "\u2303" ? "ctrl" : "ctrl");
+  if (event.altKey) modifiers.push("alt");
+  if (event.shiftKey) modifiers.push("shift");
+  if (event.metaKey) modifiers.push("cmd");
+  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key.toLowerCase();
+  return [...modifiers, key].join("+");
+}
+function isPrefix(a, b) {
+  if (a.length > b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (canonicalizeParsed(a[i]) !== canonicalizeParsed(b[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+function detectConflict(newSteps, existingSteps) {
+  const newCombo = newSteps.map(canonicalizeParsed).join(" ");
+  const existingCombo = existingSteps.map(canonicalizeParsed).join(" ");
+  if (newCombo === existingCombo) return "exact";
+  if (isPrefix(newSteps, existingSteps) || isPrefix(existingSteps, newSteps)) {
+    return "sequence-prefix";
+  }
+  return null;
+}
+function emitConflict(registry, conflict) {
+  const conflictWarnings = registry.options.conflictWarnings ?? true;
+  if (registry.options.onConflict) {
+    registry.options.onConflict(conflict);
+    return;
+  }
+  if (!conflictWarnings) return;
+  console.warn(
+    `[useShortcut] Conflict detected (${conflict.reason}) between "${conflict.combo}" and "${conflict.existingCombo}"`
+  );
+}
 function createBinding(state, handler, handlerOptions = {}, registry) {
-  const { modifiers, key, options, except: stateExcept } = state;
-  if (!key) {
+  const { options, except: stateExcept } = state;
+  const rawSteps = state.steps;
+  if (rawSteps.length === 0) {
     throw new Error("[useShortcut] No key specified. Use .key() to set the action key.");
   }
-  const combo = buildComboString(modifiers, key);
-  const display = formatCombo(modifiers, key);
-  const parsed = parseShortcut(combo);
+  const parsedSteps = rawSteps.map((step) => parseShortcut(step));
+  const combo = parsedSteps.map(canonicalizeParsed).join(" ");
+  const display = formatSequenceDisplay(rawSteps);
   const debug = options.debug ?? false;
   const except = stateExcept ?? handlerOptions.except;
+  for (const [existingCombo, existing2] of registry.listeners.entries()) {
+    if (existingCombo === combo) continue;
+    const reason = detectConflict(parsedSteps, existing2.parsedSteps);
+    if (!reason) continue;
+    emitConflict(registry, { combo, existingCombo, reason });
+  }
   const existing = registry.listeners.get(combo);
   if (existing) {
     debugLog(debug, "Updating existing shortcut handler:", combo);
     existing.userHandler = handler;
+    existing.scopes = new Set(normalizeScopes(state.scopes ?? handlerOptions.scopes));
     return {
       unbind: existing.unbind,
       display,
@@ -320,14 +380,25 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
   }
   const isEnabled = !handlerOptions.disabled && !options.disabled;
   const delay = handlerOptions.delay ?? options.delay ?? 0;
+  const sequenceTimeout = handlerOptions.sequenceTimeout ?? options.sequenceTimeout ?? 800;
+  const requiredScopes = new Set(normalizeScopes(state.scopes ?? handlerOptions.scopes));
   const attemptCallbacks = /* @__PURE__ */ new Set();
-  debugLog(debug, "Registering:", combo, "\u2192", display, { modifiers, key, parsed, except: !!except });
+  debugLog(debug, "Registering:", combo, "\u2192", display, {
+    parsedSteps,
+    except: !!except,
+    scopes: [...requiredScopes]
+  });
   function handleEvent(event) {
     const entry = registry.listeners.get(combo);
     if (!entry?.isEnabled) return;
-    if (options.ignoreInputs !== false && !except) {
+    const runtimeOptions = registry.options;
+    if (runtimeOptions.disabled) return;
+    if (!scopeMatch(entry.scopes, registry.activeScopes)) {
+      return;
+    }
+    if (runtimeOptions.ignoreInputs !== false && !except) {
       const target2 = event.target;
-      if (IGNORED_TAGS.has(target2.tagName) || target2.isContentEditable) {
+      if (target2 && (IGNORED_TAGS.has(target2.tagName) || target2.isContentEditable)) {
         return;
       }
     }
@@ -335,29 +406,40 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
       debugLog(debug, "Skipped due to except condition:", combo);
       return;
     }
-    debugLog(debug, "Key pressed:", event.key, {
-      ctrl: event.ctrlKey,
-      alt: event.altKey,
-      shift: event.shiftKey,
-      meta: event.metaKey
-    });
-    const matched = matchesShortcut(event, parsed);
+    const expected = entry.parsedSteps[entry.progress];
+    const now = Date.now();
+    if (entry.progress > 0 && now - entry.lastMatchedAt > sequenceTimeout) {
+      entry.progress = 0;
+    }
+    let matched = false;
+    if (matchesShortcut(event, expected)) {
+      entry.progress += 1;
+      entry.lastMatchedAt = now;
+      if (entry.progress === entry.parsedSteps.length) {
+        matched = true;
+        entry.progress = 0;
+      }
+    } else if (entry.progress > 0 && matchesShortcut(event, entry.parsedSteps[0])) {
+      entry.progress = 1;
+      entry.lastMatchedAt = now;
+    } else {
+      entry.progress = 0;
+    }
     entry.attemptCallbacks.forEach((cb) => cb(matched, event));
-    if (matched) {
-      debugLog(debug, "MATCHED:", combo, "\u2192", display);
-      if (handlerOptions.preventDefault !== false) {
-        event.preventDefault();
-      }
-      if (handlerOptions.stopPropagation) {
-        event.stopPropagation();
-      }
-      const executeHandler = () => entry.userHandler(event);
-      if (delay > 0) {
-        debugLog(debug, "Delaying execution by", delay, "ms");
-        setTimeout(executeHandler, delay);
-      } else {
-        executeHandler();
-      }
+    if (!matched) return;
+    debugLog(debug, "MATCHED:", combo, "\u2192", display);
+    if (handlerOptions.preventDefault !== false) {
+      event.preventDefault();
+    }
+    if (handlerOptions.stopPropagation) {
+      event.stopPropagation();
+    }
+    const executeHandler = () => entry.userHandler(event);
+    if (delay > 0) {
+      debugLog(debug, "Delaying execution by", delay, "ms");
+      setTimeout(executeHandler, delay);
+    } else {
+      executeHandler();
     }
   }
   const target = options.target ?? (typeof window !== "undefined" ? window : null);
@@ -378,7 +460,11 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
     userHandler: handler,
     unbind,
     isEnabled,
-    attemptCallbacks
+    attemptCallbacks,
+    parsedSteps,
+    scopes: requiredScopes,
+    progress: 0,
+    lastMatchedAt: 0
   });
   return {
     unbind,
@@ -407,10 +493,40 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
     }
   };
 }
+function createRecorder(options) {
+  return (recordingOptions = {}) => {
+    return new Promise((resolve, reject) => {
+      const target = recordingOptions.target ?? options.target ?? (typeof window !== "undefined" ? window : null);
+      const eventType = recordingOptions.eventType ?? options.eventType ?? "keydown";
+      if (!target) {
+        reject(new Error("[useShortcut] Cannot record shortcut without a target."));
+        return;
+      }
+      let timeout;
+      const listener = (event) => {
+        const keyboardEvent = event;
+        if (isPureModifier(keyboardEvent)) return;
+        keyboardEvent.preventDefault();
+        target.removeEventListener(eventType, listener);
+        if (timeout) clearTimeout(timeout);
+        resolve(eventToCombo(keyboardEvent));
+      };
+      target.addEventListener(eventType, listener, { once: false });
+      const timeoutMs = recordingOptions.timeoutMs;
+      if (timeoutMs && timeoutMs > 0) {
+        timeout = setTimeout(() => {
+          target.removeEventListener(eventType, listener);
+          reject(new Error(`[useShortcut] Recording timed out after ${timeoutMs}ms.`));
+        }, timeoutMs);
+      }
+    });
+  };
+}
 function createShortcutBuilder(options = {}) {
   const registry = {
     listeners: /* @__PURE__ */ new Map(),
-    options
+    options,
+    activeScopes: new Set(normalizeScopes(options.activeScopes))
   };
   debugLog(options.debug, "Builder created with options:", options);
   function createProxy(currentState) {
@@ -429,13 +545,65 @@ function createShortcutBuilder(options = {}) {
           debugLog(currentState.options.debug, `Chain: +${prop} \u2192`, newState.modifiers);
           return createProxy(newState);
         }
-        if (prop === "key") {
-          return (key) => {
+        if (prop === "in") {
+          return (scopes) => {
+            const nextScopes = [...normalizeScopes(currentState.scopes), ...normalizeScopes(scopes)];
             const newState = {
               ...currentState,
-              key
+              scopes: nextScopes
+            };
+            return createProxy(newState);
+          };
+        }
+        if (prop === "setScopes") {
+          return (scopes) => {
+            registry.activeScopes = new Set(normalizeScopes(scopes));
+          };
+        }
+        if (prop === "enableScope") {
+          return (scope) => {
+            if (!scope?.trim()) return;
+            registry.activeScopes.add(scope.trim());
+          };
+        }
+        if (prop === "disableScope") {
+          return (scope) => {
+            if (!scope?.trim()) return;
+            registry.activeScopes.delete(scope.trim());
+          };
+        }
+        if (prop === "getScopes") {
+          return () => [...registry.activeScopes];
+        }
+        if (prop === "isScopeActive") {
+          return (scope) => registry.activeScopes.has(scope);
+        }
+        if (prop === "record") {
+          return createRecorder(registry.options);
+        }
+        if (prop === "key") {
+          return (key) => {
+            const nextStep = buildComboString(currentState.modifiers, key);
+            const newState = {
+              ...currentState,
+              modifiers: {},
+              steps: [...currentState.steps, nextStep]
             };
             debugLog(currentState.options.debug, `Chain: .key("${key}")`);
+            return createProxy(newState);
+          };
+        }
+        if (prop === "then") {
+          return (key) => {
+            const nextStep = String(key).trim().toLowerCase();
+            if (!nextStep) {
+              throw new Error("[useShortcut] .then() requires a non-empty key or shortcut step.");
+            }
+            const newState = {
+              ...currentState,
+              steps: [...currentState.steps, nextStep]
+            };
+            debugLog(currentState.options.debug, `Chain: .then("${nextStep}")`);
             return createProxy(newState);
           };
         }
@@ -445,7 +613,7 @@ function createShortcutBuilder(options = {}) {
               ...currentState,
               except: condition
             };
-            debugLog(currentState.options.debug, `Chain: .except()`, condition);
+            debugLog(currentState.options.debug, "Chain: .except()", condition);
             return createProxy(newState);
           };
         }
@@ -466,7 +634,7 @@ function createShortcutBuilder(options = {}) {
   }
   const initialState = {
     modifiers: {},
-    key: null,
+    steps: [],
     options
   };
   return {
@@ -476,6 +644,68 @@ function createShortcutBuilder(options = {}) {
 }
 
 // src/hook.ts
+function normalizeShortcutMapKeys(keys) {
+  if (Array.isArray(keys)) {
+    return keys.map((key) => key.trim()).filter(Boolean);
+  }
+  const trimmed = keys.trim();
+  if (!trimmed) return [];
+  if (trimmed.includes(" then ")) {
+    return trimmed.split(/\s+then\s+/i).map((key) => key.trim()).filter(Boolean);
+  }
+  if (trimmed.includes(" ") && !trimmed.includes("+")) {
+    return trimmed.split(/\s+/).map((key) => key.trim()).filter(Boolean);
+  }
+  return [trimmed];
+}
+function applyStep(builder, step) {
+  const tokens = step.toLowerCase().split("+").map((token) => token.trim()).filter(Boolean);
+  if (tokens.length === 0) {
+    throw new Error("[useShortcutMap] Invalid step: empty shortcut step");
+  }
+  const key = tokens.pop();
+  let chain = builder;
+  for (const token of tokens) {
+    if (token === "ctrl" || token === "control") {
+      chain = chain.ctrl;
+      continue;
+    }
+    if (token === "shift") {
+      chain = chain.shift;
+      continue;
+    }
+    if (token === "alt" || token === "option") {
+      chain = chain.alt;
+      continue;
+    }
+    if (token === "cmd" || token === "command" || token === "meta") {
+      chain = chain.cmd;
+      continue;
+    }
+    if (token === "mod") {
+      chain = chain.mod;
+      continue;
+    }
+    throw new Error(`[useShortcutMap] Unsupported modifier token "${token}" in step "${step}"`);
+  }
+  return chain.key(key);
+}
+function registerShortcutMap(builder, shortcutMap) {
+  const results = {};
+  for (const id of Object.keys(shortcutMap)) {
+    const entry = shortcutMap[id];
+    const steps = normalizeShortcutMapKeys(entry.keys);
+    if (steps.length === 0) {
+      throw new Error(`[useShortcutMap] Shortcut "${String(id)}" has no key steps`);
+    }
+    let chain = applyStep(builder, steps[0]);
+    for (const step of steps.slice(1)) {
+      chain = chain.then(step);
+    }
+    results[id] = chain.on(entry.handler, entry.options);
+  }
+  return results;
+}
 function useShortcut(options = {}) {
   const optionsRef = react.useRef(options);
   optionsRef.current = options;
@@ -484,6 +714,10 @@ function useShortcut(options = {}) {
   }, []);
   react.useEffect(() => {
     registry.options = optionsRef.current;
+    if (optionsRef.current.activeScopes !== void 0) {
+      const scopes = Array.isArray(optionsRef.current.activeScopes) ? optionsRef.current.activeScopes : [optionsRef.current.activeScopes];
+      registry.activeScopes = new Set(scopes.map((scope) => scope.trim()).filter(Boolean));
+    }
   });
   react.useEffect(() => {
     return () => {
@@ -493,9 +727,17 @@ function useShortcut(options = {}) {
   }, [registry]);
   return builder;
 }
+function useShortcutMap(shortcutMap, options = {}) {
+  const $ = useShortcut(options);
+  return registerShortcutMap($, shortcutMap);
+}
 function createShortcut(options = {}) {
   const { builder } = createShortcutBuilder(options);
   return builder;
+}
+function createShortcutMap(shortcutMap, options = {}) {
+  const builder = createShortcut(options);
+  return registerShortcutMap(builder, shortcutMap);
 }
 
 exports.ModifierAliases = ModifierAliases;
@@ -505,6 +747,7 @@ exports.ModifierKey = ModifierKey;
 exports.Platform = Platform;
 exports.SpecialKeyMap = SpecialKeyMap;
 exports.createShortcut = createShortcut;
+exports.createShortcutMap = createShortcutMap;
 exports.detectPlatform = detectPlatform;
 exports.formatShortcut = formatShortcut;
 exports.getModifierSymbols = getModifierSymbols;
@@ -513,6 +756,8 @@ exports.matchesAnyShortcut = matchesAnyShortcut;
 exports.matchesShortcut = matchesShortcut;
 exports.parseShortcut = parseShortcut;
 exports.parseShortcuts = parseShortcuts;
+exports.registerShortcutMap = registerShortcutMap;
 exports.useShortcut = useShortcut;
+exports.useShortcutMap = useShortcutMap;
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

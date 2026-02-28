@@ -29,6 +29,12 @@ export type {
     KeyChain,
     ExceptPreset,
     ExceptPredicate,
+    ShortcutScope,
+    ShortcutConflict,
+    ShortcutMap,
+    ShortcutMapEntry,
+    ShortcutMapResult,
+    ShortcutRecordingOptions,
 } from "./types"
 
 export {
@@ -41,4 +47,4 @@ export {
 
 export { formatShortcut, getModifierSymbols } from "./formatter"
 
-export { useShortcut, createShortcut } from "./hook"
+export { useShortcut, createShortcut, useShortcutMap, createShortcutMap, registerShortcutMap } from "./hook"

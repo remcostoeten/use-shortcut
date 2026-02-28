@@ -20,6 +20,11 @@ $.key("/").except("typing").on(() => focusSearch())
 ## Features
 
 - **Chainable API** - Fluent, readable shortcut definitions
+- **Sequences/chords** - Multi-step bindings like `$.key("g").then("d")`
+- **Named scopes** - Activate/deactivate shortcut contexts (`editor`, `navigation`, etc.)
+- **Conflict detection** - Detect exact and sequence-prefix overlaps
+- **Shortcut maps** - Register many shortcuts at once with `useShortcutMap()`
+- **Recording mode** - Capture the next key combo for custom keybind UIs
 - **Perfect TypeScript** - Intellisense at every step
 - **Cross-platform** - `mod` = ⌘ on Mac, Ctrl on Windows/Linux
 - **Context-aware** - Skip shortcuts in inputs with `.except()`
@@ -160,6 +165,49 @@ save.unbind()   // Remove the shortcut
 save.trigger()  // Programmatically trigger
 ```
 
+### Sequences / Chords
+
+```tsx
+// GitHub-style: press g, then d
+$.key("g").then("d").on(() => goToDashboard())
+
+// Steps can include modifiers too
+$.key("g").then("shift+d").on(() => openDebug())
+```
+
+### Named Scopes
+
+```tsx
+const $ = useShortcut({ activeScopes: "navigation" })
+
+$.in("navigation").key("g").then("d").on(() => goToDashboard())
+$.in("editor").mod.key("s").on(() => saveFile())
+
+$.setScopes("editor")        // enable editor scope only
+$.enableScope("navigation")  // add a second active scope
+$.disableScope("editor")     // remove one scope
+$.getScopes()                // ["navigation"]
+```
+
+### Shortcut Maps
+
+```tsx
+import { useShortcutMap } from "@remcostoeten/use-shortcut"
+
+useShortcutMap({
+  save: { keys: "mod+s", handler: () => save() },
+  undo: { keys: "mod+z", handler: () => undo() },
+  dashboard: { keys: ["g", "d"], handler: () => goToDashboard() },
+})
+```
+
+### Recording Mode
+
+```tsx
+const combo = await $.record({ timeoutMs: 5000 })
+// e.g. "ctrl+k" or "cmd+k"
+```
+
 ### Hook Options
 
 ```tsx
@@ -170,6 +218,12 @@ const $ = useShortcut({
   disabled: false,       // Disable all shortcuts
   eventType: "keydown",  // or "keyup"
   target: window,        // Custom event target
+  activeScopes: "editor", // Active named scopes
+  sequenceTimeout: 800,   // ms to complete sequence
+  conflictWarnings: true, // Warn on overlaps
+  onConflict: (conflict) => {
+    console.warn(conflict)
+  },
 })
 ```
 
