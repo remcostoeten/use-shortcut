@@ -1,8 +1,7 @@
-#!/usr/bin/env node
-
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from "fs"
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs"
 import { join, dirname } from "path"
 import { fileURLToPath } from "url"
+import { getArchitectureTemplates, type ScaffoldFramework } from "./templates"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -13,6 +12,7 @@ const COLORS = {
     cyan: "\x1b[36m",
     yellow: "\x1b[33m",
     dim: "\x1b[2m",
+    red: "\x1b[31m",
 }
 
 function log(message: string, color = COLORS.reset) {
@@ -23,11 +23,29 @@ function getSrcPath() {
     return join(__dirname, "..", "src")
 }
 
-function getDestPath(targetDir: string) {
+function getCopyDestPath(targetDir: string) {
     return join(process.cwd(), targetDir, "use-shortcut")
 }
 
-const FILES = [
+function getScaffoldDestPath(targetDir: string, dir: string) {
+    return join(process.cwd(), targetDir, dir)
+}
+
+function getFlagValue(args: string[], flag: string, fallback: string): string {
+    const flagIndex = args.indexOf(flag)
+    if (flagIndex === -1) return fallback
+
+    const value = args[flagIndex + 1]
+    if (!value || value.startsWith("--")) return fallback
+
+    return value
+}
+
+function hasFlag(args: string[], flag: string): boolean {
+    return args.includes(flag)
+}
+
+const CORE_FILES = [
     "index.ts",
     "hook.ts",
     "builder.ts",
@@ -37,61 +55,145 @@ const FILES = [
     "formatter.ts",
 ]
 
-function init(targetDir = "hooks") {
+function init(targetDir = "hooks", force = false) {
     const srcPath = getSrcPath()
-    const destPath = getDestPath(targetDir)
+    const destPath = getCopyDestPath(targetDir)
 
-    log("\n🎹 use-shortcut CLI\n", COLORS.cyan)
+    log("\nuse-shortcut CLI\n", COLORS.cyan)
 
-    if (existsSync(destPath)) {
-        log(`⚠️  Directory already exists: ${destPath}`, COLORS.yellow)
-        log("   Use --force to overwrite\n")
+    if (existsSync(destPath) && !force) {
+        log(`Directory already exists: ${destPath}`, COLORS.yellow)
+        log("Use --force to overwrite existing files\n", COLORS.dim)
         return
     }
 
     mkdirSync(destPath, { recursive: true })
 
-    for (const file of FILES) {
+    let written = 0
+
+    for (const file of CORE_FILES) {
         const srcFile = join(srcPath, file)
         const destFile = join(destPath, file)
 
         if (!existsSync(srcFile)) {
-            log(`⚠️  Source file not found: ${file}`, COLORS.yellow)
+            log(`Source file not found: ${file}`, COLORS.yellow)
             continue
         }
 
-        let content = readFileSync(srcFile, "utf-8")
-
-        content = content.replace(/"use client"\n\n/, "\"use client\"\n\n")
-
+        const content = readFileSync(srcFile, "utf-8")
         writeFileSync(destFile, content)
-        log(`  ✓ ${file}`, COLORS.green)
+        written += 1
+        log(`  wrote ${file}`, COLORS.green)
     }
 
-    log("\n✨ Done! Files copied to:", COLORS.green)
-    log(`   ${destPath}\n`, COLORS.dim)
+    log(`\nCopied ${written} files to:`, COLORS.green)
+    log(`  ${destPath}\n`, COLORS.dim)
 
     log("Usage:", COLORS.cyan)
-    log(`  import { useShortcut } from "@/${targetDir}/use-shortcut"\n`, COLORS.dim)
-
+    log(`  import { useShortcut } from "@/${targetDir}/use-shortcut"`, COLORS.dim)
     log("  const $ = useShortcut()", COLORS.dim)
-    log("  $.mod.key(\"k\").on(() => console.log(\"Search!\"))\n", COLORS.dim)
+    log("  $.mod.key(\"k\").on(() => console.log(\"Search\"))\n", COLORS.dim)
+}
+
+function scaffoldArchitecture(
+    framework: ScaffoldFramework,
+    targetDir = "src",
+    dir = "shortcuts",
+    force = false,
+) {
+    const destPath = getScaffoldDestPath(targetDir, dir)
+    const templates = getArchitectureTemplates(framework)
+
+    log("\nuse-shortcut CLI\n", COLORS.cyan)
+    log(`Scaffolding ${framework} architecture in ${destPath}\n`, COLORS.dim)
+
+    mkdirSync(destPath, { recursive: true })
+
+    let written = 0
+    let skipped = 0
+
+    for (const [file, content] of Object.entries(templates)) {
+        const outputPath = join(destPath, file)
+
+        if (existsSync(outputPath) && !force) {
+            skipped += 1
+            log(`  skipped ${file} (already exists)`, COLORS.yellow)
+            continue
+        }
+
+        writeFileSync(outputPath, content)
+        written += 1
+        log(`  wrote ${file}`, COLORS.green)
+    }
+
+    log("", COLORS.reset)
+    log(`Architecture scaffold complete: ${written} written, ${skipped} skipped.`, COLORS.green)
+    log(`Location: ${destPath}\n`, COLORS.dim)
+
+    log("Next steps:", COLORS.cyan)
+    log(`  1. Open ${join(targetDir, dir, "registry.ts")} and define your action catalog`, COLORS.dim)
+    log(`  2. Wire app handlers into <ShortcutProvider handlers={...} />`, COLORS.dim)
+    log(`  3. Toggle scopes from feature boundaries via useShortcutManager()`, COLORS.dim)
+    log(`  4. Optionally expose setBinding/resetBinding in your settings UI\n`, COLORS.dim)
+}
+
+function printHelp() {
+    log("\nuse-shortcut CLI\n", COLORS.cyan)
+    log("Commands:", COLORS.yellow)
+    log("  init [--target hooks] [--force]", COLORS.dim)
+    log("      Copy source files into your project (shadcn-style).", COLORS.dim)
+    log("", COLORS.dim)
+    log("  scaffold [--framework next|react] [--target src] [--dir shortcuts] [--force]", COLORS.dim)
+    log("      Generate a scalable app shortcut architecture.", COLORS.dim)
+    log("", COLORS.dim)
+    log("  init --architecture", COLORS.dim)
+    log("      Alias for scaffold with defaults.\n", COLORS.dim)
+}
+
+function parseFramework(value: string): ScaffoldFramework {
+    if (value === "next" || value === "react") {
+        return value
+    }
+
+    log(`Invalid framework: ${value}. Expected \"next\" or \"react\".`, COLORS.red)
+    process.exit(1)
 }
 
 function main() {
     const args = process.argv.slice(2)
     const command = args[0]
 
-    if (command === "init") {
-        const targetIndex = args.indexOf("--target")
-        const targetDir = targetIndex !== -1 ? args[targetIndex + 1] : "hooks"
-        init(targetDir)
-    } else {
-        log("\n🎹 use-shortcut CLI\n", COLORS.cyan)
-        log("Commands:", COLORS.yellow)
-        log("  init              Copy files to your project")
-        log("  init --target lib Copy to custom directory\n")
+    if (!command || command === "--help" || command === "-h" || command === "help") {
+        printHelp()
+        return
     }
+
+    if (command === "init") {
+        if (hasFlag(args, "--architecture") || hasFlag(args, "--app") || hasFlag(args, "--scaffold")) {
+            const framework = parseFramework(getFlagValue(args, "--framework", "next"))
+            const targetDir = getFlagValue(args, "--target", "src")
+            const dir = getFlagValue(args, "--dir", "shortcuts")
+            const force = hasFlag(args, "--force")
+            scaffoldArchitecture(framework, targetDir, dir, force)
+            return
+        }
+
+        const targetDir = getFlagValue(args, "--target", "hooks")
+        const force = hasFlag(args, "--force")
+        init(targetDir, force)
+        return
+    }
+
+    if (command === "scaffold" || command === "architecture") {
+        const framework = parseFramework(getFlagValue(args, "--framework", "next"))
+        const targetDir = getFlagValue(args, "--target", "src")
+        const dir = getFlagValue(args, "--dir", "shortcuts")
+        const force = hasFlag(args, "--force")
+        scaffoldArchitecture(framework, targetDir, dir, force)
+        return
+    }
+
+    printHelp()
 }
 
 main()
