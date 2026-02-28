@@ -163,7 +163,9 @@ function main() {
     const args = process.argv.slice(2)
     const command = args[0]
 
-    if (!command || command === "--help" || command === "-h" || command === "help") {
+    const isHelp = !command || command === "--help" || command === "-h" || command === "help"
+
+    if (isHelp) {
         printHelp()
         return
     }
@@ -194,6 +196,7 @@ function main() {
     }
 
     printHelp()
+    process.exit(1)
 }
 
 main()
