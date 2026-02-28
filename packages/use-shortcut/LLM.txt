@@ -5,9 +5,9 @@ LLM-focused reference for implementing, extending, or integrating keyboard short
 ## Package
 
 - Name: `@remcostoeten/use-shortcut`
-- Version: `1.2.0`
+- Version: `1.3.0`
 - Runtime: React (peer dependency)
-- Key capabilities: chainable shortcuts, sequences/chords, scopes, conflict detection, recording mode, bulk maps, CLI scaffolding
+- Key capabilities: chainable shortcuts, sequences/chords, scopes, conflict detection, recording mode, bulk maps, groups, priorities, event filtering, CLI scaffolding
 
 ## Core API
 
