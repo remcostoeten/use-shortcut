@@ -334,6 +334,12 @@ function emitConflict(registry, conflict) {
     `[useShortcut] Conflict detected (${conflict.reason}) between "${conflict.combo}" and "${conflict.existingCombo}"`
   );
 }
+function sortEntries(entries) {
+  return [...entries].sort((a, b) => {
+    if (b.priority !== a.priority) return b.priority - a.priority;
+    return a.id - b.id;
+  });
+}
 function createBinding(state, handler, handlerOptions = {}, registry) {
   const { options, except: stateExcept } = state;
   const rawSteps = state.steps;
@@ -345,36 +351,13 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
   const display = formatSequenceDisplay(rawSteps);
   const debug = options.debug ?? false;
   const except = stateExcept ?? handlerOptions.except;
-  for (const [existingCombo, existing2] of registry.listeners.entries()) {
-    if (existingCombo === combo) continue;
-    const reason = detectConflict(parsedSteps, existing2.parsedSteps);
-    if (!reason) continue;
-    emitConflict(registry, { combo, existingCombo, reason });
-  }
-  const existing = registry.listeners.get(combo);
-  if (existing) {
-    debugLog(debug, "Updating existing shortcut handler:", combo);
-    existing.userHandler = handler;
-    existing.scopes = new Set(normalizeScopes(state.scopes ?? handlerOptions.scopes));
-    return {
-      unbind: existing.unbind,
-      display,
-      combo,
-      trigger: () => existing.userHandler(new KeyboardEvent("keydown")),
-      get isEnabled() {
-        return existing.isEnabled;
-      },
-      enable: () => {
-        existing.isEnabled = true;
-      },
-      disable: () => {
-        existing.isEnabled = false;
-      },
-      onAttempt: (callback) => {
-        existing.attemptCallbacks.add(callback);
-        return () => existing.attemptCallbacks.delete(callback);
-      }
-    };
+  for (const [existingCombo, listener] of registry.listeners.entries()) {
+    for (const existing of listener.entries) {
+      if (existingCombo === combo) continue;
+      const reason = detectConflict(parsedSteps, existing.parsedSteps);
+      if (!reason) continue;
+      emitConflict(registry, { combo, existingCombo, reason });
+    }
   }
   const isEnabled = !handlerOptions.disabled && !options.disabled;
   const delay = handlerOptions.delay ?? options.delay ?? 0;
@@ -386,108 +369,133 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
     except: !!except,
     scopes: [...requiredScopes]
   });
-  function handleEvent(event) {
-    const entry = registry.listeners.get(combo);
-    if (!entry?.isEnabled) return;
-    const runtimeOptions = registry.options;
-    if (runtimeOptions.disabled) return;
-    if (!scopeMatch(entry.scopes, registry.activeScopes)) {
-      return;
-    }
-    if (runtimeOptions.ignoreInputs !== false && !except) {
-      const target2 = event.target;
-      if (target2 && (IGNORED_TAGS.has(target2.tagName) || target2.isContentEditable)) {
-        return;
-      }
-    }
-    if (shouldExcept(event, except)) {
-      debugLog(debug, "Skipped due to except condition:", combo);
-      return;
-    }
-    const expected = entry.parsedSteps[entry.progress];
-    const now = Date.now();
-    if (entry.progress > 0 && now - entry.lastMatchedAt > sequenceTimeout) {
-      entry.progress = 0;
-    }
-    let matched = false;
-    if (matchesShortcut(event, expected)) {
-      entry.progress += 1;
-      entry.lastMatchedAt = now;
-      if (entry.progress === entry.parsedSteps.length) {
-        matched = true;
-        entry.progress = 0;
-      }
-    } else if (entry.progress > 0 && matchesShortcut(event, entry.parsedSteps[0])) {
-      entry.progress = 1;
-      entry.lastMatchedAt = now;
-    } else {
-      entry.progress = 0;
-    }
-    entry.attemptCallbacks.forEach((cb) => cb(matched, event));
-    if (!matched) return;
-    debugLog(debug, "MATCHED:", combo, "\u2192", display);
-    if (handlerOptions.preventDefault !== false) {
-      event.preventDefault();
-    }
-    if (handlerOptions.stopPropagation) {
-      event.stopPropagation();
-    }
-    const executeHandler = () => entry.userHandler(event);
-    if (delay > 0) {
-      debugLog(debug, "Delaying execution by", delay, "ms");
-      setTimeout(executeHandler, delay);
-    } else {
-      executeHandler();
-    }
-  }
-  const target = options.target ?? (typeof window !== "undefined" ? window : null);
-  const eventType = options.eventType ?? "keydown";
-  if (target) {
-    target.addEventListener(eventType, handleEvent);
-    debugLog(debug, "Listener attached for:", combo);
-  }
-  function unbind() {
-    if (target) {
-      target.removeEventListener(eventType, handleEvent);
-      registry.listeners.delete(combo);
-      debugLog(debug, "Unregistered:", combo);
-    }
-  }
-  registry.listeners.set(combo, {
-    listener: handleEvent,
+  const entry = {
+    id: registry.nextId++,
     userHandler: handler,
-    unbind,
     isEnabled,
     attemptCallbacks,
     parsedSteps,
     scopes: requiredScopes,
     progress: 0,
-    lastMatchedAt: 0
-  });
+    lastMatchedAt: 0,
+    except,
+    delay,
+    sequenceTimeout,
+    preventDefault: handlerOptions.preventDefault !== false,
+    stopPropagation: handlerOptions.stopPropagation ?? false,
+    stopOnMatch: handlerOptions.stopOnMatch ?? false,
+    priority: handlerOptions.priority ?? 0
+  };
+  let comboListener = registry.listeners.get(combo);
+  if (!comboListener) {
+    const target = options.target ?? (typeof window !== "undefined" ? window : null);
+    const eventType = options.eventType ?? "keydown";
+    const listener = (event) => {
+      const runtimeOptions = registry.options;
+      if (runtimeOptions.disabled) return;
+      if (runtimeOptions.eventFilter && !runtimeOptions.eventFilter(event)) return;
+      const current = registry.listeners.get(combo);
+      if (!current) return;
+      const orderedEntries = sortEntries(current.entries);
+      for (const item of orderedEntries) {
+        if (!item.isEnabled) continue;
+        if (!scopeMatch(item.scopes, registry.activeScopes)) {
+          continue;
+        }
+        if (runtimeOptions.ignoreInputs !== false && !item.except) {
+          const targetEl = event.target;
+          if (targetEl && (IGNORED_TAGS.has(targetEl.tagName) || targetEl.isContentEditable)) {
+            continue;
+          }
+        }
+        if (shouldExcept(event, item.except)) {
+          debugLog(debug, "Skipped due to except condition:", combo);
+          continue;
+        }
+        const expected = item.parsedSteps[item.progress];
+        const now = Date.now();
+        if (item.progress > 0 && now - item.lastMatchedAt > item.sequenceTimeout) {
+          item.progress = 0;
+        }
+        let matched = false;
+        if (matchesShortcut(event, expected)) {
+          item.progress += 1;
+          item.lastMatchedAt = now;
+          if (item.progress === item.parsedSteps.length) {
+            matched = true;
+            item.progress = 0;
+          }
+        } else if (item.progress > 0 && matchesShortcut(event, item.parsedSteps[0])) {
+          item.progress = 1;
+          item.lastMatchedAt = now;
+        } else {
+          item.progress = 0;
+        }
+        item.attemptCallbacks.forEach((cb) => cb(matched, event));
+        if (!matched) continue;
+        debugLog(debug, "MATCHED:", combo, "\u2192", display);
+        if (item.preventDefault) {
+          event.preventDefault();
+        }
+        if (item.stopPropagation) {
+          event.stopPropagation();
+        }
+        const executeHandler = () => item.userHandler(event);
+        if (item.delay > 0) {
+          debugLog(debug, "Delaying execution by", item.delay, "ms");
+          setTimeout(executeHandler, item.delay);
+        } else {
+          executeHandler();
+        }
+        if (item.stopOnMatch) {
+          break;
+        }
+      }
+    };
+    if (target) {
+      target.addEventListener(eventType, listener);
+      debugLog(debug, "Listener attached for:", combo);
+    }
+    const unbind = () => {
+      if (target) {
+        target.removeEventListener(eventType, listener);
+        registry.listeners.delete(combo);
+        debugLog(debug, "Unregistered:", combo);
+      }
+    };
+    comboListener = {
+      listener,
+      entries: [],
+      unbind
+    };
+    registry.listeners.set(combo, comboListener);
+  }
+  comboListener.entries.push(entry);
+  const unbindEntry = () => {
+    const current = registry.listeners.get(combo);
+    if (!current) return;
+    current.entries = current.entries.filter((item) => item.id !== entry.id);
+    if (current.entries.length === 0) {
+      current.unbind();
+    }
+  };
   return {
-    unbind,
+    unbind: unbindEntry,
     display,
     combo,
-    trigger: () => handler(new KeyboardEvent(eventType)),
+    trigger: () => handler(new KeyboardEvent(registry.options.eventType ?? "keydown")),
     get isEnabled() {
-      return registry.listeners.get(combo)?.isEnabled ?? false;
+      return entry.isEnabled;
     },
     enable: () => {
-      const entry = registry.listeners.get(combo);
-      if (entry) entry.isEnabled = true;
+      entry.isEnabled = true;
     },
     disable: () => {
-      const entry = registry.listeners.get(combo);
-      if (entry) entry.isEnabled = false;
+      entry.isEnabled = false;
     },
     onAttempt: (callback) => {
-      const entry = registry.listeners.get(combo);
-      if (entry) {
-        entry.attemptCallbacks.add(callback);
-        return () => entry.attemptCallbacks.delete(callback);
-      }
-      return () => {
-      };
+      entry.attemptCallbacks.add(callback);
+      return () => entry.attemptCallbacks.delete(callback);
     }
   };
 }
@@ -524,7 +532,8 @@ function createShortcutBuilder(options = {}) {
   const registry = {
     listeners: /* @__PURE__ */ new Map(),
     options,
-    activeScopes: new Set(normalizeScopes(options.activeScopes))
+    activeScopes: new Set(normalizeScopes(options.activeScopes)),
+    nextId: 1
   };
   debugLog(options.debug, "Builder created with options:", options);
   function createProxy(currentState) {
@@ -737,7 +746,39 @@ function createShortcutMap(shortcutMap, options = {}) {
   const builder = createShortcut(options);
   return registerShortcutMap(builder, shortcutMap);
 }
+function createShortcutGroup() {
+  const results = [];
+  return {
+    add: (...entries) => {
+      results.push(...entries);
+    },
+    addMany: (entries) => {
+      if (Array.isArray(entries)) {
+        results.push(...entries);
+        return;
+      }
+      results.push(...Object.values(entries));
+    },
+    unbindAll: () => {
+      for (const entry of results) {
+        entry.unbind();
+      }
+      results.length = 0;
+    },
+    clear: () => {
+      results.length = 0;
+    },
+    getResults: () => [...results]
+  };
+}
+function useShortcutGroup() {
+  const groupRef = useRef(null);
+  if (!groupRef.current) {
+    groupRef.current = createShortcutGroup();
+  }
+  return groupRef.current;
+}
 
-export { ModifierAliases, ModifierDisplayOrder, ModifierDisplaySymbols, ModifierKey, Platform, SpecialKeyMap, createShortcut, createShortcutMap, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, registerShortcutMap, useShortcut, useShortcutMap };
+export { ModifierAliases, ModifierDisplayOrder, ModifierDisplaySymbols, ModifierKey, Platform, SpecialKeyMap, createShortcut, createShortcutGroup, createShortcutMap, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, registerShortcutMap, useShortcut, useShortcutGroup, useShortcutMap };
 //# sourceMappingURL=index.mjs.map
 //# sourceMappingURL=index.mjs.map

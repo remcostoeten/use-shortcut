@@ -25,6 +25,9 @@ $.key("/").except("typing").on(() => focusSearch())
 - **Conflict detection** - Detect exact and sequence-prefix overlaps
 - **Shortcut maps** - Register many shortcuts at once with `useShortcutMap()`
 - **Recording mode** - Capture the next key combo for custom keybind UIs
+- **Priorities** - Deterministic ordering for overlapping shortcuts
+- **Groups** - Register multiple shortcuts and unbind them together
+- **Event filtering** - Global event guard via `eventFilter`
 - **Perfect TypeScript** - Intellisense at every step
 - **Cross-platform** - `mod` = ⌘ on Mac, Ctrl on Windows/Linux
 - **Context-aware** - Skip shortcuts in inputs with `.except()`
@@ -241,6 +244,20 @@ const combo = await $.record({ timeoutMs: 5000 })
 // e.g. "ctrl+k" or "cmd+k"
 ```
 
+### Shortcut Groups
+
+```tsx
+import { createShortcutGroup } from "@remcostoeten/use-shortcut"
+
+const group = createShortcutGroup()
+
+group.add($.mod.key("k").on(openPalette))
+group.add($.mod.key("p").on(openSearch))
+
+// Later, cleanup all at once
+group.unbindAll()
+```
+
 ### Hook Options
 
 ```tsx
@@ -257,6 +274,16 @@ const $ = useShortcut({
   onConflict: (conflict) => {
     console.warn(conflict)
   },
+  eventFilter: (event) => !event.isComposing,
+})
+```
+
+### Handler Options (Advanced)
+
+```tsx
+$.mod.key("k").on(openPalette, {
+  priority: 10,      // higher runs first
+  stopOnMatch: true, // prevent lower priority handlers from running
 })
 ```
 

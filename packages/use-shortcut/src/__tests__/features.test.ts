@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { createShortcut, createShortcutMap } from "../hook"
+import { createShortcut, createShortcutMap, createShortcutGroup } from "../hook"
 
 function dispatchKey(key: string, options: KeyboardEventInit = {}) {
     window.dispatchEvent(
@@ -81,5 +81,53 @@ describe("advanced shortcut features", () => {
         dispatchKey("k", { ctrlKey: true })
 
         await expect(recordPromise).resolves.toBe("ctrl+k")
+    })
+
+    it("respects priority and stopOnMatch for overlapping combos", () => {
+        const $ = createShortcut({ target: window, ignoreInputs: false })
+        const primary = vi.fn()
+        const secondary = vi.fn()
+
+        $.mod.key("k").on(primary, { priority: 10, stopOnMatch: true })
+        $.mod.key("k").on(secondary, { priority: 0 })
+
+        dispatchKey("k", { ctrlKey: true })
+
+        expect(primary).toHaveBeenCalledTimes(1)
+        expect(secondary).toHaveBeenCalledTimes(0)
+    })
+
+    it("applies global eventFilter before handlers", () => {
+        const handler = vi.fn()
+        const $ = createShortcut({
+            target: window,
+            ignoreInputs: false,
+            eventFilter: (event) => event.key !== "x",
+        })
+
+        $.key("x").on(handler)
+        $.key("y").on(handler)
+
+        dispatchKey("x")
+        dispatchKey("y")
+
+        expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it("supports shortcut groups for cleanup", () => {
+        const $ = createShortcut({ target: window, ignoreInputs: false })
+        const group = createShortcutGroup()
+        const handler = vi.fn()
+
+        const result = $.mod.key("s").on(handler)
+        group.add(result)
+
+        dispatchKey("s", { ctrlKey: true })
+        expect(handler).toHaveBeenCalledTimes(1)
+
+        group.unbindAll()
+
+        dispatchKey("s", { ctrlKey: true })
+        expect(handler).toHaveBeenCalledTimes(1)
     })
 })

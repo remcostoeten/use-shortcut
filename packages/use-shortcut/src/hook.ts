@@ -8,6 +8,8 @@ import type {
     ShortcutMap,
     ShortcutMapResult,
     ShortcutMapEntry,
+    ShortcutGroup,
+    ShortcutResult,
 } from "./types"
 
 function normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
@@ -170,4 +172,42 @@ export function createShortcutMap<T extends ShortcutMap>(
 ): ShortcutMapResult<T> {
     const builder = createShortcut(options)
     return registerShortcutMap(builder, shortcutMap)
+}
+
+export function createShortcutGroup(): ShortcutGroup {
+    const results: ShortcutResult[] = []
+
+    return {
+        add: (...entries: ShortcutResult[]) => {
+            results.push(...entries)
+        },
+        addMany: (entries: ShortcutResult[] | Record<string, ShortcutResult>) => {
+            if (Array.isArray(entries)) {
+                results.push(...entries)
+                return
+            }
+
+            results.push(...Object.values(entries))
+        },
+        unbindAll: () => {
+            for (const entry of results) {
+                entry.unbind()
+            }
+            results.length = 0
+        },
+        clear: () => {
+            results.length = 0
+        },
+        getResults: () => [...results],
+    }
+}
+
+export function useShortcutGroup(): ShortcutGroup {
+    const groupRef = useRef<ShortcutGroup | null>(null)
+
+    if (!groupRef.current) {
+        groupRef.current = createShortcutGroup()
+    }
+
+    return groupRef.current
 }
