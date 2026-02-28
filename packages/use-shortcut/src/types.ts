@@ -113,6 +113,10 @@ export type HandlerOptions = {
     scopes?: ShortcutScope
     /** Timeout in ms for multi-step sequences */
     sequenceTimeout?: number
+    /** Higher priority handlers run first (default: 0) */
+    priority?: number
+    /** Stop evaluating other handlers for this combo when matched */
+    stopOnMatch?: boolean
 }
 
 /**
@@ -241,6 +245,8 @@ export type UseShortcutOptions = {
     conflictWarnings?: boolean
     /** Custom conflict callback */
     onConflict?: (conflict: ShortcutConflict) => void
+    /** Global event filter; return false to skip all shortcuts for the event */
+    eventFilter?: (event: KeyboardEvent) => boolean
 }
 
 export type ShortcutMapEntry = {
@@ -253,4 +259,12 @@ export type ShortcutMap = Record<string, ShortcutMapEntry>
 
 export type ShortcutMapResult<T extends ShortcutMap = ShortcutMap> = {
     [K in keyof T]: ShortcutResult
+}
+
+export type ShortcutGroup = {
+    add: (...results: ShortcutResult[]) => void
+    addMany: (results: ShortcutResult[] | Record<string, ShortcutResult>) => void
+    unbindAll: () => void
+    clear: () => void
+    getResults: () => ShortcutResult[]
 }

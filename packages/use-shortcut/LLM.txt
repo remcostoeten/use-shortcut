@@ -23,6 +23,10 @@ LLM-focused reference for implementing, extending, or integrating keyboard short
   Bulk registration helper in non-React contexts.
 - `registerShortcutMap(builder, shortcutMap)`
   Applies a map to an existing builder.
+- `createShortcutGroup()`
+  Collects `ShortcutResult` instances and unbinds them together.
+- `useShortcutGroup()`
+  React hook that returns a stable shortcut group.
 
 ## Builder chain
 
@@ -51,6 +55,8 @@ LLM-focused reference for implementing, extending, or integrating keyboard short
 - `except?: ExceptPreset | ExceptPreset[] | ExceptPredicate`
 - `scopes?: string | string[]`
 - `sequenceTimeout?: number`
+- `priority?: number`
+- `stopOnMatch?: boolean`
 
 ## Hook options
 
@@ -64,6 +70,7 @@ LLM-focused reference for implementing, extending, or integrating keyboard short
 - `sequenceTimeout?: number`
 - `conflictWarnings?: boolean`
 - `onConflict?: (conflict) => void`
+- `eventFilter?: (event: KeyboardEvent) => boolean`
 
 ## Shortcut map shape
 

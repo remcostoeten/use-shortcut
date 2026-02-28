@@ -35,6 +35,7 @@ export type {
     ShortcutMapEntry,
     ShortcutMapResult,
     ShortcutRecordingOptions,
+    ShortcutGroup,
 } from "./types"
 
 export {
@@ -47,4 +48,12 @@ export {
 
 export { formatShortcut, getModifierSymbols } from "./formatter"
 
-export { useShortcut, createShortcut, useShortcutMap, createShortcutMap, registerShortcutMap } from "./hook"
+export {
+    useShortcut,
+    createShortcut,
+    useShortcutMap,
+    createShortcutMap,
+    registerShortcutMap,
+    createShortcutGroup,
+    useShortcutGroup,
+} from "./hook"
