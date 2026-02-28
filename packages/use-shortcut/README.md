@@ -51,6 +51,39 @@ bunx @remcostoeten/use-shortcut init
 
 This copies the source files directly into your project at `hooks/use-shortcut/`.
 
+### App Architecture Scaffold (React/Next)
+
+Generate a scalable, reusable shortcut architecture with typed registry, scopes, provider state/actions, and persistent user bindings:
+
+```bash
+# Next.js-oriented scaffold (default)
+npx @remcostoeten/use-shortcut scaffold
+
+# React scaffold
+npx @remcostoeten/use-shortcut scaffold --framework react
+
+# Custom location
+npx @remcostoeten/use-shortcut scaffold --target src --dir shortcuts
+```
+
+Generated structure:
+
+```txt
+src/shortcuts/
+  index.ts
+  provider.tsx
+  registry.ts
+  runtime.ts
+  scopes.ts
+  storage.ts
+  types.ts
+  README.md
+```
+
+Architecture docs:
+- Human guide: [`docs/app-architecture.md`](./docs/app-architecture.md)
+- LLM guide: [`docs/app-architecture.llm.md`](./docs/app-architecture.llm.md)
+
 ## Quick Start
 
 ```tsx

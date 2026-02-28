@@ -1,6 +1,6 @@
 {
     "name": "@remcostoeten/use-shortcut",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Beautiful, intuitive, chainable syntax for executing keyboard shortcuts in React and Next.js with perfect TypeScript IntelliSense.",
     "author": "Remco Stoeten",
     "license": "MIT",
