@@ -70,13 +70,19 @@ type ShortcutHandler = (event: KeyboardEvent) => void;
 type ExceptPredicate = (event: KeyboardEvent) => boolean;
 /**
  * Built-in exception presets for common scenarios
- * - `"input"` - Skip when focused on input, textarea, or select
- * - `"editable"` - Skip when focused on contentEditable elements
- * - `"typing"` - Skip in any text input context (combines input + editable)
- * - `"modal"` - Skip when a modal/dialog is open (checks [data-modal] or [role="dialog"])
- * - `"disabled"` - Skip when focused element is disabled
+ * - "input" - Skip when focused on input, textarea, or select
+ * - "editable" - Skip when focused on contentEditable elements
+ * - "typing" - Skip in any text input context (combines input + editable)
+ * - "modal" - Skip when a modal/dialog is open (checks [data-modal] or [role="dialog"])
+ * - "disabled" - Skip when focused element is disabled
  */
 type ExceptPreset = "input" | "editable" | "typing" | "modal" | "disabled";
+type ShortcutScope = string | string[];
+type ShortcutConflict = {
+    combo: string;
+    existingCombo: string;
+    reason: "exact" | "sequence-prefix";
+};
 /**
  * Options for shortcut handler registration
  */
@@ -95,6 +101,10 @@ type HandlerOptions = {
     scope?: HTMLElement | null;
     /** Conditions to skip the shortcut */
     except?: ExceptPreset | ExceptPreset[] | ExceptPredicate;
+    /** Required named scopes that must be active */
+    scopes?: ShortcutScope;
+    /** Timeout in ms for multi-step sequences */
+    sequenceTimeout?: number;
 };
 /**
  * Result object returned when registering a shortcut
@@ -105,7 +115,7 @@ type ShortcutResult = {
     unbind: () => void;
     /** Platform-aware display string (e.g., "⌘S" on Mac, "Ctrl+S" on Windows) */
     display: string;
-    /** Normalized combo string (e.g., "cmd+s") */
+    /** Normalized combo string (e.g., "cmd+s" or "g d") */
     combo: string;
     /** Programmatically trigger the shortcut handler */
     trigger: () => void;
@@ -139,11 +149,12 @@ type ModifierChain<Used extends Partial<ModifierFlags>> = {
         cmd: true;
     }>;
     key: <K extends ActionKey>(key: K) => KeyChain<Used, K>;
+    in: (scopes: ShortcutScope) => ModifierChain<Used>;
 };
 /**
  * Chain state after calling `.key()` - ready to attach a handler
  */
-type KeyChain<Used extends Partial<ModifierFlags>, Key extends ActionKey> = {
+type KeyChain<Used extends Partial<ModifierFlags>, Key extends string> = {
     /** Attach a handler to this shortcut */
     on: (handler: ShortcutHandler, options?: HandlerOptions) => ShortcutResult;
     /** Attach a handler with inline options */
@@ -152,20 +163,26 @@ type KeyChain<Used extends Partial<ModifierFlags>, Key extends ActionKey> = {
     }) => ShortcutResult;
     /** Add exception conditions before attaching handler */
     except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => KeyChainWithExcept<Used, Key>;
+    /** Add required named scopes */
+    in: (scopes: ShortcutScope) => KeyChain<Used, Key>;
+    /** Add the next step in a sequence */
+    then: <K extends ActionKey | string>(key: K) => KeyChain<Used, `${Key} ${K}`>;
 };
 /**
- * Chain state after calling `.except()` - ready to attach a handler
+ * Chain state after calling `.except()` - ready to attach handler
  */
-type KeyChainWithExcept<Used extends Partial<ModifierFlags>, Key extends ActionKey> = {
+type KeyChainWithExcept<Used extends Partial<ModifierFlags>, Key extends string> = {
     on: (handler: ShortcutHandler, options?: Omit<HandlerOptions, "except">) => ShortcutResult;
+    in: (scopes: ShortcutScope) => KeyChainWithExcept<Used, Key>;
+    then: <K extends ActionKey | string>(key: K) => KeyChainWithExcept<Used, `${Key} ${K}`>;
+};
+type ShortcutRecordingOptions = {
+    target?: HTMLElement | Window | null;
+    eventType?: "keydown" | "keyup";
+    timeoutMs?: number;
 };
 /**
  * The main shortcut builder interface returned by `useShortcut()`
- * @example
- * const $ = useShortcut()
- * $.mod.key("s").on(() => save())
- * $.ctrl.shift.key("p").on(() => openPalette())
- * $.key("/").except("typing").on(() => focusSearch())
  */
 type ShortcutBuilder = ModifierChain<EmptyModifiers> & {
     ctrl: ModifierChain<{
@@ -184,6 +201,20 @@ type ShortcutBuilder = ModifierChain<EmptyModifiers> & {
         cmd: true;
     }>;
     key: <K extends ActionKey>(key: K) => KeyChain<EmptyModifiers, K>;
+    /** Set required scopes for upcoming chain calls */
+    in: (scopes: ShortcutScope) => ShortcutBuilder;
+    /** Update active scopes at runtime */
+    setScopes: (scopes: ShortcutScope) => void;
+    /** Enable one scope */
+    enableScope: (scope: string) => void;
+    /** Disable one scope */
+    disableScope: (scope: string) => void;
+    /** Return currently active scopes */
+    getScopes: () => string[];
+    /** Check if a scope is active */
+    isScopeActive: (scope: string) => boolean;
+    /** Record the next key combo */
+    record: (options?: ShortcutRecordingOptions) => Promise<string>;
 };
 /**
  * Options for the `useShortcut` hook
@@ -197,10 +228,27 @@ type UseShortcutOptions = {
     ignoreInputs?: boolean;
     /** Target element for keyboard listeners (default: `window`) */
     target?: HTMLElement | Window | null;
-    /** Keyboard event type to listen for (default: `"keydown"`) */
+    /** Keyboard event type to listen for (default: "keydown") */
     eventType?: "keydown" | "keyup";
     /** Globally disable all shortcuts from this hook */
     disabled?: boolean;
+    /** Active named scopes. Shortcuts with scopes only run when at least one matches. */
+    activeScopes?: ShortcutScope;
+    /** Global timeout in ms for sequence completion */
+    sequenceTimeout?: number;
+    /** Warn when conflicting shortcuts are registered (default: true) */
+    conflictWarnings?: boolean;
+    /** Custom conflict callback */
+    onConflict?: (conflict: ShortcutConflict) => void;
+};
+type ShortcutMapEntry = {
+    keys: string | string[];
+    handler: ShortcutHandler;
+    options?: HandlerOptions;
+};
+type ShortcutMap = Record<string, ShortcutMapEntry>;
+type ShortcutMapResult<T extends ShortcutMap = ShortcutMap> = {
+    [K in keyof T]: ShortcutResult;
 };
 
 /**
@@ -274,26 +322,18 @@ declare function formatShortcut(shortcut: string, platform?: PlatformType): stri
  */
 declare function getModifierSymbols(platform?: PlatformType): Record<ModifierKeyType, string>;
 
+declare function registerShortcutMap<T extends ShortcutMap>(builder: ShortcutBuilder, shortcutMap: T): ShortcutMapResult<T>;
 /**
  * React hook for registering chainable keyboard shortcuts
  *
  * @param options - Configuration options for the hook
  * @returns A chainable shortcut builder (`$`)
- *
- * @example
- * ```tsx
- * function App() {
- *   const $ = useShortcut()
- *
- *   $.mod.key("s").on(() => save())
- *   $.ctrl.shift.key("p").on(() => openPalette())
- *   $.key("/").except("typing").on(() => focusSearch())
- *
- *   return <div>Press ⌘S to save</div>
- * }
- * ```
  */
 declare function useShortcut(options?: UseShortcutOptions): ShortcutBuilder;
+/**
+ * Bulk registration helper for shortcut maps.
+ */
+declare function useShortcutMap<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>;
 /**
  * Create a shortcut builder for non-React usage
  *
@@ -301,16 +341,11 @@ declare function useShortcut(options?: UseShortcutOptions): ShortcutBuilder;
  *
  * @param options - Configuration options
  * @returns A chainable shortcut builder
- *
- * @example
- * ```ts
- * const $ = createShortcut()
- * const save = $.mod.key("s").on(() => save())
- *
- * // Cleanup when done
- * save.unbind()
- * ```
  */
 declare function createShortcut(options?: UseShortcutOptions): ShortcutBuilder;
+/**
+ * Bulk registration helper for non-React usage.
+ */
+declare function createShortcutMap<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>;
 
-export { type ActionKey, type AlphaKey, type ExceptPredicate, type ExceptPreset, type FunctionKey, type HandlerOptions, type KeyChain, ModifierAliases, type ModifierChain, ModifierDisplayOrder, ModifierDisplaySymbols, type ModifierFlags, ModifierKey, type ModifierName, type ModifierState, type NavigationKey, type NumericKey, type ParsedShortcut, Platform, type ShortcutBuilder, type ShortcutHandler, type ShortcutResult, type SpecialKey, SpecialKeyMap, type SymbolKey, type UseShortcutOptions, createShortcut, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, useShortcut };
+export { type ActionKey, type AlphaKey, type ExceptPredicate, type ExceptPreset, type FunctionKey, type HandlerOptions, type KeyChain, ModifierAliases, type ModifierChain, ModifierDisplayOrder, ModifierDisplaySymbols, type ModifierFlags, ModifierKey, type ModifierName, type ModifierState, type NavigationKey, type NumericKey, type ParsedShortcut, Platform, type ShortcutBuilder, type ShortcutConflict, type ShortcutHandler, type ShortcutMap, type ShortcutMapEntry, type ShortcutMapResult, type ShortcutRecordingOptions, type ShortcutResult, type ShortcutScope, type SpecialKey, SpecialKeyMap, type SymbolKey, type UseShortcutOptions, createShortcut, createShortcutMap, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, registerShortcutMap, useShortcut, useShortcutMap };

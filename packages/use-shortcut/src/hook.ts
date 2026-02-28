@@ -2,26 +2,110 @@
 
 import { useEffect, useRef, useMemo } from "react"
 import { createShortcutBuilder } from "./builder"
-import type { ShortcutBuilder, UseShortcutOptions } from "./types"
+import type {
+    ShortcutBuilder,
+    UseShortcutOptions,
+    ShortcutMap,
+    ShortcutMapResult,
+    ShortcutMapEntry,
+} from "./types"
+
+function normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
+    if (Array.isArray(keys)) {
+        return keys.map((key) => key.trim()).filter(Boolean)
+    }
+
+    const trimmed = keys.trim()
+    if (!trimmed) return []
+
+    if (trimmed.includes(" then ")) {
+        return trimmed.split(/\s+then\s+/i).map((key) => key.trim()).filter(Boolean)
+    }
+
+    if (trimmed.includes(" ") && !trimmed.includes("+")) {
+        return trimmed.split(/\s+/).map((key) => key.trim()).filter(Boolean)
+    }
+
+    return [trimmed]
+}
+
+function applyStep(builder: any, step: string): any {
+    const tokens = step
+        .toLowerCase()
+        .split("+")
+        .map((token) => token.trim())
+        .filter(Boolean)
+
+    if (tokens.length === 0) {
+        throw new Error("[useShortcutMap] Invalid step: empty shortcut step")
+    }
+
+    const key = tokens.pop()!
+    let chain = builder
+
+    for (const token of tokens) {
+        if (token === "ctrl" || token === "control") {
+            chain = chain.ctrl
+            continue
+        }
+
+        if (token === "shift") {
+            chain = chain.shift
+            continue
+        }
+
+        if (token === "alt" || token === "option") {
+            chain = chain.alt
+            continue
+        }
+
+        if (token === "cmd" || token === "command" || token === "meta") {
+            chain = chain.cmd
+            continue
+        }
+
+        if (token === "mod") {
+            chain = chain.mod
+            continue
+        }
+
+        throw new Error(`[useShortcutMap] Unsupported modifier token "${token}" in step "${step}"`)
+    }
+
+    return chain.key(key)
+}
+
+export function registerShortcutMap<T extends ShortcutMap>(
+    builder: ShortcutBuilder,
+    shortcutMap: T,
+): ShortcutMapResult<T> {
+    const results = {} as ShortcutMapResult<T>
+
+    for (const id of Object.keys(shortcutMap) as Array<keyof T>) {
+        const entry = shortcutMap[id]
+        const steps = normalizeShortcutMapKeys(entry.keys)
+
+        if (steps.length === 0) {
+            throw new Error(`[useShortcutMap] Shortcut "${String(id)}" has no key steps`)
+        }
+
+        let chain = applyStep(builder, steps[0])
+
+        for (const step of steps.slice(1)) {
+            chain = chain.then(step)
+        }
+
+        results[id] = chain.on(entry.handler, entry.options)
+    }
+
+    return results
+}
 
 /**
  * React hook for registering chainable keyboard shortcuts
  *
  * @param options - Configuration options for the hook
  * @returns A chainable shortcut builder (`$`)
- *
- * @example
- * ```tsx
- * function App() {
- *   const $ = useShortcut()
- *
- *   $.mod.key("s").on(() => save())
- *   $.ctrl.shift.key("p").on(() => openPalette())
- *   $.key("/").except("typing").on(() => focusSearch())
- *
- *   return <div>Press ⌘S to save</div>
- * }
- * ```
  */
 export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
     const optionsRef = useRef(options)
@@ -33,6 +117,14 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
 
     useEffect(() => {
         registry.options = optionsRef.current
+
+        if (optionsRef.current.activeScopes !== undefined) {
+            const scopes = Array.isArray(optionsRef.current.activeScopes)
+                ? optionsRef.current.activeScopes
+                : [optionsRef.current.activeScopes]
+
+            registry.activeScopes = new Set(scopes.map((scope) => scope.trim()).filter(Boolean))
+        }
     })
 
     useEffect(() => {
@@ -46,24 +138,36 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
 }
 
 /**
+ * Bulk registration helper for shortcut maps.
+ */
+export function useShortcutMap<T extends ShortcutMap>(
+    shortcutMap: T,
+    options: UseShortcutOptions = {},
+): ShortcutMapResult<T> {
+    const $ = useShortcut(options)
+    return registerShortcutMap($, shortcutMap)
+}
+
+/**
  * Create a shortcut builder for non-React usage
  *
  * Unlike `useShortcut`, this does not auto-cleanup - you must call `.unbind()` manually.
  *
  * @param options - Configuration options
  * @returns A chainable shortcut builder
- *
- * @example
- * ```ts
- * const $ = createShortcut()
- * const save = $.mod.key("s").on(() => save())
- *
- * // Cleanup when done
- * save.unbind()
- * ```
  */
 export function createShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
     const { builder } = createShortcutBuilder(options)
     return builder as ShortcutBuilder
 }
 
+/**
+ * Bulk registration helper for non-React usage.
+ */
+export function createShortcutMap<T extends ShortcutMap>(
+    shortcutMap: T,
+    options: UseShortcutOptions = {},
+): ShortcutMapResult<T> {
+    const builder = createShortcut(options)
+    return registerShortcutMap(builder, shortcutMap)
+}
