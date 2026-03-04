@@ -89,6 +89,8 @@ type RegistryEntry = {
 
 type ShortcutRegistry = {
     listeners: Map<string, RegistryEntry[]>
+    firstStepIndex: Map<string, Set<string>>
+    activeSequenceCombos: Set<string>
     options: UseShortcutOptions
     activeScopes: Set<string>
     nextId: number
@@ -173,6 +175,15 @@ function eventToCombo(event: KeyboardEvent): string {
     return [...modifiers, key].join("+")
 }
 
+function eventToMatchStep(event: KeyboardEvent): string {
+    const modifiers: string[] = []
+    if (event.ctrlKey) modifiers.push("ctrl")
+    if (event.altKey) modifiers.push("alt")
+    if (event.shiftKey) modifiers.push("shift")
+    if (event.metaKey) modifiers.push("cmd")
+    return [...modifiers, event.key.toLowerCase()].join("+")
+}
+
 function isPrefix(a: ParsedShortcut[], b: ParsedShortcut[]): boolean {
     if (a.length > b.length) return false
     for (let i = 0; i < a.length; i += 1) {
@@ -222,7 +233,19 @@ function dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent)
     if (runtimeOptions.disabled) return
     if (runtimeOptions.eventFilter && !runtimeOptions.eventFilter(event)) return
 
-    for (const [combo, comboEntries] of registry.listeners.entries()) {
+    const candidateCombos = new Set<string>()
+    const firstStepCombos = registry.firstStepIndex.get(eventToMatchStep(event))
+    if (firstStepCombos) {
+        for (const combo of firstStepCombos) candidateCombos.add(combo)
+    }
+    for (const combo of registry.activeSequenceCombos) {
+        candidateCombos.add(combo)
+    }
+
+    for (const combo of candidateCombos) {
+        const comboEntries = registry.listeners.get(combo)
+        if (!comboEntries) continue
+
         const orderedEntries = sortEntries(comboEntries)
 
         for (const item of orderedEntries) {
@@ -294,6 +317,12 @@ function dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent)
             if (item.stopOnMatch) {
                 break
             }
+        }
+
+        if (comboEntries.some((entry) => entry.progress > 0)) {
+            registry.activeSequenceCombos.add(combo)
+        } else {
+            registry.activeSequenceCombos.delete(combo)
         }
     }
 }
@@ -388,6 +417,14 @@ function createBinding(
         comboEntries.push(entry)
     } else {
         registry.listeners.set(combo, [entry])
+
+        const firstStep = canonicalizeParsed(parsedSteps[0])
+        const indexedCombos = registry.firstStepIndex.get(firstStep)
+        if (indexedCombos) {
+            indexedCombos.add(combo)
+        } else {
+            registry.firstStepIndex.set(firstStep, new Set([combo]))
+        }
     }
 
     attachRegistryListener(registry)
@@ -400,6 +437,17 @@ function createBinding(
 
         if (nextEntries.length === 0) {
             registry.listeners.delete(combo)
+            registry.activeSequenceCombos.delete(combo)
+
+            const firstStep = canonicalizeParsed(parsedSteps[0])
+            const indexedCombos = registry.firstStepIndex.get(firstStep)
+            if (indexedCombos) {
+                indexedCombos.delete(combo)
+                if (indexedCombos.size === 0) {
+                    registry.firstStepIndex.delete(firstStep)
+                }
+            }
+
             debugLog(debug, "Unregistered:", combo)
         } else {
             registry.listeners.set(combo, nextEntries)
@@ -473,6 +521,8 @@ export function createShortcutBuilder(options: UseShortcutOptions = {}): {
 } {
     const registry: ShortcutRegistry = {
         listeners: new Map(),
+        firstStepIndex: new Map(),
+        activeSequenceCombos: new Set(),
         options,
         activeScopes: new Set(normalizeScopes(options.activeScopes)),
         nextId: 1,

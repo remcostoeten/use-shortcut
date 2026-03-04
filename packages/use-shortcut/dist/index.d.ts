@@ -150,13 +150,13 @@ type ModifierChain<Used extends Partial<ModifierFlags>> = {
     mod: Used["cmd"] extends true ? never : ModifierChain<Used & {
         cmd: true;
     }>;
-    key: <K extends ActionKey>(key: K) => KeyChain<Used, K>;
+    key: <K extends ActionKey>(key: K) => KeyChain<K>;
     in: (scopes: ShortcutScope) => ModifierChain<Used>;
 };
 /**
  * Chain state after calling `.key()` - ready to attach a handler
  */
-type KeyChain<Used extends Partial<ModifierFlags>, Key extends string> = {
+type KeyChain<Key extends string> = {
     /** Attach a handler to this shortcut */
     on: (handler: ShortcutHandler, options?: HandlerOptions) => ShortcutResult;
     /** Attach a handler with inline options */
@@ -164,19 +164,19 @@ type KeyChain<Used extends Partial<ModifierFlags>, Key extends string> = {
         handler: ShortcutHandler;
     }) => ShortcutResult;
     /** Add exception conditions before attaching handler */
-    except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => KeyChainWithExcept<Used, Key>;
+    except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => KeyChainWithExcept<Key>;
     /** Add required named scopes */
-    in: (scopes: ShortcutScope) => KeyChain<Used, Key>;
+    in: (scopes: ShortcutScope) => KeyChain<Key>;
     /** Add the next step in a sequence */
-    then: <K extends ActionKey | string>(key: K) => KeyChain<Used, `${Key} ${K}`>;
+    then: <K extends ActionKey | string>(key: K) => KeyChain<`${Key} ${K}`>;
 };
 /**
  * Chain state after calling `.except()` - ready to attach handler
  */
-type KeyChainWithExcept<Used extends Partial<ModifierFlags>, Key extends string> = {
+type KeyChainWithExcept<Key extends string> = {
     on: (handler: ShortcutHandler, options?: Omit<HandlerOptions, "except">) => ShortcutResult;
-    in: (scopes: ShortcutScope) => KeyChainWithExcept<Used, Key>;
-    then: <K extends ActionKey | string>(key: K) => KeyChainWithExcept<Used, `${Key} ${K}`>;
+    in: (scopes: ShortcutScope) => KeyChainWithExcept<Key>;
+    then: <K extends ActionKey | string>(key: K) => KeyChainWithExcept<`${Key} ${K}`>;
 };
 type ShortcutRecordingOptions = {
     target?: HTMLElement | Window | null;
@@ -202,7 +202,7 @@ type ShortcutBuilder = ModifierChain<EmptyModifiers> & {
     mod: ModifierChain<{
         cmd: true;
     }>;
-    key: <K extends ActionKey>(key: K) => KeyChain<EmptyModifiers, K>;
+    key: <K extends ActionKey>(key: K) => KeyChain<K>;
     /** Set required scopes for upcoming chain calls */
     in: (scopes: ShortcutScope) => ShortcutBuilder;
     /** Update active scopes at runtime */

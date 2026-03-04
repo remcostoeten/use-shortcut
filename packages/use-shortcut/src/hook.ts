@@ -149,6 +149,8 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
     useEffect(() => {
         return () => {
             registry.listeners.clear()
+            registry.firstStepIndex.clear()
+            registry.activeSequenceCombos.clear()
 
             if (registry.listener && registry.listenerTarget) {
                 registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener as EventListener)

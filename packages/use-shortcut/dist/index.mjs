@@ -303,6 +303,14 @@ function eventToCombo(event) {
   const key = event.key === " " ? "space" : event.key.toLowerCase();
   return [...modifiers, key].join("+");
 }
+function eventToMatchStep(event) {
+  const modifiers = [];
+  if (event.ctrlKey) modifiers.push("ctrl");
+  if (event.altKey) modifiers.push("alt");
+  if (event.shiftKey) modifiers.push("shift");
+  if (event.metaKey) modifiers.push("cmd");
+  return [...modifiers, event.key.toLowerCase()].join("+");
+}
 function isPrefix(a, b) {
   if (a.length > b.length) return false;
   for (let i = 0; i < a.length; i += 1) {
@@ -342,7 +350,17 @@ function dispatchRegistryEvent(registry, event) {
   const runtimeOptions = registry.options;
   if (runtimeOptions.disabled) return;
   if (runtimeOptions.eventFilter && !runtimeOptions.eventFilter(event)) return;
-  for (const [combo, comboEntries] of registry.listeners.entries()) {
+  const candidateCombos = /* @__PURE__ */ new Set();
+  const firstStepCombos = registry.firstStepIndex.get(eventToMatchStep(event));
+  if (firstStepCombos) {
+    for (const combo of firstStepCombos) candidateCombos.add(combo);
+  }
+  for (const combo of registry.activeSequenceCombos) {
+    candidateCombos.add(combo);
+  }
+  for (const combo of candidateCombos) {
+    const comboEntries = registry.listeners.get(combo);
+    if (!comboEntries) continue;
     const orderedEntries = sortEntries(comboEntries);
     for (const item of orderedEntries) {
       if (!item.isEnabled) continue;
@@ -397,6 +415,11 @@ function dispatchRegistryEvent(registry, event) {
       if (item.stopOnMatch) {
         break;
       }
+    }
+    if (comboEntries.some((entry) => entry.progress > 0)) {
+      registry.activeSequenceCombos.add(combo);
+    } else {
+      registry.activeSequenceCombos.delete(combo);
     }
   }
 }
@@ -470,6 +493,13 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
     comboEntries.push(entry);
   } else {
     registry.listeners.set(combo, [entry]);
+    const firstStep = canonicalizeParsed(parsedSteps[0]);
+    const indexedCombos = registry.firstStepIndex.get(firstStep);
+    if (indexedCombos) {
+      indexedCombos.add(combo);
+    } else {
+      registry.firstStepIndex.set(firstStep, /* @__PURE__ */ new Set([combo]));
+    }
   }
   attachRegistryListener(registry);
   const unbindEntry = () => {
@@ -478,6 +508,15 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
     const nextEntries = currentEntries.filter((item) => item.id !== entry.id);
     if (nextEntries.length === 0) {
       registry.listeners.delete(combo);
+      registry.activeSequenceCombos.delete(combo);
+      const firstStep = canonicalizeParsed(parsedSteps[0]);
+      const indexedCombos = registry.firstStepIndex.get(firstStep);
+      if (indexedCombos) {
+        indexedCombos.delete(combo);
+        if (indexedCombos.size === 0) {
+          registry.firstStepIndex.delete(firstStep);
+        }
+      }
       debugLog(debug, "Unregistered:", combo);
     } else {
       registry.listeners.set(combo, nextEntries);
@@ -538,6 +577,8 @@ function createRecorder(options) {
 function createShortcutBuilder(options = {}) {
   const registry = {
     listeners: /* @__PURE__ */ new Map(),
+    firstStepIndex: /* @__PURE__ */ new Map(),
+    activeSequenceCombos: /* @__PURE__ */ new Set(),
     options,
     activeScopes: new Set(normalizeScopes(options.activeScopes)),
     nextId: 1,
@@ -739,6 +780,8 @@ function useShortcut(options = {}) {
   useEffect(() => {
     return () => {
       registry.listeners.clear();
+      registry.firstStepIndex.clear();
+      registry.activeSequenceCombos.clear();
       if (registry.listener && registry.listenerTarget) {
         registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener);
         registry.listener = null;
