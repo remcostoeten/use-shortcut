@@ -21,26 +21,6 @@ $.mod.key("s") // "s" is an ActionKey
 
 Lowercase letter keys a-z
 
-## createShortcutGroup
-
-- Kind: `function`
-- Source: `src/hook.ts:286:1`
-- Signature: `(): ShortcutGroup`
-
-Creates an imperative group controller for many shortcut registrations.
-
-Returns: A `ShortcutGroup` that can add and unbind multiple shortcuts together
-
-Examples:
-```ts
-```ts
-const group = createShortcutGroup()
-group.add($.mod.key("s").on(onSave))
-group.add($.key("escape").on(onClose))
-group.unbindAll()
-```
-```
-
 ## detectPlatform
 
 - Kind: `function`
@@ -264,31 +244,6 @@ Returns: Array of parsed shortcuts
 
 Public platform constant alias (`Platform.MAC`, `Platform.WINDOWS`, `Platform.LINUX`).
 
-## registerShortcutMap
-
-- Kind: `function`
-- Source: `src/hook.ts:146:1`
-- Signature: `<T extends ShortcutMap>(builder: ShortcutBuilder, shortcutMap: T): ShortcutMapResult<T>`
-
-Registers an object-based shortcut map in one call and returns per-action handles.
-
-Parameters:
-- `builder`: - Builder returned by `useShortcut()`
-- `shortcutMap`: - Record of action ids to key bindings, handlers, and options
-
-Returns: A result map with one `ShortcutResult` per shortcut id
-
-Examples:
-```ts
-```ts
-const $ = useShortcut()
-const results = registerShortcutMap($, {
-  save: { keys: "mod+s", handler: onSave },
-  nav: { keys: ["g", "d"], handler: onGoDashboard },
-})
-```
-```
-
 ## ShortcutBuilder
 
 - Kind: `type`
@@ -303,13 +258,6 @@ The main shortcut builder interface returned by `useShortcut()`
 
 Conflict metadata emitted when two registered shortcuts overlap.
 
-## ShortcutGroup
-
-- Kind: `type`
-- Source: `src/types.ts:261:1`
-
-Imperative grouping controller for binding/unbinding many shortcut registrations together.
-
 ## ShortcutHandler
 
 - Kind: `type`
@@ -319,27 +267,6 @@ Handler function called when a shortcut is triggered
 
 Parameters:
 - `event`: - The keyboard event that triggered the shortcut
-
-## ShortcutMap
-
-- Kind: `type`
-- Source: `src/types.ts:253:1`
-
-Bulk registration shape mapping action ids to key+handler definitions.
-
-## ShortcutMapEntry
-
-- Kind: `type`
-- Source: `src/types.ts:246:1`
-
-Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.
-
-## ShortcutMapResult
-
-- Kind: `type`
-- Source: `src/types.ts:256:1`
-
-Return type for map registrations, keyed by the same ids as the source map.
 
 ## ShortcutRecordingOptions
 
@@ -404,47 +331,6 @@ const $ = useShortcut({ activeScopes: ["editor"] })
 $.mod.key("s").on((event) => {
   event.preventDefault()
   saveDocument()
-})
-```
-```
-
-## useShortcutGroup
-
-- Kind: `function`
-- Source: `src/hook.ts:324:1`
-- Signature: `(): ShortcutGroup`
-
-React hook that returns a stable `ShortcutGroup` instance.
-
-Returns: A memoized `ShortcutGroup` tied to the component lifecycle
-
-Examples:
-```ts
-```ts
-const group = useShortcutGroup()
-```
-```
-
-## useShortcutMap
-
-- Kind: `function`
-- Source: `src/hook.ts:239:1`
-- Signature: `<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>`
-
-React hook that registers a shortcut map and automatically unbinds on cleanup.
-
-Parameters:
-- `shortcutMap`: - Record of action ids to key bindings, handlers, and options
-- `options`: - Same options as `useShortcut()`
-
-Returns: A map of `ShortcutResult` keyed by your shortcut ids
-
-Examples:
-```ts
-```ts
-const mapResults = useShortcutMap({
-  save: { keys: "mod+s", handler: onSave },
-  close: { keys: "escape", handler: onClose },
 })
 ```
 ```

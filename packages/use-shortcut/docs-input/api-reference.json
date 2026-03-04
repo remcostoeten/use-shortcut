@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-03-04T17:48:13.001Z",
+  "generatedAt": "2026-03-04T17:52:46.733Z",
   "package": "@remcostoeten/use-shortcut",
   "sourceEntry": "src/index.ts",
-  "count": 44,
+  "count": 36,
   "items": [
     {
       "name": "ActionKey",
@@ -33,22 +33,6 @@
       "params": [],
       "returns": null,
       "examples": []
-    },
-    {
-      "name": "createShortcutGroup",
-      "kind": "function",
-      "source": {
-        "file": "src/hook.ts",
-        "line": 286,
-        "column": 1
-      },
-      "summary": "Creates an imperative group controller for many shortcut registrations.",
-      "signature": "(): ShortcutGroup",
-      "params": [],
-      "returns": "A `ShortcutGroup` that can add and unbind multiple shortcuts together",
-      "examples": [
-        "```ts\nconst group = createShortcutGroup()\ngroup.add($.mod.key(\"s\").on(onSave))\ngroup.add($.key(\"escape\").on(onClose))\ngroup.unbindAll()\n```"
-      ]
     },
     {
       "name": "detectPlatform",
@@ -419,31 +403,6 @@
       "examples": []
     },
     {
-      "name": "registerShortcutMap",
-      "kind": "function",
-      "source": {
-        "file": "src/hook.ts",
-        "line": 146,
-        "column": 1
-      },
-      "summary": "Registers an object-based shortcut map in one call and returns per-action handles.",
-      "signature": "<T extends ShortcutMap>(builder: ShortcutBuilder, shortcutMap: T): ShortcutMapResult<T>",
-      "params": [
-        {
-          "name": "builder",
-          "description": "- Builder returned by `useShortcut()`"
-        },
-        {
-          "name": "shortcutMap",
-          "description": "- Record of action ids to key bindings, handlers, and options"
-        }
-      ],
-      "returns": "A result map with one `ShortcutResult` per shortcut id",
-      "examples": [
-        "```ts\nconst $ = useShortcut()\nconst results = registerShortcutMap($, {\n  save: { keys: \"mod+s\", handler: onSave },\n  nav: { keys: [\"g\", \"d\"], handler: onGoDashboard },\n})\n```"
-      ]
-    },
-    {
       "name": "ShortcutBuilder",
       "kind": "type",
       "source": {
@@ -472,20 +431,6 @@
       "examples": []
     },
     {
-      "name": "ShortcutGroup",
-      "kind": "type",
-      "source": {
-        "file": "src/types.ts",
-        "line": 261,
-        "column": 1
-      },
-      "summary": "Imperative grouping controller for binding/unbinding many shortcut registrations together.",
-      "signature": null,
-      "params": [],
-      "returns": null,
-      "examples": []
-    },
-    {
       "name": "ShortcutHandler",
       "kind": "type",
       "source": {
@@ -501,48 +446,6 @@
           "description": "- The keyboard event that triggered the shortcut"
         }
       ],
-      "returns": null,
-      "examples": []
-    },
-    {
-      "name": "ShortcutMap",
-      "kind": "type",
-      "source": {
-        "file": "src/types.ts",
-        "line": 253,
-        "column": 1
-      },
-      "summary": "Bulk registration shape mapping action ids to key+handler definitions.",
-      "signature": null,
-      "params": [],
-      "returns": null,
-      "examples": []
-    },
-    {
-      "name": "ShortcutMapEntry",
-      "kind": "type",
-      "source": {
-        "file": "src/types.ts",
-        "line": 246,
-        "column": 1
-      },
-      "summary": "Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.",
-      "signature": null,
-      "params": [],
-      "returns": null,
-      "examples": []
-    },
-    {
-      "name": "ShortcutMapResult",
-      "kind": "type",
-      "source": {
-        "file": "src/types.ts",
-        "line": 256,
-        "column": 1
-      },
-      "summary": "Return type for map registrations, keyed by the same ids as the source map.",
-      "signature": null,
-      "params": [],
       "returns": null,
       "examples": []
     },
@@ -649,47 +552,6 @@
       "returns": "A chainable shortcut builder (`$`)",
       "examples": [
         "```ts\nconst $ = useShortcut({ activeScopes: [\"editor\"] })\n$.mod.key(\"s\").on((event) => {\n  event.preventDefault()\n  saveDocument()\n})\n```"
-      ]
-    },
-    {
-      "name": "useShortcutGroup",
-      "kind": "function",
-      "source": {
-        "file": "src/hook.ts",
-        "line": 324,
-        "column": 1
-      },
-      "summary": "React hook that returns a stable `ShortcutGroup` instance.",
-      "signature": "(): ShortcutGroup",
-      "params": [],
-      "returns": "A memoized `ShortcutGroup` tied to the component lifecycle",
-      "examples": [
-        "```ts\nconst group = useShortcutGroup()\n```"
-      ]
-    },
-    {
-      "name": "useShortcutMap",
-      "kind": "function",
-      "source": {
-        "file": "src/hook.ts",
-        "line": 239,
-        "column": 1
-      },
-      "summary": "React hook that registers a shortcut map and automatically unbinds on cleanup.",
-      "signature": "<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>",
-      "params": [
-        {
-          "name": "shortcutMap",
-          "description": "- Record of action ids to key bindings, handlers, and options"
-        },
-        {
-          "name": "options",
-          "description": "- Same options as `useShortcut()`"
-        }
-      ],
-      "returns": "A map of `ShortcutResult` keyed by your shortcut ids",
-      "examples": [
-        "```ts\nconst mapResults = useShortcutMap({\n  save: { keys: \"mod+s\", handler: onSave },\n  close: { keys: \"escape\", handler: onClose },\n})\n```"
       ]
     },
     {

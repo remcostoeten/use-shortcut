@@ -26,10 +26,6 @@ Source of truth: `src/index.ts`.
 
 ### React hooks and registration helpers
 - `useShortcut(options?)`
-- `useShortcutMap(shortcutMap, options?)`
-- `registerShortcutMap(builder, shortcutMap)`
-- `createShortcutGroup()`
-- `useShortcutGroup()`
 
 ### Exported types (TypeScript API)
 - `ModifierState`
@@ -54,11 +50,7 @@ Source of truth: `src/index.ts`.
 - `ExceptPredicate`
 - `ShortcutScope`
 - `ShortcutConflict`
-- `ShortcutMap`
-- `ShortcutMapEntry`
-- `ShortcutMapResult`
 - `ShortcutRecordingOptions`
-- `ShortcutGroup`
 
 ## CLI Public Surface (`use-shortcut` bin)
 
