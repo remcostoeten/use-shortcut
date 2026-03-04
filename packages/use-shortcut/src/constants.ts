@@ -1,3 +1,4 @@
+/** Supported runtime OS identifiers used by formatter and parser normalization. */
 export const OS = {
     MAC: "mac",
     WINDOWS: "windows",
@@ -6,10 +7,21 @@ export const OS = {
 
 export type PlatformType = (typeof OS)[keyof typeof OS]
 
+/** Public platform constant alias (`Platform.MAC`, `Platform.WINDOWS`, `Platform.LINUX`). */
 export const Platform = OS
 
+let _cachedPlatform: PlatformType | null = null
+
+/**
+ * Detect the current OS platform for modifier normalization and display formatting.
+ * Result is memoized for the page lifecycle.
+ */
 export function detectPlatform(): PlatformType {
-    if (typeof navigator === "undefined") return OS.WINDOWS
+    if (_cachedPlatform) return _cachedPlatform
+    if (typeof navigator === "undefined") {
+        _cachedPlatform = OS.WINDOWS
+        return _cachedPlatform
+    }
 
     const uaPlatform = (
         navigator as Navigator & {
@@ -25,20 +37,25 @@ export function detectPlatform(): PlatformType {
         || platform.includes("ipad")
         || platform.includes("ipod")
     ) {
-        return OS.MAC
+        _cachedPlatform = OS.MAC
+        return _cachedPlatform
     }
 
     if (platform.includes("linux") || platform.includes("android")) {
-        return OS.LINUX
+        _cachedPlatform = OS.LINUX
+        return _cachedPlatform
     }
 
     if (platform.includes("win")) {
-        return OS.WINDOWS
+        _cachedPlatform = OS.WINDOWS
+        return _cachedPlatform
     }
 
-    return OS.WINDOWS
+    _cachedPlatform = OS.WINDOWS
+    return _cachedPlatform
 }
 
+/** Canonical modifier token names used internally across parsing/formatting. */
 export const ModifierKey = {
     META: "meta",
     CTRL: "ctrl",
@@ -48,6 +65,7 @@ export const ModifierKey = {
 
 export type ModifierKeyType = (typeof ModifierKey)[keyof typeof ModifierKey]
 
+/** Alias map from user-facing modifier tokens to canonical modifier keys. */
 export const ModifierAliases: Record<string, ModifierKeyType> = {
     command: ModifierKey.META,
     cmd: ModifierKey.META,
@@ -70,6 +88,7 @@ export const ModifierAliases: Record<string, ModifierKeyType> = {
     shft: ModifierKey.SHIFT,
 } as const
 
+/** Alias map from human shortcut key tokens to `KeyboardEvent.key`-compatible values. */
 export const SpecialKeyMap: Record<string, string> = {
     up: "ArrowUp",
     down: "ArrowDown",
@@ -111,6 +130,7 @@ export const SpecialKeyMap: Record<string, string> = {
     closebracket: "]",
 } as const
 
+/** Platform-specific display labels/symbols for modifier keys. */
 export const ModifierDisplaySymbols: Record<PlatformType, Record<ModifierKeyType, string>> = {
     [OS.MAC]: {
         [ModifierKey.META]: "⌘",
@@ -132,6 +152,7 @@ export const ModifierDisplaySymbols: Record<PlatformType, Record<ModifierKeyType
     },
 } as const
 
+/** Platform-specific canonical order for modifier rendering and combo normalization. */
 export const ModifierDisplayOrder: Record<PlatformType, ModifierKeyType[]> = {
     [OS.MAC]: [ModifierKey.CTRL, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.META],
     [OS.WINDOWS]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL],

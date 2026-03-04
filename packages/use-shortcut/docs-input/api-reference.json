@@ -1,0 +1,710 @@
+{
+  "generatedAt": "2026-03-04T17:48:13.001Z",
+  "package": "@remcostoeten/use-shortcut",
+  "sourceEntry": "src/index.ts",
+  "count": 44,
+  "items": [
+    {
+      "name": "ActionKey",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 33,
+        "column": 1
+      },
+      "summary": "All valid action keys that can be used with `.key()`",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": [
+        "$.mod.key(\"s\") // \"s\" is an ActionKey"
+      ]
+    },
+    {
+      "name": "AlphaKey",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 2,
+        "column": 1
+      },
+      "summary": "Lowercase letter keys a-z",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "createShortcutGroup",
+      "kind": "function",
+      "source": {
+        "file": "src/hook.ts",
+        "line": 286,
+        "column": 1
+      },
+      "summary": "Creates an imperative group controller for many shortcut registrations.",
+      "signature": "(): ShortcutGroup",
+      "params": [],
+      "returns": "A `ShortcutGroup` that can add and unbind multiple shortcuts together",
+      "examples": [
+        "```ts\nconst group = createShortcutGroup()\ngroup.add($.mod.key(\"s\").on(onSave))\ngroup.add($.key(\"escape\").on(onClose))\ngroup.unbindAll()\n```"
+      ]
+    },
+    {
+      "name": "detectPlatform",
+      "kind": "function",
+      "source": {
+        "file": "src/constants.ts",
+        "line": 19,
+        "column": 1
+      },
+      "summary": "Detect the current OS platform for modifier normalization and display formatting.\nResult is memoized for the page lifecycle.",
+      "signature": "(): PlatformType",
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ExceptPredicate",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 74,
+        "column": 1
+      },
+      "summary": "Custom predicate for excluding shortcuts in certain conditions",
+      "signature": null,
+      "params": [
+        {
+          "name": "event",
+          "description": "- The keyboard event to evaluate"
+        }
+      ],
+      "returns": "`true` to skip the shortcut, `false` to allow it",
+      "examples": []
+    },
+    {
+      "name": "ExceptPreset",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 84,
+        "column": 1
+      },
+      "summary": "Built-in exception presets for common scenarios\n- \"input\" - Skip when focused on input, textarea, or select\n- \"editable\" - Skip when focused on contentEditable elements\n- \"typing\" - Skip in any text input context (combines input + editable)\n- \"modal\" - Skip when a modal/dialog is open (checks [data-modal] or [role=\"dialog\"])\n- \"disabled\" - Skip when focused element is disabled",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "formatShortcut",
+      "kind": "function",
+      "source": {
+        "file": "src/formatter.ts",
+        "line": 55,
+        "column": 1
+      },
+      "summary": "Format a shortcut string for display with platform-aware symbols",
+      "signature": "(shortcut: string, platform?: PlatformType): string",
+      "params": [
+        {
+          "name": "shortcut",
+          "description": "- Shortcut string (e.g., \"cmd+s\")"
+        },
+        {
+          "name": "platform",
+          "description": "- Optional platform override (default: auto-detect)"
+        }
+      ],
+      "returns": "Formatted display string (e.g., \"⌘S\" on Mac, \"Ctrl+S\" on Windows)",
+      "examples": [
+        "```ts\nformatShortcut(\"cmd+s\") // \"⌘S\" on Mac, \"Ctrl+S\" on Windows\nformatShortcut(\"ctrl+shift+p\", \"mac\") // \"⌃⇧P\"\n```"
+      ]
+    },
+    {
+      "name": "FunctionKey",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 10,
+        "column": 1
+      },
+      "summary": "Function keys F1-F12",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "HandlerOptions",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 99,
+        "column": 1
+      },
+      "summary": "Options for shortcut handler registration",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "KeyChain",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 162,
+        "column": 1
+      },
+      "summary": "Chain state after calling `.key()` - ready to attach a handler",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "matchesAnyShortcut",
+      "kind": "function",
+      "source": {
+        "file": "src/parser.ts",
+        "line": 120,
+        "column": 1
+      },
+      "summary": "Check if a keyboard event matches any of the parsed shortcuts",
+      "signature": "(event: KeyboardEvent, parsedShortcuts: ParsedShortcut[]): boolean",
+      "params": [
+        {
+          "name": "event",
+          "description": "- The keyboard event to check"
+        },
+        {
+          "name": "parsedShortcuts",
+          "description": "- Array of parsed shortcuts to match against"
+        }
+      ],
+      "returns": "`true` if the event matches any shortcut",
+      "examples": []
+    },
+    {
+      "name": "matchesShortcut",
+      "kind": "function",
+      "source": {
+        "file": "src/parser.ts",
+        "line": 98,
+        "column": 1
+      },
+      "summary": "Check if a keyboard event matches a parsed shortcut",
+      "signature": "(event: KeyboardEvent, parsed: ParsedShortcut): boolean",
+      "params": [
+        {
+          "name": "event",
+          "description": "- The keyboard event to check"
+        },
+        {
+          "name": "parsed",
+          "description": "- The parsed shortcut to match against"
+        }
+      ],
+      "returns": "`true` if the event matches the shortcut",
+      "examples": []
+    },
+    {
+      "name": "ModifierAliases",
+      "kind": "const",
+      "source": {
+        "file": "src/constants.ts",
+        "line": 69,
+        "column": 14
+      },
+      "summary": "Alias map from user-facing modifier tokens to canonical modifier keys.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ModifierChain",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 149,
+        "column": 1
+      },
+      "summary": "Chainable modifier builder with type-safe exhaustion\nEach modifier can only be used once in a chain",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ModifierDisplayOrder",
+      "kind": "const",
+      "source": {
+        "file": "src/constants.ts",
+        "line": 156,
+        "column": 14
+      },
+      "summary": "Platform-specific canonical order for modifier rendering and combo normalization.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ModifierDisplaySymbols",
+      "kind": "const",
+      "source": {
+        "file": "src/constants.ts",
+        "line": 134,
+        "column": 14
+      },
+      "summary": "Platform-specific display labels/symbols for modifier keys.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ModifierFlags",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 39,
+        "column": 1
+      },
+      "summary": "Internal modifier state flags",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ModifierKey",
+      "kind": "const",
+      "source": {
+        "file": "src/constants.ts",
+        "line": 59,
+        "column": 14
+      },
+      "summary": "Canonical modifier token names used internally across parsing/formatting.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ModifierName",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 36,
+        "column": 1
+      },
+      "summary": "Modifier key names used in the chainable API",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ModifierState",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 47,
+        "column": 1
+      },
+      "summary": "Modifier key state from a keyboard event",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "NavigationKey",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 13,
+        "column": 1
+      },
+      "summary": "Arrow and navigation keys",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "NumericKey",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 7,
+        "column": 1
+      },
+      "summary": "Number keys 0-9",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ParsedShortcut",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 55,
+        "column": 1
+      },
+      "summary": "Result of parsing a shortcut string",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "parseShortcut",
+      "kind": "function",
+      "source": {
+        "file": "src/parser.ts",
+        "line": 20,
+        "column": 1
+      },
+      "summary": "Parse a shortcut string into its components",
+      "signature": "(shortcut: string): ParsedShortcut",
+      "params": [
+        {
+          "name": "shortcut",
+          "description": "- Shortcut string (e.g., \"cmd+s\", \"ctrl+shift+p\")"
+        }
+      ],
+      "returns": "Parsed shortcut with modifiers, key, and original string",
+      "examples": [
+        "```ts\nconst parsed = parseShortcut(\"cmd+s\")\n// { modifiers: { meta: true, ... }, key: \"s\", original: \"cmd+s\" }\n```"
+      ]
+    },
+    {
+      "name": "parseShortcuts",
+      "kind": "function",
+      "source": {
+        "file": "src/parser.ts",
+        "line": 71,
+        "column": 1
+      },
+      "summary": "Parse multiple shortcut strings",
+      "signature": "(shortcuts: string | string[]): ParsedShortcut[]",
+      "params": [
+        {
+          "name": "shortcuts",
+          "description": "- Single shortcut or array of shortcuts"
+        }
+      ],
+      "returns": "Array of parsed shortcuts",
+      "examples": []
+    },
+    {
+      "name": "Platform",
+      "kind": "const",
+      "source": {
+        "file": "src/constants.ts",
+        "line": 11,
+        "column": 14
+      },
+      "summary": "Public platform constant alias (`Platform.MAC`, `Platform.WINDOWS`, `Platform.LINUX`).",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "registerShortcutMap",
+      "kind": "function",
+      "source": {
+        "file": "src/hook.ts",
+        "line": 146,
+        "column": 1
+      },
+      "summary": "Registers an object-based shortcut map in one call and returns per-action handles.",
+      "signature": "<T extends ShortcutMap>(builder: ShortcutBuilder, shortcutMap: T): ShortcutMapResult<T>",
+      "params": [
+        {
+          "name": "builder",
+          "description": "- Builder returned by `useShortcut()`"
+        },
+        {
+          "name": "shortcutMap",
+          "description": "- Record of action ids to key bindings, handlers, and options"
+        }
+      ],
+      "returns": "A result map with one `ShortcutResult` per shortcut id",
+      "examples": [
+        "```ts\nconst $ = useShortcut()\nconst results = registerShortcutMap($, {\n  save: { keys: \"mod+s\", handler: onSave },\n  nav: { keys: [\"g\", \"d\"], handler: onGoDashboard },\n})\n```"
+      ]
+    },
+    {
+      "name": "ShortcutBuilder",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 194,
+        "column": 1
+      },
+      "summary": "The main shortcut builder interface returned by `useShortcut()`",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutConflict",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 90,
+        "column": 1
+      },
+      "summary": "Conflict metadata emitted when two registered shortcuts overlap.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutGroup",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 261,
+        "column": 1
+      },
+      "summary": "Imperative grouping controller for binding/unbinding many shortcut registrations together.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutHandler",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 67,
+        "column": 1
+      },
+      "summary": "Handler function called when a shortcut is triggered",
+      "signature": null,
+      "params": [
+        {
+          "name": "event",
+          "description": "- The keyboard event that triggered the shortcut"
+        }
+      ],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutMap",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 253,
+        "column": 1
+      },
+      "summary": "Bulk registration shape mapping action ids to key+handler definitions.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutMapEntry",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 246,
+        "column": 1
+      },
+      "summary": "Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutMapResult",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 256,
+        "column": 1
+      },
+      "summary": "Return type for map registrations, keyed by the same ids as the source map.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutRecordingOptions",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 185,
+        "column": 1
+      },
+      "summary": "Options for `ShortcutBuilder.record()` and low-level recording flows.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutResult",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 126,
+        "column": 1
+      },
+      "summary": "Result object returned when registering a shortcut\nProvides control over the shortcut and display information",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutScope",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 87,
+        "column": 1
+      },
+      "summary": "Scope selector used to enable/disable subsets of shortcuts at runtime.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "SpecialKey",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 19,
+        "column": 1
+      },
+      "summary": "Special action keys like Enter, Escape, Tab",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "SpecialKeyMap",
+      "kind": "const",
+      "source": {
+        "file": "src/constants.ts",
+        "line": 92,
+        "column": 14
+      },
+      "summary": "Alias map from human shortcut key tokens to `KeyboardEvent.key`-compatible values.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "SymbolKey",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 24,
+        "column": 1
+      },
+      "summary": "Symbol and punctuation keys",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "useShortcut",
+      "kind": "function",
+      "source": {
+        "file": "src/hook.ts",
+        "line": 187,
+        "column": 1
+      },
+      "summary": "React hook for registering chainable keyboard shortcuts",
+      "signature": "(options?: UseShortcutOptions): ShortcutBuilder",
+      "params": [
+        {
+          "name": "options",
+          "description": "- Configuration options for the hook"
+        }
+      ],
+      "returns": "A chainable shortcut builder (`$`)",
+      "examples": [
+        "```ts\nconst $ = useShortcut({ activeScopes: [\"editor\"] })\n$.mod.key(\"s\").on((event) => {\n  event.preventDefault()\n  saveDocument()\n})\n```"
+      ]
+    },
+    {
+      "name": "useShortcutGroup",
+      "kind": "function",
+      "source": {
+        "file": "src/hook.ts",
+        "line": 324,
+        "column": 1
+      },
+      "summary": "React hook that returns a stable `ShortcutGroup` instance.",
+      "signature": "(): ShortcutGroup",
+      "params": [],
+      "returns": "A memoized `ShortcutGroup` tied to the component lifecycle",
+      "examples": [
+        "```ts\nconst group = useShortcutGroup()\n```"
+      ]
+    },
+    {
+      "name": "useShortcutMap",
+      "kind": "function",
+      "source": {
+        "file": "src/hook.ts",
+        "line": 239,
+        "column": 1
+      },
+      "summary": "React hook that registers a shortcut map and automatically unbinds on cleanup.",
+      "signature": "<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>",
+      "params": [
+        {
+          "name": "shortcutMap",
+          "description": "- Record of action ids to key bindings, handlers, and options"
+        },
+        {
+          "name": "options",
+          "description": "- Same options as `useShortcut()`"
+        }
+      ],
+      "returns": "A map of `ShortcutResult` keyed by your shortcut ids",
+      "examples": [
+        "```ts\nconst mapResults = useShortcutMap({\n  save: { keys: \"mod+s\", handler: onSave },\n  close: { keys: \"escape\", handler: onClose },\n})\n```"
+      ]
+    },
+    {
+      "name": "UseShortcutOptions",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 220,
+        "column": 1
+      },
+      "summary": "Options for the `useShortcut` hook",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    }
+  ]
+}

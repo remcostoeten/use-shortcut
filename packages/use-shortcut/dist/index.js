@@ -9,20 +9,29 @@ var OS = {
   LINUX: "linux"
 };
 var Platform = OS;
+var _cachedPlatform = null;
 function detectPlatform() {
-  if (typeof navigator === "undefined") return OS.WINDOWS;
+  if (_cachedPlatform) return _cachedPlatform;
+  if (typeof navigator === "undefined") {
+    _cachedPlatform = OS.WINDOWS;
+    return _cachedPlatform;
+  }
   const uaPlatform = navigator.userAgentData?.platform?.toLowerCase();
-  const platform = (uaPlatform ?? navigator.platform).toLowerCase();
+  const platform = (uaPlatform ?? navigator.platform ?? navigator.userAgent ?? "").toLowerCase();
   if (platform.includes("mac") || platform.includes("iphone") || platform.includes("ipad") || platform.includes("ipod")) {
-    return OS.MAC;
+    _cachedPlatform = OS.MAC;
+    return _cachedPlatform;
   }
   if (platform.includes("linux") || platform.includes("android")) {
-    return OS.LINUX;
+    _cachedPlatform = OS.LINUX;
+    return _cachedPlatform;
   }
   if (platform.includes("win")) {
-    return OS.WINDOWS;
+    _cachedPlatform = OS.WINDOWS;
+    return _cachedPlatform;
   }
-  return OS.WINDOWS;
+  _cachedPlatform = OS.WINDOWS;
+  return _cachedPlatform;
 }
 var ModifierKey = {
   META: "meta",
@@ -182,6 +191,34 @@ function matchesAnyShortcut(event, parsedShortcuts) {
 }
 
 // src/formatter.ts
+var BASE_DISPLAY_NAMES = {
+  ArrowUp: "\u2191",
+  ArrowDown: "\u2193",
+  ArrowLeft: "\u2190",
+  ArrowRight: "\u2192",
+  Home: "Home",
+  End: "End",
+  PageUp: "PgUp",
+  PageDown: "PgDn"
+};
+var MAC_DISPLAY_NAMES = {
+  ...BASE_DISPLAY_NAMES,
+  Enter: "\u21A9",
+  Tab: "\u21E5",
+  Escape: "\u238B",
+  Backspace: "\u232B",
+  Delete: "\u2326",
+  " ": "\u2423"
+};
+var NON_MAC_DISPLAY_NAMES = {
+  ...BASE_DISPLAY_NAMES,
+  Enter: "Enter",
+  Tab: "Tab",
+  Escape: "Esc",
+  Backspace: "Backspace",
+  Delete: "Del",
+  " ": "Space"
+};
 function formatShortcut(shortcut, platform) {
   const targetPlatform = platform ?? detectPlatform();
   const parsed = parseShortcut(shortcut);
@@ -199,22 +236,7 @@ function formatShortcut(shortcut, platform) {
   return parts.join(separator);
 }
 function formatKey(key, platform) {
-  const displayNames = {
-    ArrowUp: "\u2191",
-    ArrowDown: "\u2193",
-    ArrowLeft: "\u2190",
-    ArrowRight: "\u2192",
-    Enter: platform === OS.MAC ? "\u21A9" : "Enter",
-    Tab: platform === OS.MAC ? "\u21E5" : "Tab",
-    Escape: platform === OS.MAC ? "\u238B" : "Esc",
-    Backspace: platform === OS.MAC ? "\u232B" : "Backspace",
-    Delete: platform === OS.MAC ? "\u2326" : "Del",
-    " ": platform === OS.MAC ? "\u2423" : "Space",
-    Home: "Home",
-    End: "End",
-    PageUp: "PgUp",
-    PageDown: "PgDn"
-  };
+  const displayNames = platform === OS.MAC ? MAC_DISPLAY_NAMES : NON_MAC_DISPLAY_NAMES;
   return displayNames[key] || key.toUpperCase();
 }
 function getModifierSymbols(platform) {
@@ -233,19 +255,14 @@ function _debugLog(debug, ...args) {
 function _getActiveModifierTokens(modifiers) {
   const platform = detectPlatform();
   const order = ModifierDisplayOrder[platform];
-  return order.filter((key) => {
-    if (key === ModifierKey.CTRL) return modifiers.ctrl;
-    if (key === ModifierKey.ALT) return modifiers.alt;
-    if (key === ModifierKey.SHIFT) return modifiers.shift;
-    if (key === ModifierKey.META) return modifiers.cmd;
-    return false;
-  }).map((key) => {
-    if (key === ModifierKey.CTRL) return "ctrl";
-    if (key === ModifierKey.ALT) return "alt";
-    if (key === ModifierKey.SHIFT) return "shift";
-    if (key === ModifierKey.META) return "cmd";
-    return "";
-  });
+  const tokens = [];
+  for (const key of order) {
+    if (key === ModifierKey.CTRL && modifiers.ctrl) tokens.push("ctrl");
+    if (key === ModifierKey.ALT && modifiers.alt) tokens.push("alt");
+    if (key === ModifierKey.SHIFT && modifiers.shift) tokens.push("shift");
+    if (key === ModifierKey.META && modifiers.cmd) tokens.push("cmd");
+  }
+  return tokens;
 }
 function _buildComboString(modifiers, key) {
   const tokens = _getActiveModifierTokens(modifiers);
@@ -260,7 +277,8 @@ function _canonicalizeParsed(parsed) {
   if (parsed.modifiers.alt) modifiers.push("alt");
   if (parsed.modifiers.shift) modifiers.push("shift");
   if (parsed.modifiers.meta) modifiers.push("cmd");
-  return [...modifiers, parsed.key.toLowerCase()].join("+");
+  const key = parsed.key === " " || parsed.key === "Spacebar" ? "space" : parsed.key.toLowerCase();
+  return [...modifiers, key].join("+");
 }
 function _eventToCombo(event) {
   const modifiers = [];
@@ -268,33 +286,30 @@ function _eventToCombo(event) {
   if (event.altKey) modifiers.push("alt");
   if (event.shiftKey) modifiers.push("shift");
   if (event.metaKey) modifiers.push("cmd");
-  const key = event.key === " " ? "space" : event.key.toLowerCase();
+  const key = event.key === " " || event.key === "Spacebar" ? "space" : event.key.toLowerCase();
   return [...modifiers, key].join("+");
 }
 function _eventToMatchStep(event) {
-  const modifiers = [];
-  if (event.ctrlKey) modifiers.push("ctrl");
-  if (event.altKey) modifiers.push("alt");
-  if (event.shiftKey) modifiers.push("shift");
-  if (event.metaKey) modifiers.push("cmd");
-  return [...modifiers, event.key.toLowerCase()].join("+");
+  return _eventToCombo(event);
 }
 
 // src/runtime/conflicts.ts
 function _isPrefix(a, b) {
   if (a.length > b.length) return false;
   for (let i = 0; i < a.length; i += 1) {
-    if (_canonicalizeParsed(a[i]) !== _canonicalizeParsed(b[i])) {
+    if (a[i] !== b[i]) {
       return false;
     }
   }
   return true;
 }
 function _detectConflict(newSteps, existingSteps) {
-  const newCombo = newSteps.map(_canonicalizeParsed).join(" ");
-  const existingCombo = existingSteps.map(_canonicalizeParsed).join(" ");
+  const newCanonicalSteps = newSteps.map(_canonicalizeParsed);
+  const existingCanonicalSteps = existingSteps.map(_canonicalizeParsed);
+  const newCombo = newCanonicalSteps.join(" ");
+  const existingCombo = existingCanonicalSteps.join(" ");
   if (newCombo === existingCombo) return "exact";
-  if (_isPrefix(newSteps, existingSteps) || _isPrefix(existingSteps, newSteps)) {
+  if (_isPrefix(newCanonicalSteps, existingCanonicalSteps) || _isPrefix(existingCanonicalSteps, newCanonicalSteps)) {
     return "sequence-prefix";
   }
   return null;
@@ -315,21 +330,27 @@ function _emitConflict(registry, conflict) {
 var _IGNORED_TAGS = /* @__PURE__ */ new Set(["INPUT", "TEXTAREA", "SELECT"]);
 var _EXCEPT_PREDICATES = {
   input: (e) => {
+    if (!(e.target instanceof HTMLElement)) return false;
     const target = e.target;
     return _IGNORED_TAGS.has(target.tagName);
   },
   editable: (e) => {
+    if (!(e.target instanceof HTMLElement)) return false;
     const target = e.target;
     return target.isContentEditable;
   },
   typing: (e) => {
+    if (!(e.target instanceof HTMLElement)) return false;
     const target = e.target;
     return _IGNORED_TAGS.has(target.tagName) || target.isContentEditable;
   },
   modal: () => {
+    if (typeof document === "undefined" || typeof document.querySelector !== "function")
+      return false;
     return document.querySelector('[data-modal="true"], [role="dialog"]') !== null;
   },
   disabled: (e) => {
+    if (!(e.target instanceof HTMLElement)) return false;
     const target = e.target;
     return target.hasAttribute("disabled") || target.getAttribute("aria-disabled") === "true";
   }
@@ -362,6 +383,7 @@ function _isPureModifier(event) {
 
 // src/runtime/listener.ts
 function _sortEntries(entries) {
+  if (entries.length <= 1) return entries;
   return [...entries].sort((a, b) => {
     if (b.priority !== a.priority) return b.priority - a.priority;
     return a.id - b.id;
@@ -590,7 +612,7 @@ function _createRecorder(options) {
         if (timeout) clearTimeout(timeout);
         resolve(_eventToCombo(keyboardEvent));
       };
-      target.addEventListener(eventType, listener, { once: false });
+      target.addEventListener(eventType, listener);
       const timeoutMs = recordingOptions.timeoutMs;
       if (timeoutMs && timeoutMs > 0) {
         timeout = setTimeout(() => {
@@ -855,17 +877,24 @@ function useShortcutMap(shortcutMap, options = {}) {
     stableShortcutMapRef.current = shortcutMap;
   }
   const stableShortcutMap = stableShortcutMapRef.current;
-  const [results, setResults] = react.useState({});
+  const resultsRef = react.useRef({});
   react.useEffect(() => {
     const registrations = registerShortcutMap($, stableShortcutMap);
-    setResults(registrations);
+    const results = resultsRef.current;
+    for (const key of Object.keys(results)) {
+      delete results[key];
+    }
+    Object.assign(results, registrations);
     return () => {
       for (const result of Object.values(registrations)) {
         result.unbind();
       }
+      for (const key of Object.keys(results)) {
+        delete results[key];
+      }
     };
   }, [$, stableShortcutMap]);
-  return results;
+  return resultsRef.current;
 }
 function createShortcutGroup() {
   const results = [];

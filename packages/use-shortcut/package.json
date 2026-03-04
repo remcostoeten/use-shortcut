@@ -59,6 +59,8 @@
         "dev": "tsup --watch",
         "test": "vitest run --environment jsdom",
         "typecheck": "tsc --noEmit",
+        "docs:api": "node scripts/generate-api-reference.mjs",
+        "docs:check": "bun run docs:api && node scripts/docs-check.mjs",
         "clean": "rm -rf dist",
         "prepublishOnly": "npm run build"
     },

@@ -17,8 +17,8 @@ WIP keyboard shortcut library for React with a chainable API.
   - Runtime controls: `setScopes`, `enableScope`, `disableScope`, `getScopes`, `isScopeActive`
 - Exception predicates/presets with `.except(...)`
 - Shortcut maps:
-  - `registerShortcutMap`
-  - `useShortcutMap`
+  - `registerShortcutMap` (imperative)
+  - `useShortcutMap` (React lifecycle-aware)
   - Prefer a stable `shortcutMap` reference in React (`useMemo`) for best performance
 - Recording mode: `$.record({ timeoutMs })`
 - Conflict detection (`exact`, `sequence-prefix`)
@@ -29,6 +29,19 @@ WIP keyboard shortcut library for React with a chainable API.
 - Global guard/filter support via `eventFilter`
 - React entry point:
   - `useShortcut`
+
+## API Intention (Consumer-Facing)
+
+- `useShortcut(options?)`
+  - Main React hook. Use this for the chainable API (`$.mod.key("s").on(...)`).
+- `useShortcutMap(shortcutMap, options?)`
+  - React-first bulk registration. Automatically registers and cleans up with component lifecycle.
+- `registerShortcutMap($, shortcutMap)`
+  - Imperative bulk registration helper. Use when you already have a builder from `useShortcut` and want manual control.
+- `createShortcutGroup()` / `useShortcutGroup()`
+  - Group multiple `ShortcutResult` objects and unbind them together.
+
+Internal helpers follow underscore naming (for example `_createShortcutBuilder`, `_canonicalizeParsed`) and are not re-exported from `src/index.ts`.
 
 ## Architecture Notes
 

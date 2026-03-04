@@ -41,12 +41,11 @@ export type {
 export {
     parseShortcut,
     parseShortcuts,
-    getModifiersFromEvent,
     matchesShortcut,
     matchesAnyShortcut,
 } from "./parser"
 
-export { formatShortcut, getModifierSymbols } from "./formatter"
+export { formatShortcut } from "./formatter"
 
 export {
     useShortcut,

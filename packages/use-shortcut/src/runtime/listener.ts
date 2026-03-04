@@ -6,6 +6,8 @@ import { _IGNORED_TAGS, _scopeMatch, _shouldExcept } from "./guards"
 import type { RegistryEntry, ShortcutRegistry } from "./types"
 
 function _sortEntries(entries: RegistryEntry[]): RegistryEntry[] {
+    if (entries.length <= 1) return entries
+
     return [...entries].sort((a, b) => {
         if (b.priority !== a.priority) return b.priority - a.priority
         return a.id - b.id
@@ -138,4 +140,3 @@ export function _detachRegistryListener(registry: ShortcutRegistry) {
     registry.listenerTarget = null
     _debugLog(registry.options.debug, "Listener detached")
 }
-

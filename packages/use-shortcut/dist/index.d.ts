@@ -334,7 +334,7 @@ declare function formatShortcut(shortcut: string, platform?: PlatformType): stri
  * @example
  * ```ts
  * getModifierSymbols("mac") // { meta: "⌘", ctrl: "⌃", alt: "⌥", shift: "⇧" }
- * ```
+ * ```-
  */
 declare function getModifierSymbols(platform?: PlatformType): Record<ModifierKeyType, string>;
 

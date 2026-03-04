@@ -17,7 +17,7 @@ import { _buildComboString } from "./runtime/keys"
 import { _createRecorder } from "./runtime/recording"
 import type { BuilderState, ShortcutRegistry } from "./runtime/types"
 
-const MODIFIER_KEYS = new Set(["ctrl", "shift", "alt", "cmd", "mod"])
+const _MODIFIER_KEYS = new Set(["ctrl", "shift", "alt", "cmd", "mod"])
 
 export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
     builder: IShortcutBuilder
@@ -37,14 +37,14 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
 
     _debugLog(options.debug, "Builder created with options:", options)
 
-    function createProxy(currentState: BuilderState): IShortcutBuilder {
+    function _createProxy(currentState: BuilderState): IShortcutBuilder {
         return new Proxy({} as IShortcutBuilder, {
             get(_, prop: string) {
                 if (prop === "__debug") {
                     return currentState.options.debug
                 }
 
-                if (MODIFIER_KEYS.has(prop)) {
+                if (_MODIFIER_KEYS.has(prop)) {
                     const platform = detectPlatform()
                     const modKey = prop === "mod" ? (platform === Platform.MAC ? "cmd" : "ctrl") : prop
 
@@ -55,7 +55,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
 
                     _debugLog(currentState.options.debug, `Chain: +${prop} →`, newState.modifiers)
 
-                    return createProxy(newState)
+                    return _createProxy(newState)
                 }
 
                 if (prop === "in") {
@@ -66,7 +66,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
                             scopes: nextScopes,
                         }
 
-                        return createProxy(newState)
+                        return _createProxy(newState)
                     }
                 }
 
@@ -113,7 +113,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
 
                         _debugLog(currentState.options.debug, `Chain: .key("${key}")`)
 
-                        return createProxy(newState)
+                        return _createProxy(newState)
                     }
                 }
 
@@ -131,7 +131,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
 
                         _debugLog(currentState.options.debug, `Chain: .then("${nextStep}")`)
 
-                        return createProxy(newState)
+                        return _createProxy(newState)
                     }
                 }
 
@@ -144,7 +144,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
 
                         _debugLog(currentState.options.debug, "Chain: .except()", condition)
 
-                        return createProxy(newState)
+                        return _createProxy(newState)
                     }
                 }
 
@@ -173,7 +173,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
     }
 
     return {
-        builder: createProxy(initialState),
+        builder: _createProxy(initialState),
         registry,
     }
 }

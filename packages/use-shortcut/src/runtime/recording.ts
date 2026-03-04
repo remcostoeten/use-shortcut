@@ -25,7 +25,7 @@ export function _createRecorder(options: UseShortcutOptions) {
                 resolve(_eventToCombo(keyboardEvent))
             }
 
-            target.addEventListener(eventType, listener as EventListener, { once: false })
+            target.addEventListener(eventType, listener as EventListener)
 
             const timeoutMs = recordingOptions.timeoutMs
             if (timeoutMs && timeoutMs > 0) {
@@ -37,4 +37,3 @@ export function _createRecorder(options: UseShortcutOptions) {
         })
     }
 }
-
