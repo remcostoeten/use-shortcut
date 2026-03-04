@@ -6,7 +6,6 @@ export const OS = {
 
 export type PlatformType = (typeof OS)[keyof typeof OS]
 
-// Backward-compatible alias used by public API and internal imports.
 export const Platform = OS
 
 export function detectPlatform(): PlatformType {
@@ -18,7 +17,7 @@ export function detectPlatform(): PlatformType {
         }
     ).userAgentData?.platform?.toLowerCase()
 
-    const platform = (uaPlatform ?? navigator.platform).toLowerCase()
+    const platform = (uaPlatform ?? navigator.platform ?? navigator.userAgent ?? "").toLowerCase()
 
     if (
         platform.includes("mac")
