@@ -3,17 +3,26 @@
 var react = require('react');
 
 // src/constants.ts
-var Platform = {
+var OS = {
   MAC: "mac",
   WINDOWS: "windows",
   LINUX: "linux"
 };
+var Platform = OS;
 function detectPlatform() {
-  if (typeof navigator === "undefined") return Platform.WINDOWS;
-  const platform = navigator.platform.toLowerCase();
-  if (platform.includes("mac")) return Platform.MAC;
-  if (platform.includes("linux")) return Platform.LINUX;
-  return Platform.WINDOWS;
+  if (typeof navigator === "undefined") return OS.WINDOWS;
+  const uaPlatform = navigator.userAgentData?.platform?.toLowerCase();
+  const platform = (uaPlatform ?? navigator.platform).toLowerCase();
+  if (platform.includes("mac") || platform.includes("iphone") || platform.includes("ipad") || platform.includes("ipod")) {
+    return OS.MAC;
+  }
+  if (platform.includes("linux") || platform.includes("android")) {
+    return OS.LINUX;
+  }
+  if (platform.includes("win")) {
+    return OS.WINDOWS;
+  }
+  return OS.WINDOWS;
 }
 var ModifierKey = {
   META: "meta",
@@ -83,19 +92,19 @@ var SpecialKeyMap = {
   closebracket: "]"
 };
 var ModifierDisplaySymbols = {
-  [Platform.MAC]: {
+  [OS.MAC]: {
     [ModifierKey.META]: "\u2318",
     [ModifierKey.CTRL]: "\u2303",
     [ModifierKey.ALT]: "\u2325",
     [ModifierKey.SHIFT]: "\u21E7"
   },
-  [Platform.WINDOWS]: {
+  [OS.WINDOWS]: {
     [ModifierKey.META]: "Ctrl",
     [ModifierKey.CTRL]: "Ctrl",
     [ModifierKey.ALT]: "Alt",
     [ModifierKey.SHIFT]: "Shift"
   },
-  [Platform.LINUX]: {
+  [OS.LINUX]: {
     [ModifierKey.META]: "Super",
     [ModifierKey.CTRL]: "Ctrl",
     [ModifierKey.ALT]: "Alt",
@@ -103,9 +112,9 @@ var ModifierDisplaySymbols = {
   }
 };
 var ModifierDisplayOrder = {
-  [Platform.MAC]: [ModifierKey.CTRL, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.META],
-  [Platform.WINDOWS]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL],
-  [Platform.LINUX]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL]
+  [OS.MAC]: [ModifierKey.CTRL, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.META],
+  [OS.WINDOWS]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL],
+  [OS.LINUX]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL]
 };
 
 // src/parser.ts
@@ -183,7 +192,7 @@ function formatShortcut(shortcut, platform) {
   }
   const displayKey = formatKey(parsed.key, targetPlatform);
   parts.push(displayKey);
-  const separator = targetPlatform === Platform.MAC ? "" : "+";
+  const separator = targetPlatform === OS.MAC ? "" : "+";
   return parts.join(separator);
 }
 function formatKey(key, platform) {
@@ -192,12 +201,12 @@ function formatKey(key, platform) {
     ArrowDown: "\u2193",
     ArrowLeft: "\u2190",
     ArrowRight: "\u2192",
-    Enter: platform === Platform.MAC ? "\u21A9" : "Enter",
-    Tab: platform === Platform.MAC ? "\u21E5" : "Tab",
-    Escape: platform === Platform.MAC ? "\u238B" : "Esc",
-    Backspace: platform === Platform.MAC ? "\u232B" : "Backspace",
-    Delete: platform === Platform.MAC ? "\u2326" : "Del",
-    " ": platform === Platform.MAC ? "\u2423" : "Space",
+    Enter: platform === OS.MAC ? "\u21A9" : "Enter",
+    Tab: platform === OS.MAC ? "\u21E5" : "Tab",
+    Escape: platform === OS.MAC ? "\u238B" : "Esc",
+    Backspace: platform === OS.MAC ? "\u232B" : "Backspace",
+    Delete: platform === OS.MAC ? "\u2326" : "Del",
+    " ": platform === OS.MAC ? "\u2423" : "Space",
     Home: "Home",
     End: "End",
     PageUp: "PgUp",
@@ -297,15 +306,21 @@ function isPureModifier(event) {
   return key === "shift" || key === "control" || key === "alt" || key === "meta";
 }
 function eventToCombo(event) {
-  const platform = detectPlatform();
-  const symbols = ModifierDisplaySymbols[platform];
   const modifiers = [];
-  if (event.ctrlKey) modifiers.push(symbols[ModifierKey.CTRL] === "\u2303" ? "ctrl" : "ctrl");
+  if (event.ctrlKey) modifiers.push("ctrl");
   if (event.altKey) modifiers.push("alt");
   if (event.shiftKey) modifiers.push("shift");
   if (event.metaKey) modifiers.push("cmd");
-  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key.toLowerCase();
+  const key = event.key === " " ? "space" : event.key.toLowerCase();
   return [...modifiers, key].join("+");
+}
+function eventToMatchStep(event) {
+  const modifiers = [];
+  if (event.ctrlKey) modifiers.push("ctrl");
+  if (event.altKey) modifiers.push("alt");
+  if (event.shiftKey) modifiers.push("shift");
+  if (event.metaKey) modifiers.push("cmd");
+  return [...modifiers, event.key.toLowerCase()].join("+");
 }
 function isPrefix(a, b) {
   if (a.length > b.length) return false;
@@ -342,6 +357,102 @@ function sortEntries(entries) {
     return a.id - b.id;
   });
 }
+function dispatchRegistryEvent(registry, event) {
+  const runtimeOptions = registry.options;
+  if (runtimeOptions.disabled) return;
+  if (runtimeOptions.eventFilter && !runtimeOptions.eventFilter(event)) return;
+  const candidateCombos = /* @__PURE__ */ new Set();
+  const firstStepCombos = registry.firstStepIndex.get(eventToMatchStep(event));
+  if (firstStepCombos) {
+    for (const combo of firstStepCombos) candidateCombos.add(combo);
+  }
+  for (const combo of registry.activeSequenceCombos) {
+    candidateCombos.add(combo);
+  }
+  for (const combo of candidateCombos) {
+    const comboEntries = registry.listeners.get(combo);
+    if (!comboEntries) continue;
+    const orderedEntries = sortEntries(comboEntries);
+    for (const item of orderedEntries) {
+      if (!item.isEnabled) continue;
+      if (!scopeMatch(item.scopes, registry.activeScopes)) {
+        continue;
+      }
+      if (runtimeOptions.ignoreInputs !== false && !item.except) {
+        const targetEl = event.target;
+        if (targetEl && (IGNORED_TAGS.has(targetEl.tagName) || targetEl.isContentEditable)) {
+          continue;
+        }
+      }
+      if (shouldExcept(event, item.except)) {
+        debugLog(runtimeOptions.debug, "Skipped due to except condition:", combo);
+        continue;
+      }
+      const expected = item.parsedSteps[item.progress];
+      const now = Date.now();
+      if (item.progress > 0 && now - item.lastMatchedAt > item.sequenceTimeout) {
+        item.progress = 0;
+      }
+      let matched = false;
+      if (matchesShortcut(event, expected)) {
+        item.progress += 1;
+        item.lastMatchedAt = now;
+        if (item.progress === item.parsedSteps.length) {
+          matched = true;
+          item.progress = 0;
+        }
+      } else if (item.progress > 0 && matchesShortcut(event, item.parsedSteps[0])) {
+        item.progress = 1;
+        item.lastMatchedAt = now;
+      } else {
+        item.progress = 0;
+      }
+      item.attemptCallbacks.forEach((cb) => cb(matched, event));
+      if (!matched) continue;
+      debugLog(runtimeOptions.debug, "MATCHED:", combo);
+      if (item.preventDefault) {
+        event.preventDefault();
+      }
+      if (item.stopPropagation) {
+        event.stopPropagation();
+      }
+      const executeHandler = () => item.userHandler(event);
+      if (item.delay > 0) {
+        debugLog(runtimeOptions.debug, "Delaying execution by", item.delay, "ms");
+        setTimeout(executeHandler, item.delay);
+      } else {
+        executeHandler();
+      }
+      if (item.stopOnMatch) {
+        break;
+      }
+    }
+    if (comboEntries.some((entry) => entry.progress > 0)) {
+      registry.activeSequenceCombos.add(combo);
+    } else {
+      registry.activeSequenceCombos.delete(combo);
+    }
+  }
+}
+function attachRegistryListener(registry) {
+  if (registry.listener) return;
+  const target = registry.options.target ?? (typeof window !== "undefined" ? window : null);
+  if (!target) return;
+  const eventType = registry.options.eventType ?? "keydown";
+  const listener = (event) => dispatchRegistryEvent(registry, event);
+  target.addEventListener(eventType, listener);
+  registry.listener = listener;
+  registry.listenerTarget = target;
+  registry.listenerEventType = eventType;
+  debugLog(registry.options.debug, "Listener attached");
+}
+function detachRegistryListener(registry) {
+  if (!registry.listener || !registry.listenerTarget) return;
+  registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener);
+  registry.listener = null;
+  registry.listenerTarget = null;
+  debugLog(registry.options.debug, "Listener detached");
+}
 function createBinding(state, handler, handlerOptions = {}, registry) {
   const { options, except: stateExcept } = state;
   const rawSteps = state.steps;
@@ -353,8 +464,8 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
   const display = formatSequenceDisplay(rawSteps);
   const debug = options.debug ?? false;
   const except = stateExcept ?? handlerOptions.except;
-  for (const [existingCombo, listener] of registry.listeners.entries()) {
-    for (const existing of listener.entries) {
+  for (const [existingCombo, entries] of registry.listeners.entries()) {
+    for (const existing of entries) {
       if (existingCombo === combo) continue;
       const reason = detectConflict(parsedSteps, existing.parsedSteps);
       if (!reason) continue;
@@ -388,97 +499,41 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
     stopOnMatch: handlerOptions.stopOnMatch ?? false,
     priority: handlerOptions.priority ?? 0
   };
-  let comboListener = registry.listeners.get(combo);
-  if (!comboListener) {
-    const target = options.target ?? (typeof window !== "undefined" ? window : null);
-    const eventType = options.eventType ?? "keydown";
-    const listener = (event) => {
-      const runtimeOptions = registry.options;
-      if (runtimeOptions.disabled) return;
-      if (runtimeOptions.eventFilter && !runtimeOptions.eventFilter(event)) return;
-      const current = registry.listeners.get(combo);
-      if (!current) return;
-      const orderedEntries = sortEntries(current.entries);
-      for (const item of orderedEntries) {
-        if (!item.isEnabled) continue;
-        if (!scopeMatch(item.scopes, registry.activeScopes)) {
-          continue;
-        }
-        if (runtimeOptions.ignoreInputs !== false && !item.except) {
-          const targetEl = event.target;
-          if (targetEl && (IGNORED_TAGS.has(targetEl.tagName) || targetEl.isContentEditable)) {
-            continue;
-          }
-        }
-        if (shouldExcept(event, item.except)) {
-          debugLog(debug, "Skipped due to except condition:", combo);
-          continue;
-        }
-        const expected = item.parsedSteps[item.progress];
-        const now = Date.now();
-        if (item.progress > 0 && now - item.lastMatchedAt > item.sequenceTimeout) {
-          item.progress = 0;
-        }
-        let matched = false;
-        if (matchesShortcut(event, expected)) {
-          item.progress += 1;
-          item.lastMatchedAt = now;
-          if (item.progress === item.parsedSteps.length) {
-            matched = true;
-            item.progress = 0;
-          }
-        } else if (item.progress > 0 && matchesShortcut(event, item.parsedSteps[0])) {
-          item.progress = 1;
-          item.lastMatchedAt = now;
-        } else {
-          item.progress = 0;
-        }
-        item.attemptCallbacks.forEach((cb) => cb(matched, event));
-        if (!matched) continue;
-        debugLog(debug, "MATCHED:", combo, "\u2192", display);
-        if (item.preventDefault) {
-          event.preventDefault();
-        }
-        if (item.stopPropagation) {
-          event.stopPropagation();
-        }
-        const executeHandler = () => item.userHandler(event);
-        if (item.delay > 0) {
-          debugLog(debug, "Delaying execution by", item.delay, "ms");
-          setTimeout(executeHandler, item.delay);
-        } else {
-          executeHandler();
-        }
-        if (item.stopOnMatch) {
-          break;
-        }
-      }
-    };
-    if (target) {
-      target.addEventListener(eventType, listener);
-      debugLog(debug, "Listener attached for:", combo);
+  const comboEntries = registry.listeners.get(combo);
+  if (comboEntries) {
+    comboEntries.push(entry);
+  } else {
+    registry.listeners.set(combo, [entry]);
+    const firstStep = canonicalizeParsed(parsedSteps[0]);
+    const indexedCombos = registry.firstStepIndex.get(firstStep);
+    if (indexedCombos) {
+      indexedCombos.add(combo);
+    } else {
+      registry.firstStepIndex.set(firstStep, /* @__PURE__ */ new Set([combo]));
     }
-    const unbind = () => {
-      if (target) {
-        target.removeEventListener(eventType, listener);
-        registry.listeners.delete(combo);
-        debugLog(debug, "Unregistered:", combo);
-      }
-    };
-    comboListener = {
-      listener,
-      entries: [],
-      unbind
-    };
-    registry.listeners.set(combo, comboListener);
   }
-  comboListener.entries.push(entry);
+  attachRegistryListener(registry);
   const unbindEntry = () => {
-    const current = registry.listeners.get(combo);
-    if (!current) return;
-    current.entries = current.entries.filter((item) => item.id !== entry.id);
-    if (current.entries.length === 0) {
-      current.unbind();
+    const currentEntries = registry.listeners.get(combo);
+    if (!currentEntries) return;
+    const nextEntries = currentEntries.filter((item) => item.id !== entry.id);
+    if (nextEntries.length === 0) {
+      registry.listeners.delete(combo);
+      registry.activeSequenceCombos.delete(combo);
+      const firstStep = canonicalizeParsed(parsedSteps[0]);
+      const indexedCombos = registry.firstStepIndex.get(firstStep);
+      if (indexedCombos) {
+        indexedCombos.delete(combo);
+        if (indexedCombos.size === 0) {
+          registry.firstStepIndex.delete(firstStep);
+        }
+      }
+      debugLog(debug, "Unregistered:", combo);
+    } else {
+      registry.listeners.set(combo, nextEntries);
+    }
+    if (registry.listeners.size === 0) {
+      detachRegistryListener(registry);
     }
   };
   return {
@@ -530,12 +585,17 @@ function createRecorder(options) {
     });
   };
 }
-function createShortcutBuilder(options = {}) {
+function _createShortcutBuilder(options = {}) {
   const registry = {
     listeners: /* @__PURE__ */ new Map(),
+    firstStepIndex: /* @__PURE__ */ new Map(),
+    activeSequenceCombos: /* @__PURE__ */ new Set(),
     options,
     activeScopes: new Set(normalizeScopes(options.activeScopes)),
-    nextId: 1
+    nextId: 1,
+    listener: null,
+    listenerTarget: null,
+    listenerEventType: options.eventType ?? "keydown"
   };
   debugLog(options.debug, "Builder created with options:", options);
   function createProxy(currentState) {
@@ -719,7 +779,7 @@ function useShortcut(options = {}) {
   const optionsRef = react.useRef(options);
   optionsRef.current = options;
   const { builder, registry } = react.useMemo(() => {
-    return createShortcutBuilder(optionsRef.current);
+    return _createShortcutBuilder(optionsRef.current);
   }, []);
   react.useEffect(() => {
     registry.options = optionsRef.current;
@@ -727,26 +787,34 @@ function useShortcut(options = {}) {
       const scopes = Array.isArray(optionsRef.current.activeScopes) ? optionsRef.current.activeScopes : [optionsRef.current.activeScopes];
       registry.activeScopes = new Set(scopes.map((scope) => scope.trim()).filter(Boolean));
     }
-  });
+  }, [registry, options]);
   react.useEffect(() => {
     return () => {
-      registry.listeners.forEach((entry) => entry.unbind());
       registry.listeners.clear();
+      registry.firstStepIndex.clear();
+      registry.activeSequenceCombos.clear();
+      if (registry.listener && registry.listenerTarget) {
+        registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener);
+        registry.listener = null;
+        registry.listenerTarget = null;
+      }
     };
   }, [registry]);
   return builder;
 }
 function useShortcutMap(shortcutMap, options = {}) {
   const $ = useShortcut(options);
-  return registerShortcutMap($, shortcutMap);
-}
-function createShortcut(options = {}) {
-  const { builder } = createShortcutBuilder(options);
-  return builder;
-}
-function createShortcutMap(shortcutMap, options = {}) {
-  const builder = createShortcut(options);
-  return registerShortcutMap(builder, shortcutMap);
+  const [results, setResults] = react.useState({});
+  react.useEffect(() => {
+    const registrations = registerShortcutMap($, shortcutMap);
+    setResults(registrations);
+    return () => {
+      for (const result of Object.values(registrations)) {
+        result.unbind();
+      }
+    };
+  }, [$, shortcutMap]);
+  return results;
 }
 function createShortcutGroup() {
   const results = [];
@@ -787,9 +855,7 @@ exports.ModifierDisplaySymbols = ModifierDisplaySymbols;
 exports.ModifierKey = ModifierKey;
 exports.Platform = Platform;
 exports.SpecialKeyMap = SpecialKeyMap;
-exports.createShortcut = createShortcut;
 exports.createShortcutGroup = createShortcutGroup;
-exports.createShortcutMap = createShortcutMap;
 exports.detectPlatform = detectPlatform;
 exports.formatShortcut = formatShortcut;
 exports.getModifierSymbols = getModifierSymbols;

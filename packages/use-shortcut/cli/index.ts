@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs"
 import { join, dirname } from "path"
 import { fileURLToPath } from "url"
-import { getArchitectureTemplates, type ScaffoldFramework } from "./templates"
+import { _getArchitectureTemplates, type ScaffoldFramework } from "./templates"
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -102,7 +102,7 @@ function scaffoldArchitecture(
     force = false,
 ) {
     const destPath = getScaffoldDestPath(targetDir, dir)
-    const templates = getArchitectureTemplates(framework)
+    const templates = _getArchitectureTemplates(framework)
 
     log("\nuse-shortcut CLI\n", COLORS.cyan)
     log(`Scaffolding ${framework} architecture in ${destPath}\n`, COLORS.dim)

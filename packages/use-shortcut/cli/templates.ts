@@ -1,6 +1,6 @@
 export type ScaffoldFramework = "react" | "next"
 
-export function getArchitectureTemplates(framework: ScaffoldFramework): Record<string, string> {
+export function _getArchitectureTemplates(framework: ScaffoldFramework): Record<string, string> {
     const integrationSection =
         framework === "next"
             ? `## Next.js Integration\n\n1. Create a client provider wrapper at \`app/shortcut-provider.tsx\` and render \`<ShortcutProvider />\` there.\n2. Render that provider inside \`app/layout.tsx\` around your app shell.\n3. Keep page/server components pure; shortcut handlers stay in client components.\n`

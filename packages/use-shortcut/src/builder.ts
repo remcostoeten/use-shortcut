@@ -1,7 +1,6 @@
 import {
     detectPlatform,
     Platform,
-    ModifierDisplaySymbols,
     ModifierKey,
     ModifierDisplayOrder,
 } from "./constants"
@@ -88,17 +87,16 @@ type RegistryEntry = {
     priority: number
 }
 
-type ComboListener = {
-    listener: (e: KeyboardEvent) => void
-    entries: RegistryEntry[]
-    unbind: () => void
-}
-
 type ShortcutRegistry = {
-    listeners: Map<string, ComboListener>
+    listeners: Map<string, RegistryEntry[]>
+    firstStepIndex: Map<string, Set<string>>
+    activeSequenceCombos: Set<string>
     options: UseShortcutOptions
     activeScopes: Set<string>
     nextId: number
+    listener: ((event: KeyboardEvent) => void) | null
+    listenerTarget: (HTMLElement | Window) | null
+    listenerEventType: "keydown" | "keyup"
 }
 
 function normalizeScopes(scopes?: ShortcutScope): string[] {
@@ -152,13 +150,17 @@ function debugLog(debug: boolean | undefined, ...args: unknown[]) {
     }
 }
 
+function normalizeKeyToken(key: string): string {
+    return key === " " ? "space" : key.toLowerCase()
+}
+
 function canonicalizeParsed(parsed: ParsedShortcut): string {
     const modifiers: string[] = []
     if (parsed.modifiers.ctrl) modifiers.push("ctrl")
     if (parsed.modifiers.alt) modifiers.push("alt")
     if (parsed.modifiers.shift) modifiers.push("shift")
     if (parsed.modifiers.meta) modifiers.push("cmd")
-    return [...modifiers, parsed.key.toLowerCase()].join("+")
+    return [...modifiers, normalizeKeyToken(parsed.key)].join("+")
 }
 
 function isPureModifier(event: KeyboardEvent): boolean {
@@ -167,16 +169,23 @@ function isPureModifier(event: KeyboardEvent): boolean {
 }
 
 function eventToCombo(event: KeyboardEvent): string {
-    const platform = detectPlatform()
-    const symbols = ModifierDisplaySymbols[platform]
-
     const modifiers: string[] = []
-    if (event.ctrlKey) modifiers.push(symbols[ModifierKey.CTRL] === "⌃" ? "ctrl" : "ctrl")
+    if (event.ctrlKey) modifiers.push("ctrl")
     if (event.altKey) modifiers.push("alt")
     if (event.shiftKey) modifiers.push("shift")
     if (event.metaKey) modifiers.push("cmd")
 
-    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key.toLowerCase()
+    const key = normalizeKeyToken(event.key)
+    return [...modifiers, key].join("+")
+}
+
+function eventToMatchStep(event: KeyboardEvent): string {
+    const modifiers: string[] = []
+    if (event.ctrlKey) modifiers.push("ctrl")
+    if (event.altKey) modifiers.push("alt")
+    if (event.shiftKey) modifiers.push("shift")
+    if (event.metaKey) modifiers.push("cmd")
+    const key = normalizeKeyToken(event.key)
     return [...modifiers, key].join("+")
 }
 
@@ -224,6 +233,134 @@ function sortEntries(entries: RegistryEntry[]): RegistryEntry[] {
     })
 }
 
+function dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent) {
+    const runtimeOptions = registry.options
+    if (runtimeOptions.disabled) return
+    if (runtimeOptions.eventFilter && !runtimeOptions.eventFilter(event)) return
+
+    const candidateCombos = new Set<string>()
+    const firstStepCombos = registry.firstStepIndex.get(eventToMatchStep(event))
+    if (firstStepCombos) {
+        for (const combo of firstStepCombos) candidateCombos.add(combo)
+    }
+    for (const combo of registry.activeSequenceCombos) {
+        candidateCombos.add(combo)
+    }
+
+    for (const combo of candidateCombos) {
+        const comboEntries = registry.listeners.get(combo)
+        if (!comboEntries) continue
+
+        const orderedEntries = sortEntries(comboEntries)
+
+        for (const item of orderedEntries) {
+            if (!item.isEnabled) continue
+
+            if (!scopeMatch(item.scopes, registry.activeScopes)) {
+                continue
+            }
+
+            if (runtimeOptions.ignoreInputs !== false && !item.except) {
+                const targetEl = event.target as HTMLElement
+                if (targetEl && (IGNORED_TAGS.has(targetEl.tagName) || targetEl.isContentEditable)) {
+                    continue
+                }
+            }
+
+            if (shouldExcept(event, item.except)) {
+                debugLog(runtimeOptions.debug, "Skipped due to except condition:", combo)
+                continue
+            }
+
+            const now = Date.now()
+
+            if (item.progress > 0 && now - item.lastMatchedAt > item.sequenceTimeout) {
+                item.progress = 0
+            }
+
+            const expected = item.parsedSteps[item.progress]
+
+            let matched = false
+
+            if (matchesShortcut(event, expected)) {
+                item.progress += 1
+                item.lastMatchedAt = now
+
+                if (item.progress === item.parsedSteps.length) {
+                    matched = true
+                    item.progress = 0
+                }
+            } else if (item.progress > 0 && matchesShortcut(event, item.parsedSteps[0])) {
+                item.progress = 1
+                item.lastMatchedAt = now
+            } else {
+                item.progress = 0
+            }
+
+            for (const cb of item.attemptCallbacks) {
+                cb(matched, event)
+            }
+
+            if (!matched) continue
+
+            debugLog(runtimeOptions.debug, "MATCHED:", combo)
+
+            if (item.preventDefault) {
+                event.preventDefault()
+            }
+
+            if (item.stopPropagation) {
+                event.stopPropagation()
+            }
+
+            const executeHandler = () => item.userHandler(event)
+
+            if (item.delay > 0) {
+                debugLog(runtimeOptions.debug, "Delaying execution by", item.delay, "ms")
+                setTimeout(executeHandler, item.delay)
+            } else {
+                executeHandler()
+            }
+
+            if (item.stopOnMatch) {
+                break
+            }
+        }
+
+        if (comboEntries.some((entry) => entry.progress > 0)) {
+            registry.activeSequenceCombos.add(combo)
+        } else {
+            registry.activeSequenceCombos.delete(combo)
+        }
+    }
+}
+
+function attachRegistryListener(registry: ShortcutRegistry) {
+    if (registry.listener) return
+
+    const target = registry.options.target ?? (typeof window !== "undefined" ? window : null)
+    if (!target) return
+
+    const eventType = registry.options.eventType ?? "keydown"
+    const listener = (event: KeyboardEvent) => dispatchRegistryEvent(registry, event)
+    target.addEventListener(eventType, listener as EventListener)
+
+    registry.listener = listener
+    registry.listenerTarget = target
+    registry.listenerEventType = eventType
+
+    debugLog(registry.options.debug, "Listener attached")
+}
+
+function detachRegistryListener(registry: ShortcutRegistry) {
+    if (!registry.listener || !registry.listenerTarget) return
+
+    registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener as EventListener)
+    registry.listener = null
+    registry.listenerTarget = null
+    debugLog(registry.options.debug, "Listener detached")
+}
+
 function createBinding(
     state: BuilderState,
     handler: ShortcutHandler,
@@ -244,8 +381,8 @@ function createBinding(
     const debug = options.debug ?? false
     const except = stateExcept ?? handlerOptions.except
 
-    for (const [existingCombo, listener] of registry.listeners.entries()) {
-        for (const existing of listener.entries) {
+    for (const [existingCombo, entries] of registry.listeners.entries()) {
+        for (const existing of entries) {
             if (existingCombo === combo) continue
             const reason = detectConflict(parsedSteps, existing.parsedSteps)
             if (!reason) continue
@@ -283,126 +420,49 @@ function createBinding(
         priority: handlerOptions.priority ?? 0,
     }
 
-    let comboListener = registry.listeners.get(combo)
+    const comboEntries = registry.listeners.get(combo)
+    if (comboEntries) {
+        comboEntries.push(entry)
+    } else {
+        registry.listeners.set(combo, [entry])
 
-    if (!comboListener) {
-        const target = options.target ?? (typeof window !== "undefined" ? window : null)
-        const eventType = options.eventType ?? "keydown"
-
-        const listener = (event: KeyboardEvent) => {
-            const runtimeOptions = registry.options
-            if (runtimeOptions.disabled) return
-            if (runtimeOptions.eventFilter && !runtimeOptions.eventFilter(event)) return
-
-            const current = registry.listeners.get(combo)
-            if (!current) return
-
-            const orderedEntries = sortEntries(current.entries)
-
-            for (const item of orderedEntries) {
-                if (!item.isEnabled) continue
-
-                if (!scopeMatch(item.scopes, registry.activeScopes)) {
-                    continue
-                }
-
-                if (runtimeOptions.ignoreInputs !== false && !item.except) {
-                    const targetEl = event.target as HTMLElement
-                    if (targetEl && (IGNORED_TAGS.has(targetEl.tagName) || targetEl.isContentEditable)) {
-                        continue
-                    }
-                }
-
-                if (shouldExcept(event, item.except)) {
-                    debugLog(debug, "Skipped due to except condition:", combo)
-                    continue
-                }
-
-                const expected = item.parsedSteps[item.progress]
-                const now = Date.now()
-
-                if (item.progress > 0 && now - item.lastMatchedAt > item.sequenceTimeout) {
-                    item.progress = 0
-                }
-
-                let matched = false
-
-                if (matchesShortcut(event, expected)) {
-                    item.progress += 1
-                    item.lastMatchedAt = now
-
-                    if (item.progress === item.parsedSteps.length) {
-                        matched = true
-                        item.progress = 0
-                    }
-                } else if (item.progress > 0 && matchesShortcut(event, item.parsedSteps[0])) {
-                    item.progress = 1
-                    item.lastMatchedAt = now
-                } else {
-                    item.progress = 0
-                }
-
-                item.attemptCallbacks.forEach((cb) => cb(matched, event))
-
-                if (!matched) continue
-
-                debugLog(debug, "MATCHED:", combo, "→", display)
-
-                if (item.preventDefault) {
-                    event.preventDefault()
-                }
-
-                if (item.stopPropagation) {
-                    event.stopPropagation()
-                }
-
-                const executeHandler = () => item.userHandler(event)
-
-                if (item.delay > 0) {
-                    debugLog(debug, "Delaying execution by", item.delay, "ms")
-                    setTimeout(executeHandler, item.delay)
-                } else {
-                    executeHandler()
-                }
-
-                if (item.stopOnMatch) {
-                    break
-                }
-            }
+        const firstStep = canonicalizeParsed(parsedSteps[0])
+        const indexedCombos = registry.firstStepIndex.get(firstStep)
+        if (indexedCombos) {
+            indexedCombos.add(combo)
+        } else {
+            registry.firstStepIndex.set(firstStep, new Set([combo]))
         }
-
-        if (target) {
-            target.addEventListener(eventType, listener as EventListener)
-            debugLog(debug, "Listener attached for:", combo)
-        }
-
-        const unbind = () => {
-            if (target) {
-                target.removeEventListener(eventType, listener as EventListener)
-                registry.listeners.delete(combo)
-                debugLog(debug, "Unregistered:", combo)
-            }
-        }
-
-        comboListener = {
-            listener,
-            entries: [],
-            unbind,
-        }
-
-        registry.listeners.set(combo, comboListener)
     }
 
-    comboListener.entries.push(entry)
+    attachRegistryListener(registry)
 
     const unbindEntry = () => {
-        const current = registry.listeners.get(combo)
-        if (!current) return
+        const currentEntries = registry.listeners.get(combo)
+        if (!currentEntries) return
 
-        current.entries = current.entries.filter((item) => item.id !== entry.id)
+        const nextEntries = currentEntries.filter((item) => item.id !== entry.id)
 
-        if (current.entries.length === 0) {
-            current.unbind()
+        if (nextEntries.length === 0) {
+            registry.listeners.delete(combo)
+            registry.activeSequenceCombos.delete(combo)
+
+            const firstStep = canonicalizeParsed(parsedSteps[0])
+            const indexedCombos = registry.firstStepIndex.get(firstStep)
+            if (indexedCombos) {
+                indexedCombos.delete(combo)
+                if (indexedCombos.size === 0) {
+                    registry.firstStepIndex.delete(firstStep)
+                }
+            }
+
+            debugLog(debug, "Unregistered:", combo)
+        } else {
+            registry.listeners.set(combo, nextEntries)
+        }
+
+        if (registry.listeners.size === 0) {
+            detachRegistryListener(registry)
         }
     }
 
@@ -463,15 +523,20 @@ function createRecorder(options: UseShortcutOptions) {
     }
 }
 
-export function createShortcutBuilder(options: UseShortcutOptions = {}): {
+export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
     builder: IShortcutBuilder
     registry: ShortcutRegistry
 } {
     const registry: ShortcutRegistry = {
         listeners: new Map(),
+        firstStepIndex: new Map(),
+        activeSequenceCombos: new Set(),
         options,
         activeScopes: new Set(normalizeScopes(options.activeScopes)),
         nextId: 1,
+        listener: null,
+        listenerTarget: null,
+        listenerEventType: options.eventType ?? "keydown",
     }
 
     debugLog(options.debug, "Builder created with options:", options)

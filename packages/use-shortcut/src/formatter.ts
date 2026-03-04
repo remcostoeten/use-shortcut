@@ -1,7 +1,7 @@
 import {
     ModifierDisplayOrder,
     ModifierDisplaySymbols,
-    Platform,
+    OS,
     detectPlatform,
     type ModifierKeyType,
     type PlatformType,
@@ -38,7 +38,7 @@ export function formatShortcut(shortcut: string, platform?: PlatformType): strin
     const displayKey = formatKey(parsed.key, targetPlatform)
     parts.push(displayKey)
 
-    const separator = targetPlatform === Platform.MAC ? "" : "+"
+    const separator = targetPlatform === OS.MAC ? "" : "+"
 
     return parts.join(separator)
 }
@@ -49,12 +49,12 @@ function formatKey(key: string, platform: PlatformType): string {
         ArrowDown: "↓",
         ArrowLeft: "←",
         ArrowRight: "→",
-        Enter: platform === Platform.MAC ? "↩" : "Enter",
-        Tab: platform === Platform.MAC ? "⇥" : "Tab",
-        Escape: platform === Platform.MAC ? "⎋" : "Esc",
-        Backspace: platform === Platform.MAC ? "⌫" : "Backspace",
-        Delete: platform === Platform.MAC ? "⌦" : "Del",
-        " ": platform === Platform.MAC ? "␣" : "Space",
+        Enter: platform === OS.MAC ? "↩" : "Enter",
+        Tab: platform === OS.MAC ? "⇥" : "Tab",
+        Escape: platform === OS.MAC ? "⎋" : "Esc",
+        Backspace: platform === OS.MAC ? "⌫" : "Backspace",
+        Delete: platform === OS.MAC ? "⌦" : "Del",
+        " ": platform === OS.MAC ? "␣" : "Space",
         Home: "Home",
         End: "End",
         PageUp: "PgUp",

@@ -1,9 +1,14 @@
+declare const OS: {
+    readonly MAC: "mac";
+    readonly WINDOWS: "windows";
+    readonly LINUX: "linux";
+};
+type PlatformType = (typeof OS)[keyof typeof OS];
 declare const Platform: {
     readonly MAC: "mac";
     readonly WINDOWS: "windows";
     readonly LINUX: "linux";
 };
-type PlatformType = (typeof Platform)[keyof typeof Platform];
 declare function detectPlatform(): PlatformType;
 declare const ModifierKey: {
     readonly META: "meta";
@@ -97,8 +102,6 @@ type HandlerOptions = {
     description?: string;
     /** Disable this specific shortcut */
     disabled?: boolean;
-    /** Limit shortcut to a specific DOM element */
-    scope?: HTMLElement | null;
     /** Conditions to skip the shortcut */
     except?: ExceptPreset | ExceptPreset[] | ExceptPredicate;
     /** Required named scopes that must be active */
@@ -152,13 +155,13 @@ type ModifierChain<Used extends Partial<ModifierFlags>> = {
     mod: Used["cmd"] extends true ? never : ModifierChain<Used & {
         cmd: true;
     }>;
-    key: <K extends ActionKey>(key: K) => KeyChain<Used, K>;
+    key: <K extends ActionKey>(key: K) => KeyChain<K>;
     in: (scopes: ShortcutScope) => ModifierChain<Used>;
 };
 /**
  * Chain state after calling `.key()` - ready to attach a handler
  */
-type KeyChain<Used extends Partial<ModifierFlags>, Key extends string> = {
+type KeyChain<Key extends string> = {
     /** Attach a handler to this shortcut */
     on: (handler: ShortcutHandler, options?: HandlerOptions) => ShortcutResult;
     /** Attach a handler with inline options */
@@ -166,19 +169,19 @@ type KeyChain<Used extends Partial<ModifierFlags>, Key extends string> = {
         handler: ShortcutHandler;
     }) => ShortcutResult;
     /** Add exception conditions before attaching handler */
-    except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => KeyChainWithExcept<Used, Key>;
+    except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => KeyChainWithExcept<Key>;
     /** Add required named scopes */
-    in: (scopes: ShortcutScope) => KeyChain<Used, Key>;
+    in: (scopes: ShortcutScope) => KeyChain<Key>;
     /** Add the next step in a sequence */
-    then: <K extends ActionKey | string>(key: K) => KeyChain<Used, `${Key} ${K}`>;
+    then: <K extends ActionKey | string>(key: K) => KeyChain<`${Key} ${K}`>;
 };
 /**
  * Chain state after calling `.except()` - ready to attach handler
  */
-type KeyChainWithExcept<Used extends Partial<ModifierFlags>, Key extends string> = {
+type KeyChainWithExcept<Key extends string> = {
     on: (handler: ShortcutHandler, options?: Omit<HandlerOptions, "except">) => ShortcutResult;
-    in: (scopes: ShortcutScope) => KeyChainWithExcept<Used, Key>;
-    then: <K extends ActionKey | string>(key: K) => KeyChainWithExcept<Used, `${Key} ${K}`>;
+    in: (scopes: ShortcutScope) => KeyChainWithExcept<Key>;
+    then: <K extends ActionKey | string>(key: K) => KeyChainWithExcept<`${Key} ${K}`>;
 };
 type ShortcutRecordingOptions = {
     target?: HTMLElement | Window | null;
@@ -204,7 +207,7 @@ type ShortcutBuilder = ModifierChain<EmptyModifiers> & {
     mod: ModifierChain<{
         cmd: true;
     }>;
-    key: <K extends ActionKey>(key: K) => KeyChain<EmptyModifiers, K>;
+    key: <K extends ActionKey>(key: K) => KeyChain<K>;
     /** Set required scopes for upcoming chain calls */
     in: (scopes: ShortcutScope) => ShortcutBuilder;
     /** Update active scopes at runtime */
@@ -347,20 +350,7 @@ declare function useShortcut(options?: UseShortcutOptions): ShortcutBuilder;
  * Bulk registration helper for shortcut maps.
  */
 declare function useShortcutMap<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>;
-/**
- * Create a shortcut builder for non-React usage
- *
- * Unlike `useShortcut`, this does not auto-cleanup - you must call `.unbind()` manually.
- *
- * @param options - Configuration options
- * @returns A chainable shortcut builder
- */
-declare function createShortcut(options?: UseShortcutOptions): ShortcutBuilder;
-/**
- * Bulk registration helper for non-React usage.
- */
-declare function createShortcutMap<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>;
 declare function createShortcutGroup(): ShortcutGroup;
 declare function useShortcutGroup(): ShortcutGroup;
 
-export { type ActionKey, type AlphaKey, type ExceptPredicate, type ExceptPreset, type FunctionKey, type HandlerOptions, type KeyChain, ModifierAliases, type ModifierChain, ModifierDisplayOrder, ModifierDisplaySymbols, type ModifierFlags, ModifierKey, type ModifierName, type ModifierState, type NavigationKey, type NumericKey, type ParsedShortcut, Platform, type ShortcutBuilder, type ShortcutConflict, type ShortcutGroup, type ShortcutHandler, type ShortcutMap, type ShortcutMapEntry, type ShortcutMapResult, type ShortcutRecordingOptions, type ShortcutResult, type ShortcutScope, type SpecialKey, SpecialKeyMap, type SymbolKey, type UseShortcutOptions, createShortcut, createShortcutGroup, createShortcutMap, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, registerShortcutMap, useShortcut, useShortcutGroup, useShortcutMap };
+export { type ActionKey, type AlphaKey, type ExceptPredicate, type ExceptPreset, type FunctionKey, type HandlerOptions, type KeyChain, ModifierAliases, type ModifierChain, ModifierDisplayOrder, ModifierDisplaySymbols, type ModifierFlags, ModifierKey, type ModifierName, type ModifierState, type NavigationKey, type NumericKey, type ParsedShortcut, Platform, type ShortcutBuilder, type ShortcutConflict, type ShortcutGroup, type ShortcutHandler, type ShortcutMap, type ShortcutMapEntry, type ShortcutMapResult, type ShortcutRecordingOptions, type ShortcutResult, type ShortcutScope, type SpecialKey, SpecialKeyMap, type SymbolKey, type UseShortcutOptions, createShortcutGroup, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, registerShortcutMap, useShortcut, useShortcutGroup, useShortcutMap };

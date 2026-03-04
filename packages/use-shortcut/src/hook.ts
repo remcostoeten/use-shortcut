@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useRef, useMemo } from "react"
-import { createShortcutBuilder } from "./builder"
+import { useEffect, useRef, useMemo, useState } from "react"
+import { _createShortcutBuilder } from "./builder"
 import type {
     ShortcutBuilder,
     UseShortcutOptions,
@@ -10,7 +10,57 @@ import type {
     ShortcutMapEntry,
     ShortcutGroup,
     ShortcutResult,
+    ShortcutHandler,
+    HandlerOptions,
+    ActionKey,
 } from "./types"
+
+type ShortcutMapSequenceChain = {
+    then: (step: string) => ShortcutMapSequenceChain
+    on: (handler: ShortcutHandler, options?: HandlerOptions) => ShortcutResult
+}
+
+type ShortcutMapChain = {
+    ctrl: ShortcutMapChain
+    shift: ShortcutMapChain
+    alt: ShortcutMapChain
+    cmd: ShortcutMapChain
+    mod: ShortcutMapChain
+    key: (key: ActionKey) => ShortcutMapSequenceChain
+}
+
+function areShortcutMapKeysEqual(a: ShortcutMapEntry["keys"], b: ShortcutMapEntry["keys"]): boolean {
+    if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) return false
+        for (let i = 0; i < a.length; i += 1) {
+            if (a[i] !== b[i]) return false
+        }
+        return true
+    }
+
+    if (!Array.isArray(a) && !Array.isArray(b)) {
+        return a === b
+    }
+
+    return false
+}
+
+function areShortcutMapsEquivalent(a: ShortcutMap, b: ShortcutMap): boolean {
+    const aKeys = Object.keys(a)
+    const bKeys = Object.keys(b)
+    if (aKeys.length !== bKeys.length) return false
+
+    for (const key of aKeys) {
+        const aEntry = a[key]
+        const bEntry = b[key]
+        if (!bEntry) return false
+        if (!areShortcutMapKeysEqual(aEntry.keys, bEntry.keys)) return false
+        if (aEntry.handler !== bEntry.handler) return false
+        if (aEntry.options !== bEntry.options) return false
+    }
+
+    return true
+}
 
 function normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
     if (Array.isArray(keys)) {
@@ -31,7 +81,7 @@ function normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
     return [trimmed]
 }
 
-function applyStep(builder: any, step: string): any {
+function applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequenceChain {
     const tokens = step
         .toLowerCase()
         .split("+")
@@ -74,7 +124,7 @@ function applyStep(builder: any, step: string): any {
         throw new Error(`[useShortcutMap] Unsupported modifier token "${token}" in step "${step}"`)
     }
 
-    return chain.key(key)
+    return chain.key(key as ActionKey)
 }
 
 export function registerShortcutMap<T extends ShortcutMap>(
@@ -114,7 +164,7 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
     optionsRef.current = options
 
     const { builder, registry } = useMemo(() => {
-        return createShortcutBuilder(optionsRef.current)
+        return _createShortcutBuilder(optionsRef.current)
     }, [])
 
     useEffect(() => {
@@ -127,12 +177,19 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
 
             registry.activeScopes = new Set(scopes.map((scope) => scope.trim()).filter(Boolean))
         }
-    })
+    }, [registry, options])
 
     useEffect(() => {
         return () => {
-            registry.listeners.forEach((entry) => entry.unbind())
             registry.listeners.clear()
+            registry.firstStepIndex.clear()
+            registry.activeSequenceCombos.clear()
+
+            if (registry.listener && registry.listenerTarget) {
+                registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener as EventListener)
+                registry.listener = null
+                registry.listenerTarget = null
+            }
         }
     }, [registry])
 
@@ -147,31 +204,26 @@ export function useShortcutMap<T extends ShortcutMap>(
     options: UseShortcutOptions = {},
 ): ShortcutMapResult<T> {
     const $ = useShortcut(options)
-    return registerShortcutMap($, shortcutMap)
-}
+    const stableShortcutMapRef = useRef(shortcutMap)
+    if (!areShortcutMapsEquivalent(stableShortcutMapRef.current, shortcutMap)) {
+        stableShortcutMapRef.current = shortcutMap
+    }
 
-/**
- * Create a shortcut builder for non-React usage
- *
- * Unlike `useShortcut`, this does not auto-cleanup - you must call `.unbind()` manually.
- *
- * @param options - Configuration options
- * @returns A chainable shortcut builder
- */
-export function createShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
-    const { builder } = createShortcutBuilder(options)
-    return builder as ShortcutBuilder
-}
+    const stableShortcutMap = stableShortcutMapRef.current
+    const [results, setResults] = useState<ShortcutMapResult<T>>({} as ShortcutMapResult<T>)
 
-/**
- * Bulk registration helper for non-React usage.
- */
-export function createShortcutMap<T extends ShortcutMap>(
-    shortcutMap: T,
-    options: UseShortcutOptions = {},
-): ShortcutMapResult<T> {
-    const builder = createShortcut(options)
-    return registerShortcutMap(builder, shortcutMap)
+    useEffect(() => {
+        const registrations = registerShortcutMap($, stableShortcutMap)
+        setResults(registrations)
+
+        return () => {
+            for (const result of Object.values(registrations)) {
+                result.unbind()
+            }
+        }
+    }, [$, stableShortcutMap])
+
+    return results
 }
 
 export function createShortcutGroup(): ShortcutGroup {

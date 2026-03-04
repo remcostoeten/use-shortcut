@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
-import { createShortcut, createShortcutMap, createShortcutGroup } from "../hook"
+import { _createShortcutBuilder } from "../builder"
+import { registerShortcutMap, createShortcutGroup } from "../hook"
+import type { ShortcutBuilder, UseShortcutOptions } from "../types"
 
 function dispatchKey(key: string, options: KeyboardEventInit = {}) {
     window.dispatchEvent(
@@ -12,13 +14,22 @@ function dispatchKey(key: string, options: KeyboardEventInit = {}) {
     )
 }
 
+function createTestShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
+    const { builder } = _createShortcutBuilder({
+        target: window,
+        ...options,
+    })
+
+    return builder as ShortcutBuilder
+}
+
 describe("advanced shortcut features", () => {
     beforeEach(() => {
         document.body.innerHTML = ""
     })
 
     it("supports multi-key sequences with .then()", () => {
-        const $ = createShortcut({ target: window, ignoreInputs: false })
+        const $ = createTestShortcut({ ignoreInputs: false })
         const handler = vi.fn()
 
         $.key("g").then("d").on(handler)
@@ -31,7 +42,7 @@ describe("advanced shortcut features", () => {
     })
 
     it("supports named scopes with runtime activation", () => {
-        const $ = createShortcut({ target: window, ignoreInputs: false, activeScopes: "navigation" })
+        const $ = createTestShortcut({ ignoreInputs: false, activeScopes: "navigation" })
         const handler = vi.fn()
 
         $.in("editor").mod.key("s").on(handler)
@@ -46,7 +57,7 @@ describe("advanced shortcut features", () => {
 
     it("reports sequence overlap conflicts", () => {
         const onConflict = vi.fn()
-        const $ = createShortcut({ target: window, ignoreInputs: false, onConflict })
+        const $ = createTestShortcut({ ignoreInputs: false, onConflict })
 
         $.key("g").on(() => {})
         $.key("g").then("d").on(() => {})
@@ -55,16 +66,17 @@ describe("advanced shortcut features", () => {
         expect(onConflict.mock.calls[0][0].reason).toBe("sequence-prefix")
     })
 
-    it("registers shortcuts in bulk with createShortcutMap", () => {
+    it("registers shortcuts in bulk with registerShortcutMap", () => {
         const save = vi.fn()
         const undo = vi.fn()
+        const $ = createTestShortcut({ ignoreInputs: false })
 
-        createShortcutMap(
+        registerShortcutMap(
+            $,
             {
                 save: { keys: "mod+s", handler: save },
                 undo: { keys: "mod+z", handler: undo },
             },
-            { target: window, ignoreInputs: false },
         )
 
         dispatchKey("s", { ctrlKey: true })
@@ -75,7 +87,7 @@ describe("advanced shortcut features", () => {
     })
 
     it("records the next key combo", async () => {
-        const $ = createShortcut({ target: window })
+        const $ = createTestShortcut()
 
         const recordPromise = $.record({ timeoutMs: 1000 })
         dispatchKey("k", { ctrlKey: true })
@@ -83,8 +95,28 @@ describe("advanced shortcut features", () => {
         await expect(recordPromise).resolves.toBe("ctrl+k")
     })
 
+    it("records space key combos as parseable tokens", async () => {
+        const $ = createTestShortcut()
+
+        const recordPromise = $.record({ timeoutMs: 1000 })
+        dispatchKey(" ", { ctrlKey: true })
+
+        await expect(recordPromise).resolves.toBe("ctrl+space")
+    })
+
+    it("matches ctrl+space shortcuts", () => {
+        const $ = createTestShortcut({ ignoreInputs: false })
+        const handler = vi.fn()
+
+        $.mod.key("space").on(handler)
+
+        dispatchKey(" ", { ctrlKey: true })
+
+        expect(handler).toHaveBeenCalledTimes(1)
+    })
+
     it("respects priority and stopOnMatch for overlapping combos", () => {
-        const $ = createShortcut({ target: window, ignoreInputs: false })
+        const $ = createTestShortcut({ ignoreInputs: false })
         const primary = vi.fn()
         const secondary = vi.fn()
 
@@ -99,8 +131,7 @@ describe("advanced shortcut features", () => {
 
     it("applies global eventFilter before handlers", () => {
         const handler = vi.fn()
-        const $ = createShortcut({
-            target: window,
+        const $ = createTestShortcut({
             ignoreInputs: false,
             eventFilter: (event) => event.key !== "x",
         })
@@ -115,7 +146,7 @@ describe("advanced shortcut features", () => {
     })
 
     it("supports shortcut groups for cleanup", () => {
-        const $ = createShortcut({ target: window, ignoreInputs: false })
+        const $ = createTestShortcut({ ignoreInputs: false })
         const group = createShortcutGroup()
         const handler = vi.fn()
 

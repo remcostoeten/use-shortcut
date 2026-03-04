@@ -6,7 +6,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 // cli/templates.ts
-function getArchitectureTemplates(framework) {
+function _getArchitectureTemplates(framework) {
   const integrationSection = framework === "next" ? `## Next.js Integration
 
 1. Create a client provider wrapper at \`app/shortcut-provider.tsx\` and render \`<ShortcutProvider />\` there.
@@ -499,7 +499,7 @@ Copied ${written} files to:`, COLORS.green);
 }
 function scaffoldArchitecture(framework, targetDir = "src", dir = "shortcuts", force = false) {
   const destPath = getScaffoldDestPath(targetDir, dir);
-  const templates = getArchitectureTemplates(framework);
+  const templates = _getArchitectureTemplates(framework);
   log("\nuse-shortcut CLI\n", COLORS.cyan);
   log(`Scaffolding ${framework} architecture in ${destPath}
 `, COLORS.dim);

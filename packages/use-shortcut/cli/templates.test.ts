@@ -1,11 +1,11 @@
 // @vitest-environment node
 
 import { describe, expect, it } from "vitest"
-import { getArchitectureTemplates } from "./templates"
+import { _getArchitectureTemplates } from "./templates"
 
 describe("architecture scaffold templates", () => {
     it("returns the full template set", () => {
-        const templates = getArchitectureTemplates("next")
+        const templates = _getArchitectureTemplates("next")
 
         expect(Object.keys(templates).sort()).toEqual([
             "README.md",
@@ -20,7 +20,7 @@ describe("architecture scaffold templates", () => {
     })
 
     it("includes lifecycle-safe registration cleanup in provider", () => {
-        const templates = getArchitectureTemplates("next")
+        const templates = _getArchitectureTemplates("next")
         const provider = templates["provider.tsx"]
 
         expect(provider).toContain("registerShortcutMap")
@@ -28,8 +28,8 @@ describe("architecture scaffold templates", () => {
     })
 
     it("contains framework-specific integration guidance", () => {
-        const nextReadme = getArchitectureTemplates("next")["README.md"]
-        const reactReadme = getArchitectureTemplates("react")["README.md"]
+        const nextReadme = _getArchitectureTemplates("next")["README.md"]
+        const reactReadme = _getArchitectureTemplates("react")["README.md"]
 
         expect(nextReadme).toContain("Next.js Integration")
         expect(nextReadme).toContain("app/layout.tsx")

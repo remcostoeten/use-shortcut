@@ -1,6 +1,10 @@
 import { ModifierAliases, SpecialKeyMap, detectPlatform, Platform } from "./constants"
 import type { ModifierState, ParsedShortcut } from "./types"
 
+function normalizeKeyToken(key: string): string {
+    return key === " " ? "space" : key.toLowerCase()
+}
+
 /**
  * Parse a shortcut string into its components
  *
@@ -93,7 +97,7 @@ export function getModifiersFromEvent(event: KeyboardEvent): ModifierState {
  */
 export function matchesShortcut(event: KeyboardEvent, parsed: ParsedShortcut): boolean {
     const eventModifiers = getModifiersFromEvent(event)
-    const eventKey = event.key.toLowerCase()
+    const eventKey = normalizeKeyToken(event.key)
 
     const modifiersMatch =
         eventModifiers.meta === parsed.modifiers.meta &&
@@ -101,7 +105,7 @@ export function matchesShortcut(event: KeyboardEvent, parsed: ParsedShortcut): b
         eventModifiers.alt === parsed.modifiers.alt &&
         eventModifiers.shift === parsed.modifiers.shift
 
-    const keyMatches = eventKey === parsed.key.toLowerCase()
+    const keyMatches = eventKey === normalizeKeyToken(parsed.key)
 
     return modifiersMatch && keyMatches
 }
@@ -116,4 +120,3 @@ export function matchesShortcut(event: KeyboardEvent, parsed: ParsedShortcut): b
 export function matchesAnyShortcut(event: KeyboardEvent, parsedShortcuts: ParsedShortcut[]): boolean {
     return parsedShortcuts.some((parsed) => matchesShortcut(event, parsed))
 }
-
