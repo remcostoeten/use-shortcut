@@ -272,12 +272,13 @@ function dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent)
                 continue
             }
 
-            const expected = item.parsedSteps[item.progress]
             const now = Date.now()
 
             if (item.progress > 0 && now - item.lastMatchedAt > item.sequenceTimeout) {
                 item.progress = 0
             }
+
+            const expected = item.parsedSteps[item.progress]
 
             let matched = false
 
