@@ -104,6 +104,17 @@ describe("advanced shortcut features", () => {
         await expect(recordPromise).resolves.toBe("ctrl+space")
     })
 
+    it("matches ctrl+space shortcuts", () => {
+        const $ = createTestShortcut({ ignoreInputs: false })
+        const handler = vi.fn()
+
+        $.mod.key("space").on(handler)
+
+        dispatchKey(" ", { ctrlKey: true })
+
+        expect(handler).toHaveBeenCalledTimes(1)
+    })
+
     it("respects priority and stopOnMatch for overlapping combos", () => {
         const $ = createTestShortcut({ ignoreInputs: false })
         const primary = vi.fn()

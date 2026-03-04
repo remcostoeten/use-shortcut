@@ -4,7 +4,6 @@ WIP keyboard shortcut library for React with a chainable API.
 
 ## Status
 
-- Current package version: `1.3.0`
 - Focus right now: runtime architecture and DX refinement
 - Documentation scope: feature/status overview only (full API docs will be expanded later)
 
@@ -20,6 +19,7 @@ WIP keyboard shortcut library for React with a chainable API.
 - Shortcut maps:
   - `registerShortcutMap`
   - `useShortcutMap`
+  - Prefer a stable `shortcutMap` reference in React (`useMemo`) for best performance
 - Recording mode: `$.record({ timeoutMs })`
 - Conflict detection (`exact`, `sequence-prefix`)
 - Priority ordering and `stopOnMatch`

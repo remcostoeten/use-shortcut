@@ -150,13 +150,17 @@ function debugLog(debug: boolean | undefined, ...args: unknown[]) {
     }
 }
 
+function normalizeKeyToken(key: string): string {
+    return key === " " ? "space" : key.toLowerCase()
+}
+
 function canonicalizeParsed(parsed: ParsedShortcut): string {
     const modifiers: string[] = []
     if (parsed.modifiers.ctrl) modifiers.push("ctrl")
     if (parsed.modifiers.alt) modifiers.push("alt")
     if (parsed.modifiers.shift) modifiers.push("shift")
     if (parsed.modifiers.meta) modifiers.push("cmd")
-    return [...modifiers, parsed.key.toLowerCase()].join("+")
+    return [...modifiers, normalizeKeyToken(parsed.key)].join("+")
 }
 
 function isPureModifier(event: KeyboardEvent): boolean {
@@ -171,7 +175,7 @@ function eventToCombo(event: KeyboardEvent): string {
     if (event.shiftKey) modifiers.push("shift")
     if (event.metaKey) modifiers.push("cmd")
 
-    const key = event.key === " " ? "space" : event.key.toLowerCase()
+    const key = normalizeKeyToken(event.key)
     return [...modifiers, key].join("+")
 }
 
@@ -181,7 +185,8 @@ function eventToMatchStep(event: KeyboardEvent): string {
     if (event.altKey) modifiers.push("alt")
     if (event.shiftKey) modifiers.push("shift")
     if (event.metaKey) modifiers.push("cmd")
-    return [...modifiers, event.key.toLowerCase()].join("+")
+    const key = normalizeKeyToken(event.key)
+    return [...modifiers, key].join("+")
 }
 
 function isPrefix(a: ParsedShortcut[], b: ParsedShortcut[]): boolean {
@@ -291,7 +296,9 @@ function dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent)
                 item.progress = 0
             }
 
-            item.attemptCallbacks.forEach((cb) => cb(matched, event))
+            for (const cb of item.attemptCallbacks) {
+                cb(matched, event)
+            }
 
             if (!matched) continue
 

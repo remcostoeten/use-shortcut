@@ -29,6 +29,39 @@ type ShortcutMapChain = {
     key: (key: ActionKey) => ShortcutMapSequenceChain
 }
 
+function areShortcutMapKeysEqual(a: ShortcutMapEntry["keys"], b: ShortcutMapEntry["keys"]): boolean {
+    if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) return false
+        for (let i = 0; i < a.length; i += 1) {
+            if (a[i] !== b[i]) return false
+        }
+        return true
+    }
+
+    if (!Array.isArray(a) && !Array.isArray(b)) {
+        return a === b
+    }
+
+    return false
+}
+
+function areShortcutMapsEquivalent(a: ShortcutMap, b: ShortcutMap): boolean {
+    const aKeys = Object.keys(a)
+    const bKeys = Object.keys(b)
+    if (aKeys.length !== bKeys.length) return false
+
+    for (const key of aKeys) {
+        const aEntry = a[key]
+        const bEntry = b[key]
+        if (!bEntry) return false
+        if (!areShortcutMapKeysEqual(aEntry.keys, bEntry.keys)) return false
+        if (aEntry.handler !== bEntry.handler) return false
+        if (aEntry.options !== bEntry.options) return false
+    }
+
+    return true
+}
+
 function normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
     if (Array.isArray(keys)) {
         return keys.map((key) => key.trim()).filter(Boolean)
@@ -171,10 +204,16 @@ export function useShortcutMap<T extends ShortcutMap>(
     options: UseShortcutOptions = {},
 ): ShortcutMapResult<T> {
     const $ = useShortcut(options)
+    const stableShortcutMapRef = useRef(shortcutMap)
+    if (!areShortcutMapsEquivalent(stableShortcutMapRef.current, shortcutMap)) {
+        stableShortcutMapRef.current = shortcutMap
+    }
+
+    const stableShortcutMap = stableShortcutMapRef.current
     const [results, setResults] = useState<ShortcutMapResult<T>>({} as ShortcutMapResult<T>)
 
     useEffect(() => {
-        const registrations = registerShortcutMap($, shortcutMap)
+        const registrations = registerShortcutMap($, stableShortcutMap)
         setResults(registrations)
 
         return () => {
@@ -182,7 +221,7 @@ export function useShortcutMap<T extends ShortcutMap>(
                 result.unbind()
             }
         }
-    }, [$, shortcutMap])
+    }, [$, stableShortcutMap])
 
     return results
 }
