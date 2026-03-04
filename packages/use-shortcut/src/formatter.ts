@@ -73,7 +73,7 @@ function formatKey(key: string, platform: PlatformType): string {
  * @example
  * ```ts
  * getModifierSymbols("mac") // { meta: "⌘", ctrl: "⌃", alt: "⌥", shift: "⇧" }
- * ```
+ * ```-
  */
 export function getModifierSymbols(platform?: PlatformType): Record<ModifierKeyType, string> {
     const targetPlatform = platform ?? detectPlatform()

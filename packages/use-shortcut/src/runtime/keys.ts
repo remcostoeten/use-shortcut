@@ -2,19 +2,21 @@ import { detectPlatform, ModifierDisplayOrder, ModifierKey } from "../constants"
 import { formatShortcut } from "../formatter"
 import type { ModifierFlags, ParsedShortcut } from "../types"
 
-export function _getActiveModifierTokens(modifiers: Partial<ModifierFlags>): string[] {
+export function _getActiveModifierTokens(
+    modifiers: Partial<ModifierFlags>
+): string[] {
     const platform = detectPlatform()
     const order = ModifierDisplayOrder[platform]
 
     return order
-        .filter((key) => {
+        .filter(key => {
             if (key === ModifierKey.CTRL) return modifiers.ctrl
             if (key === ModifierKey.ALT) return modifiers.alt
             if (key === ModifierKey.SHIFT) return modifiers.shift
             if (key === ModifierKey.META) return modifiers.cmd
             return false
         })
-        .map((key) => {
+        .map(key => {
             if (key === ModifierKey.CTRL) return "ctrl"
             if (key === ModifierKey.ALT) return "alt"
             if (key === ModifierKey.SHIFT) return "shift"
@@ -23,13 +25,16 @@ export function _getActiveModifierTokens(modifiers: Partial<ModifierFlags>): str
         })
 }
 
-export function _buildComboString(modifiers: Partial<ModifierFlags>, key: string): string {
+export function _buildComboString(
+    modifiers: Partial<ModifierFlags>,
+    key: string
+): string {
     const tokens = _getActiveModifierTokens(modifiers)
     return [...tokens, key].join("+")
 }
 
 export function _formatSequenceDisplay(steps: string[]): string {
-    return steps.map((step) => formatShortcut(step)).join(" then ")
+    return steps.map(step => formatShortcut(step)).join(" then ")
 }
 
 export function _canonicalizeParsed(parsed: ParsedShortcut): string {
@@ -38,7 +43,11 @@ export function _canonicalizeParsed(parsed: ParsedShortcut): string {
     if (parsed.modifiers.alt) modifiers.push("alt")
     if (parsed.modifiers.shift) modifiers.push("shift")
     if (parsed.modifiers.meta) modifiers.push("cmd")
-    return [...modifiers, parsed.key.toLowerCase()].join("+")
+    const key =
+        parsed.key === " " || parsed.key === "Spacebar"
+            ? "space"
+            : parsed.key.toLowerCase()
+    return [...modifiers, key].join("+")
 }
 
 export function _eventToCombo(event: KeyboardEvent): string {
@@ -58,5 +67,9 @@ export function _eventToMatchStep(event: KeyboardEvent): string {
     if (event.altKey) modifiers.push("alt")
     if (event.shiftKey) modifiers.push("shift")
     if (event.metaKey) modifiers.push("cmd")
-    return [...modifiers, event.key.toLowerCase()].join("+")
+    const key =
+        event.key === " " || event.key === "Spacebar"
+            ? "space"
+            : event.key.toLowerCase()
+    return [...modifiers, key].join("+")
 }

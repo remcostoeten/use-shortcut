@@ -3,28 +3,46 @@ import type { ExceptPreset, ExceptPredicate, ShortcutScope } from "../types"
 export const _IGNORED_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"])
 
 export const _EXCEPT_PREDICATES: Record<ExceptPreset, ExceptPredicate> = {
-    input: (e) => {
-        const target = e.target as HTMLElement
+    input: e => {
+        if (!(e.target instanceof HTMLElement)) return false
+        const target = e.target
         return _IGNORED_TAGS.has(target.tagName)
     },
-    editable: (e) => {
-        const target = e.target as HTMLElement
+    editable: e => {
+        if (!(e.target instanceof HTMLElement)) return false
+        const target = e.target
         return target.isContentEditable
     },
-    typing: (e) => {
-        const target = e.target as HTMLElement
+    typing: e => {
+        if (!(e.target instanceof HTMLElement)) return false
+        const target = e.target
         return _IGNORED_TAGS.has(target.tagName) || target.isContentEditable
     },
     modal: () => {
-        return document.querySelector('[data-modal="true"], [role="dialog"]') !== null
+        if (
+            typeof document === "undefined" ||
+            typeof document.querySelector !== "function"
+        )
+            return false
+        return (
+            document.querySelector('[data-modal="true"], [role="dialog"]') !==
+            null
+        )
     },
-    disabled: (e) => {
-        const target = e.target as HTMLElement
-        return target.hasAttribute("disabled") || target.getAttribute("aria-disabled") === "true"
-    },
+    disabled: e => {
+        if (!(e.target instanceof HTMLElement)) return false
+        const target = e.target
+        return (
+            target.hasAttribute("disabled") ||
+            target.getAttribute("aria-disabled") === "true"
+        )
+    }
 }
 
-export function _shouldExcept(event: KeyboardEvent, except?: ExceptPreset | ExceptPreset[] | ExceptPredicate): boolean {
+export function _shouldExcept(
+    event: KeyboardEvent,
+    except?: ExceptPreset | ExceptPreset[] | ExceptPredicate
+): boolean {
     if (!except) return false
 
     if (typeof except === "function") {
@@ -32,7 +50,7 @@ export function _shouldExcept(event: KeyboardEvent, except?: ExceptPreset | Exce
     }
 
     if (Array.isArray(except)) {
-        return except.some((preset) => _EXCEPT_PREDICATES[preset]?.(event))
+        return except.some(preset => _EXCEPT_PREDICATES[preset]?.(event))
     }
 
     return _EXCEPT_PREDICATES[except]?.(event) ?? false
@@ -41,11 +59,14 @@ export function _shouldExcept(event: KeyboardEvent, except?: ExceptPreset | Exce
 export function _normalizeScopes(scopes?: ShortcutScope): string[] {
     if (!scopes) return []
     return (Array.isArray(scopes) ? scopes : [scopes])
-        .map((scope) => scope.trim())
+        .map(scope => scope.trim())
         .filter(Boolean)
 }
 
-export function _scopeMatch(requiredScopes: Set<string>, activeScopes: Set<string>): boolean {
+export function _scopeMatch(
+    requiredScopes: Set<string>,
+    activeScopes: Set<string>
+): boolean {
     if (requiredScopes.size === 0) return true
     for (const required of requiredScopes) {
         if (activeScopes.has(required)) return true
@@ -55,6 +76,7 @@ export function _scopeMatch(requiredScopes: Set<string>, activeScopes: Set<strin
 
 export function _isPureModifier(event: KeyboardEvent): boolean {
     const key = event.key.toLowerCase()
-    return key === "shift" || key === "control" || key === "alt" || key === "meta"
+    return (
+        key === "shift" || key === "control" || key === "alt" || key === "meta"
+    )
 }
-
