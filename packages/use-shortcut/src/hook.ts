@@ -187,30 +187,6 @@ export function useShortcutMap<T extends ShortcutMap>(
     return results
 }
 
-/**
- * Create a shortcut builder for non-React usage
- *
- * Unlike `useShortcut`, this does not auto-cleanup - you must call `.unbind()` manually.
- *
- * @param options - Configuration options
- * @returns A chainable shortcut builder
- */
-export function createShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
-    const { builder } = _createShortcutBuilder(options)
-    return builder as ShortcutBuilder
-}
-
-/**
- * Bulk registration helper for non-React usage.
- */
-export function createShortcutMap<T extends ShortcutMap>(
-    shortcutMap: T,
-    options: UseShortcutOptions = {},
-): ShortcutMapResult<T> {
-    const builder = createShortcut(options)
-    return registerShortcutMap(builder, shortcutMap)
-}
-
 export function createShortcutGroup(): ShortcutGroup {
     const results: ShortcutResult[] = []
 

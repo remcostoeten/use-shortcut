@@ -1,9 +1,14 @@
+declare const OS: {
+    readonly MAC: "mac";
+    readonly WINDOWS: "windows";
+    readonly LINUX: "linux";
+};
+type PlatformType = (typeof OS)[keyof typeof OS];
 declare const Platform: {
     readonly MAC: "mac";
     readonly WINDOWS: "windows";
     readonly LINUX: "linux";
 };
-type PlatformType = (typeof Platform)[keyof typeof Platform];
 declare function detectPlatform(): PlatformType;
 declare const ModifierKey: {
     readonly META: "meta";
@@ -345,20 +350,7 @@ declare function useShortcut(options?: UseShortcutOptions): ShortcutBuilder;
  * Bulk registration helper for shortcut maps.
  */
 declare function useShortcutMap<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>;
-/**
- * Create a shortcut builder for non-React usage
- *
- * Unlike `useShortcut`, this does not auto-cleanup - you must call `.unbind()` manually.
- *
- * @param options - Configuration options
- * @returns A chainable shortcut builder
- */
-declare function createShortcut(options?: UseShortcutOptions): ShortcutBuilder;
-/**
- * Bulk registration helper for non-React usage.
- */
-declare function createShortcutMap<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>;
 declare function createShortcutGroup(): ShortcutGroup;
 declare function useShortcutGroup(): ShortcutGroup;
 
-export { type ActionKey, type AlphaKey, type ExceptPredicate, type ExceptPreset, type FunctionKey, type HandlerOptions, type KeyChain, ModifierAliases, type ModifierChain, ModifierDisplayOrder, ModifierDisplaySymbols, type ModifierFlags, ModifierKey, type ModifierName, type ModifierState, type NavigationKey, type NumericKey, type ParsedShortcut, Platform, type ShortcutBuilder, type ShortcutConflict, type ShortcutGroup, type ShortcutHandler, type ShortcutMap, type ShortcutMapEntry, type ShortcutMapResult, type ShortcutRecordingOptions, type ShortcutResult, type ShortcutScope, type SpecialKey, SpecialKeyMap, type SymbolKey, type UseShortcutOptions, createShortcut, createShortcutGroup, createShortcutMap, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, registerShortcutMap, useShortcut, useShortcutGroup, useShortcutMap };
+export { type ActionKey, type AlphaKey, type ExceptPredicate, type ExceptPreset, type FunctionKey, type HandlerOptions, type KeyChain, ModifierAliases, type ModifierChain, ModifierDisplayOrder, ModifierDisplaySymbols, type ModifierFlags, ModifierKey, type ModifierName, type ModifierState, type NavigationKey, type NumericKey, type ParsedShortcut, Platform, type ShortcutBuilder, type ShortcutConflict, type ShortcutGroup, type ShortcutHandler, type ShortcutMap, type ShortcutMapEntry, type ShortcutMapResult, type ShortcutRecordingOptions, type ShortcutResult, type ShortcutScope, type SpecialKey, SpecialKeyMap, type SymbolKey, type UseShortcutOptions, createShortcutGroup, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, registerShortcutMap, useShortcut, useShortcutGroup, useShortcutMap };

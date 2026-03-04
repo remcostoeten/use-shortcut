@@ -1,17 +1,26 @@
 import { useRef, useMemo, useEffect, useState } from 'react';
 
 // src/constants.ts
-var Platform = {
+var OS = {
   MAC: "mac",
   WINDOWS: "windows",
   LINUX: "linux"
 };
+var Platform = OS;
 function detectPlatform() {
-  if (typeof navigator === "undefined") return Platform.WINDOWS;
-  const platform = navigator.platform.toLowerCase();
-  if (platform.includes("mac")) return Platform.MAC;
-  if (platform.includes("linux")) return Platform.LINUX;
-  return Platform.WINDOWS;
+  if (typeof navigator === "undefined") return OS.WINDOWS;
+  const uaPlatform = navigator.userAgentData?.platform?.toLowerCase();
+  const platform = (uaPlatform ?? navigator.platform).toLowerCase();
+  if (platform.includes("mac") || platform.includes("iphone") || platform.includes("ipad") || platform.includes("ipod")) {
+    return OS.MAC;
+  }
+  if (platform.includes("linux") || platform.includes("android")) {
+    return OS.LINUX;
+  }
+  if (platform.includes("win")) {
+    return OS.WINDOWS;
+  }
+  return OS.WINDOWS;
 }
 var ModifierKey = {
   META: "meta",
@@ -81,19 +90,19 @@ var SpecialKeyMap = {
   closebracket: "]"
 };
 var ModifierDisplaySymbols = {
-  [Platform.MAC]: {
+  [OS.MAC]: {
     [ModifierKey.META]: "\u2318",
     [ModifierKey.CTRL]: "\u2303",
     [ModifierKey.ALT]: "\u2325",
     [ModifierKey.SHIFT]: "\u21E7"
   },
-  [Platform.WINDOWS]: {
+  [OS.WINDOWS]: {
     [ModifierKey.META]: "Ctrl",
     [ModifierKey.CTRL]: "Ctrl",
     [ModifierKey.ALT]: "Alt",
     [ModifierKey.SHIFT]: "Shift"
   },
-  [Platform.LINUX]: {
+  [OS.LINUX]: {
     [ModifierKey.META]: "Super",
     [ModifierKey.CTRL]: "Ctrl",
     [ModifierKey.ALT]: "Alt",
@@ -101,9 +110,9 @@ var ModifierDisplaySymbols = {
   }
 };
 var ModifierDisplayOrder = {
-  [Platform.MAC]: [ModifierKey.CTRL, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.META],
-  [Platform.WINDOWS]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL],
-  [Platform.LINUX]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL]
+  [OS.MAC]: [ModifierKey.CTRL, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.META],
+  [OS.WINDOWS]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL],
+  [OS.LINUX]: [ModifierKey.META, ModifierKey.ALT, ModifierKey.SHIFT, ModifierKey.CTRL]
 };
 
 // src/parser.ts
@@ -181,7 +190,7 @@ function formatShortcut(shortcut, platform) {
   }
   const displayKey = formatKey(parsed.key, targetPlatform);
   parts.push(displayKey);
-  const separator = targetPlatform === Platform.MAC ? "" : "+";
+  const separator = targetPlatform === OS.MAC ? "" : "+";
   return parts.join(separator);
 }
 function formatKey(key, platform) {
@@ -190,12 +199,12 @@ function formatKey(key, platform) {
     ArrowDown: "\u2193",
     ArrowLeft: "\u2190",
     ArrowRight: "\u2192",
-    Enter: platform === Platform.MAC ? "\u21A9" : "Enter",
-    Tab: platform === Platform.MAC ? "\u21E5" : "Tab",
-    Escape: platform === Platform.MAC ? "\u238B" : "Esc",
-    Backspace: platform === Platform.MAC ? "\u232B" : "Backspace",
-    Delete: platform === Platform.MAC ? "\u2326" : "Del",
-    " ": platform === Platform.MAC ? "\u2423" : "Space",
+    Enter: platform === OS.MAC ? "\u21A9" : "Enter",
+    Tab: platform === OS.MAC ? "\u21E5" : "Tab",
+    Escape: platform === OS.MAC ? "\u238B" : "Esc",
+    Backspace: platform === OS.MAC ? "\u232B" : "Backspace",
+    Delete: platform === OS.MAC ? "\u2326" : "Del",
+    " ": platform === OS.MAC ? "\u2423" : "Space",
     Home: "Home",
     End: "End",
     PageUp: "PgUp",
@@ -805,14 +814,6 @@ function useShortcutMap(shortcutMap, options = {}) {
   }, [$, shortcutMap]);
   return results;
 }
-function createShortcut(options = {}) {
-  const { builder } = _createShortcutBuilder(options);
-  return builder;
-}
-function createShortcutMap(shortcutMap, options = {}) {
-  const builder = createShortcut(options);
-  return registerShortcutMap(builder, shortcutMap);
-}
 function createShortcutGroup() {
   const results = [];
   return {
@@ -846,6 +847,6 @@ function useShortcutGroup() {
   return groupRef.current;
 }
 
-export { ModifierAliases, ModifierDisplayOrder, ModifierDisplaySymbols, ModifierKey, Platform, SpecialKeyMap, createShortcut, createShortcutGroup, createShortcutMap, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, registerShortcutMap, useShortcut, useShortcutGroup, useShortcutMap };
+export { ModifierAliases, ModifierDisplayOrder, ModifierDisplaySymbols, ModifierKey, Platform, SpecialKeyMap, createShortcutGroup, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, registerShortcutMap, useShortcut, useShortcutGroup, useShortcutMap };
 //# sourceMappingURL=index.mjs.map
 //# sourceMappingURL=index.mjs.map

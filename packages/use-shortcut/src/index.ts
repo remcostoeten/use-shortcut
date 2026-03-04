@@ -50,9 +50,7 @@ export { formatShortcut, getModifierSymbols } from "./formatter"
 
 export {
     useShortcut,
-    createShortcut,
     useShortcutMap,
-    createShortcutMap,
     registerShortcutMap,
     createShortcutGroup,
     useShortcutGroup,

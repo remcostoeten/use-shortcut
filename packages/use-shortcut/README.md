@@ -20,7 +20,6 @@ WIP keyboard shortcut library for React with a chainable API.
 - Shortcut maps:
   - `registerShortcutMap`
   - `useShortcutMap`
-  - `createShortcutMap`
 - Recording mode: `$.record({ timeoutMs })`
 - Conflict detection (`exact`, `sequence-prefix`)
 - Priority ordering and `stopOnMatch`
@@ -28,9 +27,8 @@ WIP keyboard shortcut library for React with a chainable API.
   - `createShortcutGroup`
   - `useShortcutGroup`
 - Global guard/filter support via `eventFilter`
-- React and non-React entry points:
+- React entry point:
   - `useShortcut`
-  - `createShortcut`
 
 ## Architecture Notes
 
