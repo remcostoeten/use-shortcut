@@ -127,7 +127,7 @@ var ModifierDisplayOrder = {
 };
 
 // src/parser.ts
-function normalizeKeyToken(key) {
+function _normalizeKeyToken(key) {
   return key === " " ? "space" : key.toLowerCase();
 }
 function parseShortcut(shortcut) {
@@ -181,9 +181,9 @@ function getModifiersFromEvent(event) {
 }
 function matchesShortcut(event, parsed) {
   const eventModifiers = getModifiersFromEvent(event);
-  const eventKey = normalizeKeyToken(event.key);
+  const eventKey = _normalizeKeyToken(event.key);
   const modifiersMatch = eventModifiers.meta === parsed.modifiers.meta && eventModifiers.ctrl === parsed.modifiers.ctrl && eventModifiers.alt === parsed.modifiers.alt && eventModifiers.shift === parsed.modifiers.shift;
-  const keyMatches = eventKey === normalizeKeyToken(parsed.key);
+  const keyMatches = eventKey === _normalizeKeyToken(parsed.key);
   return modifiersMatch && keyMatches;
 }
 function matchesAnyShortcut(event, parsedShortcuts) {
@@ -191,7 +191,7 @@ function matchesAnyShortcut(event, parsedShortcuts) {
 }
 
 // src/formatter.ts
-var BASE_DISPLAY_NAMES = {
+var _BASE_DISPLAY_NAMES = {
   ArrowUp: "\u2191",
   ArrowDown: "\u2193",
   ArrowLeft: "\u2190",
@@ -201,8 +201,8 @@ var BASE_DISPLAY_NAMES = {
   PageUp: "PgUp",
   PageDown: "PgDn"
 };
-var MAC_DISPLAY_NAMES = {
-  ...BASE_DISPLAY_NAMES,
+var _MAC_DISPLAY_NAMES = {
+  ..._BASE_DISPLAY_NAMES,
   Enter: "\u21A9",
   Tab: "\u21E5",
   Escape: "\u238B",
@@ -210,8 +210,8 @@ var MAC_DISPLAY_NAMES = {
   Delete: "\u2326",
   " ": "\u2423"
 };
-var NON_MAC_DISPLAY_NAMES = {
-  ...BASE_DISPLAY_NAMES,
+var _NON_MAC_DISPLAY_NAMES = {
+  ..._BASE_DISPLAY_NAMES,
   Enter: "Enter",
   Tab: "Tab",
   Escape: "Esc",
@@ -230,18 +230,14 @@ function formatShortcut(shortcut, platform) {
       parts.push(symbols[modifier]);
     }
   }
-  const displayKey = formatKey(parsed.key, targetPlatform);
+  const displayKey = _formatKey(parsed.key, targetPlatform);
   parts.push(displayKey);
   const separator = targetPlatform === OS.MAC ? "" : "+";
   return parts.join(separator);
 }
-function formatKey(key, platform) {
-  const displayNames = platform === OS.MAC ? MAC_DISPLAY_NAMES : NON_MAC_DISPLAY_NAMES;
+function _formatKey(key, platform) {
+  const displayNames = platform === OS.MAC ? _MAC_DISPLAY_NAMES : _NON_MAC_DISPLAY_NAMES;
   return displayNames[key] || key.toUpperCase();
-}
-function getModifierSymbols(platform) {
-  const targetPlatform = platform ?? detectPlatform();
-  return ModifierDisplaySymbols[targetPlatform];
 }
 
 // src/runtime/debug.ts
@@ -625,7 +621,7 @@ function _createRecorder(options) {
 }
 
 // src/builder.ts
-var MODIFIER_KEYS = /* @__PURE__ */ new Set(["ctrl", "shift", "alt", "cmd", "mod"]);
+var _MODIFIER_KEYS = /* @__PURE__ */ new Set(["ctrl", "shift", "alt", "cmd", "mod"]);
 function _createShortcutBuilder(options = {}) {
   const registry = {
     listeners: /* @__PURE__ */ new Map(),
@@ -639,13 +635,13 @@ function _createShortcutBuilder(options = {}) {
     listenerEventType: options.eventType ?? "keydown"
   };
   _debugLog(options.debug, "Builder created with options:", options);
-  function createProxy(currentState) {
+  function _createProxy(currentState) {
     return new Proxy({}, {
       get(_, prop) {
         if (prop === "__debug") {
           return currentState.options.debug;
         }
-        if (MODIFIER_KEYS.has(prop)) {
+        if (_MODIFIER_KEYS.has(prop)) {
           const platform = detectPlatform();
           const modKey = prop === "mod" ? platform === Platform.MAC ? "cmd" : "ctrl" : prop;
           const newState = {
@@ -653,7 +649,7 @@ function _createShortcutBuilder(options = {}) {
             modifiers: { ...currentState.modifiers, [modKey]: true }
           };
           _debugLog(currentState.options.debug, `Chain: +${prop} \u2192`, newState.modifiers);
-          return createProxy(newState);
+          return _createProxy(newState);
         }
         if (prop === "in") {
           return (scopes) => {
@@ -662,7 +658,7 @@ function _createShortcutBuilder(options = {}) {
               ...currentState,
               scopes: nextScopes
             };
-            return createProxy(newState);
+            return _createProxy(newState);
           };
         }
         if (prop === "setScopes") {
@@ -700,7 +696,7 @@ function _createShortcutBuilder(options = {}) {
               steps: [...currentState.steps, nextStep]
             };
             _debugLog(currentState.options.debug, `Chain: .key("${key}")`);
-            return createProxy(newState);
+            return _createProxy(newState);
           };
         }
         if (prop === "then") {
@@ -714,7 +710,7 @@ function _createShortcutBuilder(options = {}) {
               steps: [...currentState.steps, nextStep]
             };
             _debugLog(currentState.options.debug, `Chain: .then("${nextStep}")`);
-            return createProxy(newState);
+            return _createProxy(newState);
           };
         }
         if (prop === "except") {
@@ -724,7 +720,7 @@ function _createShortcutBuilder(options = {}) {
               except: condition
             };
             _debugLog(currentState.options.debug, "Chain: .except()", condition);
-            return createProxy(newState);
+            return _createProxy(newState);
           };
         }
         if (prop === "on") {
@@ -748,101 +744,12 @@ function _createShortcutBuilder(options = {}) {
     options
   };
   return {
-    builder: createProxy(initialState),
+    builder: _createProxy(initialState),
     registry
   };
 }
 
 // src/hook.ts
-function areShortcutMapKeysEqual(a, b) {
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i += 1) {
-      if (a[i] !== b[i]) return false;
-    }
-    return true;
-  }
-  if (!Array.isArray(a) && !Array.isArray(b)) {
-    return a === b;
-  }
-  return false;
-}
-function areShortcutMapsEquivalent(a, b) {
-  const aKeys = Object.keys(a);
-  const bKeys = Object.keys(b);
-  if (aKeys.length !== bKeys.length) return false;
-  for (const key of aKeys) {
-    const aEntry = a[key];
-    const bEntry = b[key];
-    if (!bEntry) return false;
-    if (!areShortcutMapKeysEqual(aEntry.keys, bEntry.keys)) return false;
-    if (aEntry.handler !== bEntry.handler) return false;
-    if (aEntry.options !== bEntry.options) return false;
-  }
-  return true;
-}
-function normalizeShortcutMapKeys(keys) {
-  if (Array.isArray(keys)) {
-    return keys.map((key) => key.trim()).filter(Boolean);
-  }
-  const trimmed = keys.trim();
-  if (!trimmed) return [];
-  if (trimmed.includes(" then ")) {
-    return trimmed.split(/\s+then\s+/i).map((key) => key.trim()).filter(Boolean);
-  }
-  if (trimmed.includes(" ") && !trimmed.includes("+")) {
-    return trimmed.split(/\s+/).map((key) => key.trim()).filter(Boolean);
-  }
-  return [trimmed];
-}
-function applyStep(builder, step) {
-  const tokens = step.toLowerCase().split("+").map((token) => token.trim()).filter(Boolean);
-  if (tokens.length === 0) {
-    throw new Error("[useShortcutMap] Invalid step: empty shortcut step");
-  }
-  const key = tokens.pop();
-  let chain = builder;
-  for (const token of tokens) {
-    if (token === "ctrl" || token === "control") {
-      chain = chain.ctrl;
-      continue;
-    }
-    if (token === "shift") {
-      chain = chain.shift;
-      continue;
-    }
-    if (token === "alt" || token === "option") {
-      chain = chain.alt;
-      continue;
-    }
-    if (token === "cmd" || token === "command" || token === "meta") {
-      chain = chain.cmd;
-      continue;
-    }
-    if (token === "mod") {
-      chain = chain.mod;
-      continue;
-    }
-    throw new Error(`[useShortcutMap] Unsupported modifier token "${token}" in step "${step}"`);
-  }
-  return chain.key(key);
-}
-function registerShortcutMap(builder, shortcutMap) {
-  const results = {};
-  for (const id of Object.keys(shortcutMap)) {
-    const entry = shortcutMap[id];
-    const steps = normalizeShortcutMapKeys(entry.keys);
-    if (steps.length === 0) {
-      throw new Error(`[useShortcutMap] Shortcut "${String(id)}" has no key steps`);
-    }
-    let chain = applyStep(builder, steps[0]);
-    for (const step of steps.slice(1)) {
-      chain = chain.then(step);
-    }
-    results[id] = chain.on(entry.handler, entry.options);
-  }
-  return results;
-}
 function useShortcut(options = {}) {
   const optionsRef = react.useRef(options);
   optionsRef.current = options;
@@ -870,64 +777,6 @@ function useShortcut(options = {}) {
   }, [registry]);
   return builder;
 }
-function useShortcutMap(shortcutMap, options = {}) {
-  const $ = useShortcut(options);
-  const stableShortcutMapRef = react.useRef(shortcutMap);
-  if (!areShortcutMapsEquivalent(stableShortcutMapRef.current, shortcutMap)) {
-    stableShortcutMapRef.current = shortcutMap;
-  }
-  const stableShortcutMap = stableShortcutMapRef.current;
-  const resultsRef = react.useRef({});
-  react.useEffect(() => {
-    const registrations = registerShortcutMap($, stableShortcutMap);
-    const results = resultsRef.current;
-    for (const key of Object.keys(results)) {
-      delete results[key];
-    }
-    Object.assign(results, registrations);
-    return () => {
-      for (const result of Object.values(registrations)) {
-        result.unbind();
-      }
-      for (const key of Object.keys(results)) {
-        delete results[key];
-      }
-    };
-  }, [$, stableShortcutMap]);
-  return resultsRef.current;
-}
-function createShortcutGroup() {
-  const results = [];
-  return {
-    add: (...entries) => {
-      results.push(...entries);
-    },
-    addMany: (entries) => {
-      if (Array.isArray(entries)) {
-        results.push(...entries);
-        return;
-      }
-      results.push(...Object.values(entries));
-    },
-    unbindAll: () => {
-      for (const entry of results) {
-        entry.unbind();
-      }
-      results.length = 0;
-    },
-    clear: () => {
-      results.length = 0;
-    },
-    getResults: () => [...results]
-  };
-}
-function useShortcutGroup() {
-  const groupRef = react.useRef(null);
-  if (!groupRef.current) {
-    groupRef.current = createShortcutGroup();
-  }
-  return groupRef.current;
-}
 
 exports.ModifierAliases = ModifierAliases;
 exports.ModifierDisplayOrder = ModifierDisplayOrder;
@@ -935,18 +784,12 @@ exports.ModifierDisplaySymbols = ModifierDisplaySymbols;
 exports.ModifierKey = ModifierKey;
 exports.Platform = Platform;
 exports.SpecialKeyMap = SpecialKeyMap;
-exports.createShortcutGroup = createShortcutGroup;
 exports.detectPlatform = detectPlatform;
 exports.formatShortcut = formatShortcut;
-exports.getModifierSymbols = getModifierSymbols;
-exports.getModifiersFromEvent = getModifiersFromEvent;
 exports.matchesAnyShortcut = matchesAnyShortcut;
 exports.matchesShortcut = matchesShortcut;
 exports.parseShortcut = parseShortcut;
 exports.parseShortcuts = parseShortcuts;
-exports.registerShortcutMap = registerShortcutMap;
 exports.useShortcut = useShortcut;
-exports.useShortcutGroup = useShortcutGroup;
-exports.useShortcutMap = useShortcutMap;
 //# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map
