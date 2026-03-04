@@ -148,8 +148,13 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
 
     useEffect(() => {
         return () => {
-            registry.listeners.forEach((entry) => entry.unbind())
             registry.listeners.clear()
+
+            if (registry.listener && registry.listenerTarget) {
+                registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener as EventListener)
+                registry.listener = null
+                registry.listenerTarget = null
+            }
         }
     }, [registry])
 

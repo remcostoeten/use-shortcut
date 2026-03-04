@@ -338,6 +338,87 @@ function sortEntries(entries) {
     return a.id - b.id;
   });
 }
+function dispatchRegistryEvent(registry, event) {
+  const runtimeOptions = registry.options;
+  if (runtimeOptions.disabled) return;
+  if (runtimeOptions.eventFilter && !runtimeOptions.eventFilter(event)) return;
+  for (const [combo, comboEntries] of registry.listeners.entries()) {
+    const orderedEntries = sortEntries(comboEntries);
+    for (const item of orderedEntries) {
+      if (!item.isEnabled) continue;
+      if (!scopeMatch(item.scopes, registry.activeScopes)) {
+        continue;
+      }
+      if (runtimeOptions.ignoreInputs !== false && !item.except) {
+        const targetEl = event.target;
+        if (targetEl && (IGNORED_TAGS.has(targetEl.tagName) || targetEl.isContentEditable)) {
+          continue;
+        }
+      }
+      if (shouldExcept(event, item.except)) {
+        debugLog(runtimeOptions.debug, "Skipped due to except condition:", combo);
+        continue;
+      }
+      const expected = item.parsedSteps[item.progress];
+      const now = Date.now();
+      if (item.progress > 0 && now - item.lastMatchedAt > item.sequenceTimeout) {
+        item.progress = 0;
+      }
+      let matched = false;
+      if (matchesShortcut(event, expected)) {
+        item.progress += 1;
+        item.lastMatchedAt = now;
+        if (item.progress === item.parsedSteps.length) {
+          matched = true;
+          item.progress = 0;
+        }
+      } else if (item.progress > 0 && matchesShortcut(event, item.parsedSteps[0])) {
+        item.progress = 1;
+        item.lastMatchedAt = now;
+      } else {
+        item.progress = 0;
+      }
+      item.attemptCallbacks.forEach((cb) => cb(matched, event));
+      if (!matched) continue;
+      debugLog(runtimeOptions.debug, "MATCHED:", combo);
+      if (item.preventDefault) {
+        event.preventDefault();
+      }
+      if (item.stopPropagation) {
+        event.stopPropagation();
+      }
+      const executeHandler = () => item.userHandler(event);
+      if (item.delay > 0) {
+        debugLog(runtimeOptions.debug, "Delaying execution by", item.delay, "ms");
+        setTimeout(executeHandler, item.delay);
+      } else {
+        executeHandler();
+      }
+      if (item.stopOnMatch) {
+        break;
+      }
+    }
+  }
+}
+function attachRegistryListener(registry) {
+  if (registry.listener) return;
+  const target = registry.options.target ?? (typeof window !== "undefined" ? window : null);
+  if (!target) return;
+  const eventType = registry.options.eventType ?? "keydown";
+  const listener = (event) => dispatchRegistryEvent(registry, event);
+  target.addEventListener(eventType, listener);
+  registry.listener = listener;
+  registry.listenerTarget = target;
+  registry.listenerEventType = eventType;
+  debugLog(registry.options.debug, "Listener attached");
+}
+function detachRegistryListener(registry) {
+  if (!registry.listener || !registry.listenerTarget) return;
+  registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener);
+  registry.listener = null;
+  registry.listenerTarget = null;
+  debugLog(registry.options.debug, "Listener detached");
+}
 function createBinding(state, handler, handlerOptions = {}, registry) {
   const { options, except: stateExcept } = state;
   const rawSteps = state.steps;
@@ -349,8 +430,8 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
   const display = formatSequenceDisplay(rawSteps);
   const debug = options.debug ?? false;
   const except = stateExcept ?? handlerOptions.except;
-  for (const [existingCombo, listener] of registry.listeners.entries()) {
-    for (const existing of listener.entries) {
+  for (const [existingCombo, entries] of registry.listeners.entries()) {
+    for (const existing of entries) {
       if (existingCombo === combo) continue;
       const reason = detectConflict(parsedSteps, existing.parsedSteps);
       if (!reason) continue;
@@ -384,97 +465,25 @@ function createBinding(state, handler, handlerOptions = {}, registry) {
     stopOnMatch: handlerOptions.stopOnMatch ?? false,
     priority: handlerOptions.priority ?? 0
   };
-  let comboListener = registry.listeners.get(combo);
-  if (!comboListener) {
-    const target = options.target ?? (typeof window !== "undefined" ? window : null);
-    const eventType = options.eventType ?? "keydown";
-    const listener = (event) => {
-      const runtimeOptions = registry.options;
-      if (runtimeOptions.disabled) return;
-      if (runtimeOptions.eventFilter && !runtimeOptions.eventFilter(event)) return;
-      const current = registry.listeners.get(combo);
-      if (!current) return;
-      const orderedEntries = sortEntries(current.entries);
-      for (const item of orderedEntries) {
-        if (!item.isEnabled) continue;
-        if (!scopeMatch(item.scopes, registry.activeScopes)) {
-          continue;
-        }
-        if (runtimeOptions.ignoreInputs !== false && !item.except) {
-          const targetEl = event.target;
-          if (targetEl && (IGNORED_TAGS.has(targetEl.tagName) || targetEl.isContentEditable)) {
-            continue;
-          }
-        }
-        if (shouldExcept(event, item.except)) {
-          debugLog(debug, "Skipped due to except condition:", combo);
-          continue;
-        }
-        const expected = item.parsedSteps[item.progress];
-        const now = Date.now();
-        if (item.progress > 0 && now - item.lastMatchedAt > item.sequenceTimeout) {
-          item.progress = 0;
-        }
-        let matched = false;
-        if (matchesShortcut(event, expected)) {
-          item.progress += 1;
-          item.lastMatchedAt = now;
-          if (item.progress === item.parsedSteps.length) {
-            matched = true;
-            item.progress = 0;
-          }
-        } else if (item.progress > 0 && matchesShortcut(event, item.parsedSteps[0])) {
-          item.progress = 1;
-          item.lastMatchedAt = now;
-        } else {
-          item.progress = 0;
-        }
-        item.attemptCallbacks.forEach((cb) => cb(matched, event));
-        if (!matched) continue;
-        debugLog(debug, "MATCHED:", combo, "\u2192", display);
-        if (item.preventDefault) {
-          event.preventDefault();
-        }
-        if (item.stopPropagation) {
-          event.stopPropagation();
-        }
-        const executeHandler = () => item.userHandler(event);
-        if (item.delay > 0) {
-          debugLog(debug, "Delaying execution by", item.delay, "ms");
-          setTimeout(executeHandler, item.delay);
-        } else {
-          executeHandler();
-        }
-        if (item.stopOnMatch) {
-          break;
-        }
-      }
-    };
-    if (target) {
-      target.addEventListener(eventType, listener);
-      debugLog(debug, "Listener attached for:", combo);
-    }
-    const unbind = () => {
-      if (target) {
-        target.removeEventListener(eventType, listener);
-        registry.listeners.delete(combo);
-        debugLog(debug, "Unregistered:", combo);
-      }
-    };
-    comboListener = {
-      listener,
-      entries: [],
-      unbind
-    };
-    registry.listeners.set(combo, comboListener);
+  const comboEntries = registry.listeners.get(combo);
+  if (comboEntries) {
+    comboEntries.push(entry);
+  } else {
+    registry.listeners.set(combo, [entry]);
   }
-  comboListener.entries.push(entry);
+  attachRegistryListener(registry);
   const unbindEntry = () => {
-    const current = registry.listeners.get(combo);
-    if (!current) return;
-    current.entries = current.entries.filter((item) => item.id !== entry.id);
-    if (current.entries.length === 0) {
-      current.unbind();
+    const currentEntries = registry.listeners.get(combo);
+    if (!currentEntries) return;
+    const nextEntries = currentEntries.filter((item) => item.id !== entry.id);
+    if (nextEntries.length === 0) {
+      registry.listeners.delete(combo);
+      debugLog(debug, "Unregistered:", combo);
+    } else {
+      registry.listeners.set(combo, nextEntries);
+    }
+    if (registry.listeners.size === 0) {
+      detachRegistryListener(registry);
     }
   };
   return {
@@ -531,7 +540,10 @@ function createShortcutBuilder(options = {}) {
     listeners: /* @__PURE__ */ new Map(),
     options,
     activeScopes: new Set(normalizeScopes(options.activeScopes)),
-    nextId: 1
+    nextId: 1,
+    listener: null,
+    listenerTarget: null,
+    listenerEventType: options.eventType ?? "keydown"
   };
   debugLog(options.debug, "Builder created with options:", options);
   function createProxy(currentState) {
@@ -726,8 +738,12 @@ function useShortcut(options = {}) {
   }, [registry, options]);
   useEffect(() => {
     return () => {
-      registry.listeners.forEach((entry) => entry.unbind());
       registry.listeners.clear();
+      if (registry.listener && registry.listenerTarget) {
+        registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener);
+        registry.listener = null;
+        registry.listenerTarget = null;
+      }
     };
   }, [registry]);
   return builder;

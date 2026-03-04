@@ -97,8 +97,6 @@ type HandlerOptions = {
     description?: string;
     /** Disable this specific shortcut */
     disabled?: boolean;
-    /** Limit shortcut to a specific DOM element */
-    scope?: HTMLElement | null;
     /** Conditions to skip the shortcut */
     except?: ExceptPreset | ExceptPreset[] | ExceptPredicate;
     /** Required named scopes that must be active */
