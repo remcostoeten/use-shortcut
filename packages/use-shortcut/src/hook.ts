@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useMemo, useState } from "react"
-import { createShortcutBuilder } from "./builder"
+import { _createShortcutBuilder } from "./builder"
 import type {
     ShortcutBuilder,
     UseShortcutOptions,
@@ -131,7 +131,7 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
     optionsRef.current = options
 
     const { builder, registry } = useMemo(() => {
-        return createShortcutBuilder(optionsRef.current)
+        return _createShortcutBuilder(optionsRef.current)
     }, [])
 
     useEffect(() => {
@@ -196,7 +196,7 @@ export function useShortcutMap<T extends ShortcutMap>(
  * @returns A chainable shortcut builder
  */
 export function createShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
-    const { builder } = createShortcutBuilder(options)
+    const { builder } = _createShortcutBuilder(options)
     return builder as ShortcutBuilder
 }
 

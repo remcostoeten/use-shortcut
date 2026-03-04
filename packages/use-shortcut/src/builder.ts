@@ -515,7 +515,7 @@ function createRecorder(options: UseShortcutOptions) {
     }
 }
 
-export function createShortcutBuilder(options: UseShortcutOptions = {}): {
+export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
     builder: IShortcutBuilder
     registry: ShortcutRegistry
 } {

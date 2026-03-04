@@ -574,7 +574,7 @@ function createRecorder(options) {
     });
   };
 }
-function createShortcutBuilder(options = {}) {
+function _createShortcutBuilder(options = {}) {
   const registry = {
     listeners: /* @__PURE__ */ new Map(),
     firstStepIndex: /* @__PURE__ */ new Map(),
@@ -768,7 +768,7 @@ function useShortcut(options = {}) {
   const optionsRef = useRef(options);
   optionsRef.current = options;
   const { builder, registry } = useMemo(() => {
-    return createShortcutBuilder(optionsRef.current);
+    return _createShortcutBuilder(optionsRef.current);
   }, []);
   useEffect(() => {
     registry.options = optionsRef.current;
@@ -806,7 +806,7 @@ function useShortcutMap(shortcutMap, options = {}) {
   return results;
 }
 function createShortcut(options = {}) {
-  const { builder } = createShortcutBuilder(options);
+  const { builder } = _createShortcutBuilder(options);
   return builder;
 }
 function createShortcutMap(shortcutMap, options = {}) {
