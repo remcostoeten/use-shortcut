@@ -1,8 +1,7 @@
 {
-    "name": "kbd-shortcut-monorepo",
+    "name": "kbd-shortcut",
     "private": true,
     "workspaces": [
-        "apps/*",
         "packages/*"
     ],
     "scripts": {
