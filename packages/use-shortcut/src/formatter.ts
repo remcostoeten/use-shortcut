@@ -8,6 +8,37 @@ import {
 } from "./constants"
 import { parseShortcut } from "./parser"
 
+const _BASE_DISPLAY_NAMES: Record<string, string> = {
+    ArrowUp: "↑",
+    ArrowDown: "↓",
+    ArrowLeft: "←",
+    ArrowRight: "→",
+    Home: "Home",
+    End: "End",
+    PageUp: "PgUp",
+    PageDown: "PgDn",
+}
+
+const _MAC_DISPLAY_NAMES: Record<string, string> = {
+    ..._BASE_DISPLAY_NAMES,
+    Enter: "↩",
+    Tab: "⇥",
+    Escape: "⎋",
+    Backspace: "⌫",
+    Delete: "⌦",
+    " ": "␣",
+}
+
+const _NON_MAC_DISPLAY_NAMES: Record<string, string> = {
+    ..._BASE_DISPLAY_NAMES,
+    Enter: "Enter",
+    Tab: "Tab",
+    Escape: "Esc",
+    Backspace: "Backspace",
+    Delete: "Del",
+    " ": "Space",
+}
+
 /**
  * Format a shortcut string for display with platform-aware symbols
  *
@@ -35,7 +66,7 @@ export function formatShortcut(shortcut: string, platform?: PlatformType): strin
         }
     }
 
-    const displayKey = formatKey(parsed.key, targetPlatform)
+    const displayKey = _formatKey(parsed.key, targetPlatform)
     parts.push(displayKey)
 
     const separator = targetPlatform === OS.MAC ? "" : "+"
@@ -43,23 +74,8 @@ export function formatShortcut(shortcut: string, platform?: PlatformType): strin
     return parts.join(separator)
 }
 
-function formatKey(key: string, platform: PlatformType): string {
-    const displayNames: Record<string, string> = {
-        ArrowUp: "↑",
-        ArrowDown: "↓",
-        ArrowLeft: "←",
-        ArrowRight: "→",
-        Enter: platform === OS.MAC ? "↩" : "Enter",
-        Tab: platform === OS.MAC ? "⇥" : "Tab",
-        Escape: platform === OS.MAC ? "⎋" : "Esc",
-        Backspace: platform === OS.MAC ? "⌫" : "Backspace",
-        Delete: platform === OS.MAC ? "⌦" : "Del",
-        " ": platform === OS.MAC ? "␣" : "Space",
-        Home: "Home",
-        End: "End",
-        PageUp: "PgUp",
-        PageDown: "PgDn",
-    }
+function _formatKey(key: string, platform: PlatformType): string {
+    const displayNames = platform === OS.MAC ? _MAC_DISPLAY_NAMES : _NON_MAC_DISPLAY_NAMES
 
     return displayNames[key] || key.toUpperCase()
 }
@@ -79,4 +95,3 @@ export function getModifierSymbols(platform?: PlatformType): Record<ModifierKeyT
     const targetPlatform = platform ?? detectPlatform()
     return ModifierDisplaySymbols[targetPlatform]
 }
-

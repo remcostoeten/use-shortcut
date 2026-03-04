@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useMemo, useState } from "react"
+import { useEffect, useRef, useMemo } from "react"
 import { _createShortcutBuilder } from "./builder"
 import type {
     ShortcutBuilder,
@@ -29,7 +29,7 @@ type ShortcutMapChain = {
     key: (key: ActionKey) => ShortcutMapSequenceChain
 }
 
-function areShortcutMapKeysEqual(a: ShortcutMapEntry["keys"], b: ShortcutMapEntry["keys"]): boolean {
+function _areShortcutMapKeysEqual(a: ShortcutMapEntry["keys"], b: ShortcutMapEntry["keys"]): boolean {
     if (Array.isArray(a) && Array.isArray(b)) {
         if (a.length !== b.length) return false
         for (let i = 0; i < a.length; i += 1) {
@@ -45,7 +45,7 @@ function areShortcutMapKeysEqual(a: ShortcutMapEntry["keys"], b: ShortcutMapEntr
     return false
 }
 
-function areShortcutMapsEquivalent(a: ShortcutMap, b: ShortcutMap): boolean {
+function _areShortcutMapsEquivalent(a: ShortcutMap, b: ShortcutMap): boolean {
     const aKeys = Object.keys(a)
     const bKeys = Object.keys(b)
     if (aKeys.length !== bKeys.length) return false
@@ -54,7 +54,7 @@ function areShortcutMapsEquivalent(a: ShortcutMap, b: ShortcutMap): boolean {
         const aEntry = a[key]
         const bEntry = b[key]
         if (!bEntry) return false
-        if (!areShortcutMapKeysEqual(aEntry.keys, bEntry.keys)) return false
+        if (!_areShortcutMapKeysEqual(aEntry.keys, bEntry.keys)) return false
         if (aEntry.handler !== bEntry.handler) return false
         if (aEntry.options !== bEntry.options) return false
     }
@@ -62,7 +62,7 @@ function areShortcutMapsEquivalent(a: ShortcutMap, b: ShortcutMap): boolean {
     return true
 }
 
-function normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
+function _normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
     if (Array.isArray(keys)) {
         return keys.map((key) => key.trim()).filter(Boolean)
     }
@@ -81,7 +81,7 @@ function normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
     return [trimmed]
 }
 
-function applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequenceChain {
+function _applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequenceChain {
     const tokens = step
         .toLowerCase()
         .split("+")
@@ -127,6 +127,22 @@ function applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequence
     return chain.key(key as ActionKey)
 }
 
+/**
+ * Registers an object-based shortcut map in one call and returns per-action handles.
+ *
+ * @param builder - Builder returned by `useShortcut()`
+ * @param shortcutMap - Record of action ids to key bindings, handlers, and options
+ * @returns A result map with one `ShortcutResult` per shortcut id
+ *
+ * @example
+ * ```ts
+ * const $ = useShortcut()
+ * const results = registerShortcutMap($, {
+ *   save: { keys: "mod+s", handler: onSave },
+ *   nav: { keys: ["g", "d"], handler: onGoDashboard },
+ * })
+ * ```
+ */
 export function registerShortcutMap<T extends ShortcutMap>(
     builder: ShortcutBuilder,
     shortcutMap: T,
@@ -135,13 +151,13 @@ export function registerShortcutMap<T extends ShortcutMap>(
 
     for (const id of Object.keys(shortcutMap) as Array<keyof T>) {
         const entry = shortcutMap[id]
-        const steps = normalizeShortcutMapKeys(entry.keys)
+        const steps = _normalizeShortcutMapKeys(entry.keys)
 
         if (steps.length === 0) {
             throw new Error(`[useShortcutMap] Shortcut "${String(id)}" has no key steps`)
         }
 
-        let chain = applyStep(builder, steps[0])
+        let chain = _applyStep(builder, steps[0])
 
         for (const step of steps.slice(1)) {
             chain = chain.then(step)
@@ -158,6 +174,15 @@ export function registerShortcutMap<T extends ShortcutMap>(
  *
  * @param options - Configuration options for the hook
  * @returns A chainable shortcut builder (`$`)
+ *
+ * @example
+ * ```ts
+ * const $ = useShortcut({ activeScopes: ["editor"] })
+ * $.mod.key("s").on((event) => {
+ *   event.preventDefault()
+ *   saveDocument()
+ * })
+ * ```
  */
 export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
     const optionsRef = useRef(options)
@@ -197,7 +222,19 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
 }
 
 /**
- * Bulk registration helper for shortcut maps.
+ * React hook that registers a shortcut map and automatically unbinds on cleanup.
+ *
+ * @param shortcutMap - Record of action ids to key bindings, handlers, and options
+ * @param options - Same options as `useShortcut()`
+ * @returns A map of `ShortcutResult` keyed by your shortcut ids
+ *
+ * @example
+ * ```ts
+ * const mapResults = useShortcutMap({
+ *   save: { keys: "mod+s", handler: onSave },
+ *   close: { keys: "escape", handler: onClose },
+ * })
+ * ```
  */
 export function useShortcutMap<T extends ShortcutMap>(
     shortcutMap: T,
@@ -205,27 +242,47 @@ export function useShortcutMap<T extends ShortcutMap>(
 ): ShortcutMapResult<T> {
     const $ = useShortcut(options)
     const stableShortcutMapRef = useRef(shortcutMap)
-    if (!areShortcutMapsEquivalent(stableShortcutMapRef.current, shortcutMap)) {
+    if (!_areShortcutMapsEquivalent(stableShortcutMapRef.current, shortcutMap)) {
         stableShortcutMapRef.current = shortcutMap
     }
 
     const stableShortcutMap = stableShortcutMapRef.current
-    const [results, setResults] = useState<ShortcutMapResult<T>>({} as ShortcutMapResult<T>)
+    const resultsRef = useRef<ShortcutMapResult<T>>({} as ShortcutMapResult<T>)
 
     useEffect(() => {
         const registrations = registerShortcutMap($, stableShortcutMap)
-        setResults(registrations)
+        const results = resultsRef.current
+        for (const key of Object.keys(results)) {
+            delete (results as Record<string, unknown>)[key]
+        }
+        Object.assign(results, registrations)
 
         return () => {
             for (const result of Object.values(registrations)) {
                 result.unbind()
             }
+            for (const key of Object.keys(results)) {
+                delete (results as Record<string, unknown>)[key]
+            }
         }
     }, [$, stableShortcutMap])
 
-    return results
+    return resultsRef.current
 }
 
+/**
+ * Creates an imperative group controller for many shortcut registrations.
+ *
+ * @returns A `ShortcutGroup` that can add and unbind multiple shortcuts together
+ *
+ * @example
+ * ```ts
+ * const group = createShortcutGroup()
+ * group.add($.mod.key("s").on(onSave))
+ * group.add($.key("escape").on(onClose))
+ * group.unbindAll()
+ * ```
+ */
 export function createShortcutGroup(): ShortcutGroup {
     const results: ShortcutResult[] = []
 
@@ -254,6 +311,16 @@ export function createShortcutGroup(): ShortcutGroup {
     }
 }
 
+/**
+ * React hook that returns a stable `ShortcutGroup` instance.
+ *
+ * @returns A memoized `ShortcutGroup` tied to the component lifecycle
+ *
+ * @example
+ * ```ts
+ * const group = useShortcutGroup()
+ * ```
+ */
 export function useShortcutGroup(): ShortcutGroup {
     const groupRef = useRef<ShortcutGroup | null>(null)
 

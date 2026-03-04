@@ -1,15 +1,22 @@
+/** Supported runtime OS identifiers used by formatter and parser normalization. */
 declare const OS: {
     readonly MAC: "mac";
     readonly WINDOWS: "windows";
     readonly LINUX: "linux";
 };
 type PlatformType = (typeof OS)[keyof typeof OS];
+/** Public platform constant alias (`Platform.MAC`, `Platform.WINDOWS`, `Platform.LINUX`). */
 declare const Platform: {
     readonly MAC: "mac";
     readonly WINDOWS: "windows";
     readonly LINUX: "linux";
 };
+/**
+ * Detect the current OS platform for modifier normalization and display formatting.
+ * Result is memoized for the page lifecycle.
+ */
 declare function detectPlatform(): PlatformType;
+/** Canonical modifier token names used internally across parsing/formatting. */
 declare const ModifierKey: {
     readonly META: "meta";
     readonly CTRL: "ctrl";
@@ -17,9 +24,13 @@ declare const ModifierKey: {
     readonly SHIFT: "shift";
 };
 type ModifierKeyType = (typeof ModifierKey)[keyof typeof ModifierKey];
+/** Alias map from user-facing modifier tokens to canonical modifier keys. */
 declare const ModifierAliases: Record<string, ModifierKeyType>;
+/** Alias map from human shortcut key tokens to `KeyboardEvent.key`-compatible values. */
 declare const SpecialKeyMap: Record<string, string>;
+/** Platform-specific display labels/symbols for modifier keys. */
 declare const ModifierDisplaySymbols: Record<PlatformType, Record<ModifierKeyType, string>>;
+/** Platform-specific canonical order for modifier rendering and combo normalization. */
 declare const ModifierDisplayOrder: Record<PlatformType, ModifierKeyType[]>;
 
 /** Lowercase letter keys a-z */
@@ -82,7 +93,9 @@ type ExceptPredicate = (event: KeyboardEvent) => boolean;
  * - "disabled" - Skip when focused element is disabled
  */
 type ExceptPreset = "input" | "editable" | "typing" | "modal" | "disabled";
+/** Scope selector used to enable/disable subsets of shortcuts at runtime. */
 type ShortcutScope = string | string[];
+/** Conflict metadata emitted when two registered shortcuts overlap. */
 type ShortcutConflict = {
     combo: string;
     existingCombo: string;
@@ -183,6 +196,7 @@ type KeyChainWithExcept<Key extends string> = {
     in: (scopes: ShortcutScope) => KeyChainWithExcept<Key>;
     then: <K extends ActionKey | string>(key: K) => KeyChainWithExcept<`${Key} ${K}`>;
 };
+/** Options for `ShortcutBuilder.record()` and low-level recording flows. */
 type ShortcutRecordingOptions = {
     target?: HTMLElement | Window | null;
     eventType?: "keydown" | "keyup";
@@ -250,22 +264,6 @@ type UseShortcutOptions = {
     /** Global event filter; return false to skip all shortcuts for the event */
     eventFilter?: (event: KeyboardEvent) => boolean;
 };
-type ShortcutMapEntry = {
-    keys: string | string[];
-    handler: ShortcutHandler;
-    options?: HandlerOptions;
-};
-type ShortcutMap = Record<string, ShortcutMapEntry>;
-type ShortcutMapResult<T extends ShortcutMap = ShortcutMap> = {
-    [K in keyof T]: ShortcutResult;
-};
-type ShortcutGroup = {
-    add: (...results: ShortcutResult[]) => void;
-    addMany: (results: ShortcutResult[] | Record<string, ShortcutResult>) => void;
-    unbindAll: () => void;
-    clear: () => void;
-    getResults: () => ShortcutResult[];
-};
 
 /**
  * Parse a shortcut string into its components
@@ -287,13 +285,6 @@ declare function parseShortcut(shortcut: string): ParsedShortcut;
  * @returns Array of parsed shortcuts
  */
 declare function parseShortcuts(shortcuts: string | string[]): ParsedShortcut[];
-/**
- * Extract modifier state from a keyboard event
- *
- * @param event - The keyboard event
- * @returns Object with meta, ctrl, alt, shift boolean flags
- */
-declare function getModifiersFromEvent(event: KeyboardEvent): ModifierState;
 /**
  * Check if a keyboard event matches a parsed shortcut
  *
@@ -325,32 +316,22 @@ declare function matchesAnyShortcut(event: KeyboardEvent, parsedShortcuts: Parse
  * ```
  */
 declare function formatShortcut(shortcut: string, platform?: PlatformType): string;
-/**
- * Get the modifier key symbols for a platform
- *
- * @param platform - Optional platform override (default: auto-detect)
- * @returns Object mapping modifier keys to display symbols
- *
- * @example
- * ```ts
- * getModifierSymbols("mac") // { meta: "⌘", ctrl: "⌃", alt: "⌥", shift: "⇧" }
- * ```
- */
-declare function getModifierSymbols(platform?: PlatformType): Record<ModifierKeyType, string>;
 
-declare function registerShortcutMap<T extends ShortcutMap>(builder: ShortcutBuilder, shortcutMap: T): ShortcutMapResult<T>;
 /**
  * React hook for registering chainable keyboard shortcuts
  *
  * @param options - Configuration options for the hook
  * @returns A chainable shortcut builder (`$`)
+ *
+ * @example
+ * ```ts
+ * const $ = useShortcut({ activeScopes: ["editor"] })
+ * $.mod.key("s").on((event) => {
+ *   event.preventDefault()
+ *   saveDocument()
+ * })
+ * ```
  */
 declare function useShortcut(options?: UseShortcutOptions): ShortcutBuilder;
-/**
- * Bulk registration helper for shortcut maps.
- */
-declare function useShortcutMap<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>;
-declare function createShortcutGroup(): ShortcutGroup;
-declare function useShortcutGroup(): ShortcutGroup;
 
-export { type ActionKey, type AlphaKey, type ExceptPredicate, type ExceptPreset, type FunctionKey, type HandlerOptions, type KeyChain, ModifierAliases, type ModifierChain, ModifierDisplayOrder, ModifierDisplaySymbols, type ModifierFlags, ModifierKey, type ModifierName, type ModifierState, type NavigationKey, type NumericKey, type ParsedShortcut, Platform, type ShortcutBuilder, type ShortcutConflict, type ShortcutGroup, type ShortcutHandler, type ShortcutMap, type ShortcutMapEntry, type ShortcutMapResult, type ShortcutRecordingOptions, type ShortcutResult, type ShortcutScope, type SpecialKey, SpecialKeyMap, type SymbolKey, type UseShortcutOptions, createShortcutGroup, detectPlatform, formatShortcut, getModifierSymbols, getModifiersFromEvent, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, registerShortcutMap, useShortcut, useShortcutGroup, useShortcutMap };
+export { type ActionKey, type AlphaKey, type ExceptPredicate, type ExceptPreset, type FunctionKey, type HandlerOptions, type KeyChain, ModifierAliases, type ModifierChain, ModifierDisplayOrder, ModifierDisplaySymbols, type ModifierFlags, ModifierKey, type ModifierName, type ModifierState, type NavigationKey, type NumericKey, type ParsedShortcut, Platform, type ShortcutBuilder, type ShortcutConflict, type ShortcutHandler, type ShortcutRecordingOptions, type ShortcutResult, type ShortcutScope, type SpecialKey, SpecialKeyMap, type SymbolKey, type UseShortcutOptions, detectPlatform, formatShortcut, matchesAnyShortcut, matchesShortcut, parseShortcut, parseShortcuts, useShortcut };

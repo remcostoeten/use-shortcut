@@ -83,8 +83,10 @@ export type ExceptPredicate = (event: KeyboardEvent) => boolean
  */
 export type ExceptPreset = "input" | "editable" | "typing" | "modal" | "disabled"
 
+/** Scope selector used to enable/disable subsets of shortcuts at runtime. */
 export type ShortcutScope = string | string[]
 
+/** Conflict metadata emitted when two registered shortcuts overlap. */
 export type ShortcutConflict = {
     combo: string
     existingCombo: string
@@ -179,6 +181,7 @@ export type KeyChainWithExcept<Key extends string> = {
     then: <K extends ActionKey | string>(key: K) => KeyChainWithExcept<`${Key} ${K}`>
 }
 
+/** Options for `ShortcutBuilder.record()` and low-level recording flows. */
 export type ShortcutRecordingOptions = {
     target?: HTMLElement | Window | null
     eventType?: "keydown" | "keyup"
@@ -239,18 +242,22 @@ export type UseShortcutOptions = {
     eventFilter?: (event: KeyboardEvent) => boolean
 }
 
+/** Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`. */
 export type ShortcutMapEntry = {
     keys: string | string[]
     handler: ShortcutHandler
     options?: HandlerOptions
 }
 
+/** Bulk registration shape mapping action ids to key+handler definitions. */
 export type ShortcutMap = Record<string, ShortcutMapEntry>
 
+/** Return type for map registrations, keyed by the same ids as the source map. */
 export type ShortcutMapResult<T extends ShortcutMap = ShortcutMap> = {
     [K in keyof T]: ShortcutResult
 }
 
+/** Imperative grouping controller for binding/unbinding many shortcut registrations together. */
 export type ShortcutGroup = {
     add: (...results: ShortcutResult[]) => void
     addMany: (results: ShortcutResult[] | Record<string, ShortcutResult>) => void

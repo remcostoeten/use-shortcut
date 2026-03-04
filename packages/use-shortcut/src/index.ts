@@ -31,27 +31,18 @@ export type {
     ExceptPredicate,
     ShortcutScope,
     ShortcutConflict,
-    ShortcutMap,
-    ShortcutMapEntry,
-    ShortcutMapResult,
     ShortcutRecordingOptions,
-    ShortcutGroup,
 } from "./types"
 
 export {
     parseShortcut,
     parseShortcuts,
-    getModifiersFromEvent,
     matchesShortcut,
     matchesAnyShortcut,
 } from "./parser"
 
-export { formatShortcut, getModifierSymbols } from "./formatter"
+export { formatShortcut } from "./formatter"
 
 export {
     useShortcut,
-    useShortcutMap,
-    registerShortcutMap,
-    createShortcutGroup,
-    useShortcutGroup,
 } from "./hook"

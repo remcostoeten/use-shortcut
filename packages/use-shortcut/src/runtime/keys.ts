@@ -7,22 +7,16 @@ export function _getActiveModifierTokens(
 ): string[] {
     const platform = detectPlatform()
     const order = ModifierDisplayOrder[platform]
+    const tokens: string[] = []
 
-    return order
-        .filter(key => {
-            if (key === ModifierKey.CTRL) return modifiers.ctrl
-            if (key === ModifierKey.ALT) return modifiers.alt
-            if (key === ModifierKey.SHIFT) return modifiers.shift
-            if (key === ModifierKey.META) return modifiers.cmd
-            return false
-        })
-        .map(key => {
-            if (key === ModifierKey.CTRL) return "ctrl"
-            if (key === ModifierKey.ALT) return "alt"
-            if (key === ModifierKey.SHIFT) return "shift"
-            if (key === ModifierKey.META) return "cmd"
-            return ""
-        })
+    for (const key of order) {
+        if (key === ModifierKey.CTRL && modifiers.ctrl) tokens.push("ctrl")
+        if (key === ModifierKey.ALT && modifiers.alt) tokens.push("alt")
+        if (key === ModifierKey.SHIFT && modifiers.shift) tokens.push("shift")
+        if (key === ModifierKey.META && modifiers.cmd) tokens.push("cmd")
+    }
+
+    return tokens
 }
 
 export function _buildComboString(
@@ -57,19 +51,13 @@ export function _eventToCombo(event: KeyboardEvent): string {
     if (event.shiftKey) modifiers.push("shift")
     if (event.metaKey) modifiers.push("cmd")
 
-    const key = event.key === " " ? "space" : event.key.toLowerCase()
-    return [...modifiers, key].join("+")
-}
-
-export function _eventToMatchStep(event: KeyboardEvent): string {
-    const modifiers: string[] = []
-    if (event.ctrlKey) modifiers.push("ctrl")
-    if (event.altKey) modifiers.push("alt")
-    if (event.shiftKey) modifiers.push("shift")
-    if (event.metaKey) modifiers.push("cmd")
     const key =
         event.key === " " || event.key === "Spacebar"
             ? "space"
             : event.key.toLowerCase()
     return [...modifiers, key].join("+")
+}
+
+export function _eventToMatchStep(event: KeyboardEvent): string {
+    return _eventToCombo(event)
 }

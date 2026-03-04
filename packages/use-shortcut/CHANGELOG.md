@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-03-04
+
 ### Changed
 
 - Removed non-React public entry points (`createShortcut`, `createShortcutMap`) to focus package API on React-first usage.

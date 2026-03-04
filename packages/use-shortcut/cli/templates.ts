@@ -1,18 +1,26 @@
 export type ScaffoldFramework = "react" | "next"
 
 export function _getArchitectureTemplates(framework: ScaffoldFramework): Record<string, string> {
-    const integrationSection =
+    const _integrationSection =
         framework === "next"
             ? `## Next.js Integration\n\n1. Create a client provider wrapper at \`app/shortcut-provider.tsx\` and render \`<ShortcutProvider />\` there.\n2. Render that provider inside \`app/layout.tsx\` around your app shell.\n3. Keep page/server components pure; shortcut handlers stay in client components.\n`
             : `## React Integration\n\n1. Wrap your app root (for example in \`main.tsx\`) with \`<ShortcutProvider />\`.\n2. Keep handlers in a top-level client component and pass them to the provider via \`handlers\`.\n3. Use \`useShortcutManager()\` inside feature components to toggle scopes and bindings.\n`
 
     return {
-        "scopes.ts": `export const shortcutScopes = ["global", "navigation", "editor", "modal"] as const
+        "scopes.ts": `/** App-defined scope catalog used by the scaffolded provider. */
+export const shortcutScopes = ["global", "navigation", "editor", "modal"] as const
 
 export type ShortcutScope = (typeof shortcutScopes)[number]
 
+/** Default active scopes at provider boot. */
 export const defaultActiveScopes: ShortcutScope[] = ["global", "navigation"]
 
+/**
+ * Normalizes a scope input into an array form.
+ *
+ * @param scopes - One or many scope names
+ * @returns Array of scope names
+ */
 export function normalizeScopes(scopes: ShortcutScope | ShortcutScope[]): ShortcutScope[] {
     return Array.isArray(scopes) ? scopes : [scopes]
 }
@@ -89,7 +97,12 @@ export type ShortcutContextValue = {
 import { shortcutRegistry, type ShortcutActionId, type ShortcutBindings } from "./registry"
 import type { ShortcutHandlers } from "./types"
 
-export function createDefaultBindings(): ShortcutBindings {
+/**
+ * Returns a fresh binding object seeded from \`shortcutRegistry\` defaults.
+ *
+ * @returns Default shortcut bindings for every registered action
+ */
+export function createDefaultShortcutBindings(): ShortcutBindings {
     const bindings = {} as ShortcutBindings
 
     for (const actionId of Object.keys(shortcutRegistry) as ShortcutActionId[]) {
@@ -99,7 +112,15 @@ export function createDefaultBindings(): ShortcutBindings {
     return bindings
 }
 
-export function createShortcutMap(bindings: ShortcutBindings, handlers: ShortcutHandlers): ShortcutMap {
+/**
+ * Builds a \`ShortcutMap\` by combining current bindings with action handlers.
+ * Actions without handlers are skipped.
+ *
+ * @param bindings - Current binding state (defaults + user overrides)
+ * @param handlers - Runtime action handlers from the consuming app
+ * @returns Runtime shortcut map consumable by \`registerShortcutMap\`
+ */
+export function buildShortcutMap(bindings: ShortcutBindings, handlers: ShortcutHandlers): ShortcutMap {
     const map: ShortcutMap = {}
 
     for (const actionId of Object.keys(shortcutRegistry) as ShortcutActionId[]) {
@@ -126,13 +147,20 @@ export function createShortcutMap(bindings: ShortcutBindings, handlers: Shortcut
 `,
         "storage.ts": `import type { ShortcutActionId, ShortcutBindings } from "./registry"
 
+/** Default localStorage key used by the scaffolded shortcut provider. */
 export const DEFAULT_SHORTCUT_STORAGE_KEY = "app-shortcut-bindings"
 
-function isBindingValue(value: unknown): value is string | string[] {
+function _isBindingValue(value: unknown): value is string | string[] {
     if (typeof value === "string") return true
     return Array.isArray(value) && value.every((entry) => typeof entry === "string")
 }
 
+/**
+ * Loads persisted shortcut binding overrides from localStorage.
+ *
+ * @param storageKey - Storage key namespace
+ * @returns Partial binding overrides keyed by action id
+ */
 export function loadShortcutBindings(storageKey: string): Partial<ShortcutBindings> {
     if (typeof window === "undefined") return {}
 
@@ -146,7 +174,7 @@ export function loadShortcutBindings(storageKey: string): Partial<ShortcutBindin
         const result: Partial<ShortcutBindings> = {}
 
         for (const [actionId, value] of Object.entries(parsed as Record<string, unknown>)) {
-            if (!isBindingValue(value)) continue
+            if (!_isBindingValue(value)) continue
             result[actionId as ShortcutActionId] = value
         }
 
@@ -156,6 +184,12 @@ export function loadShortcutBindings(storageKey: string): Partial<ShortcutBindin
     }
 }
 
+/**
+ * Persists all shortcut bindings to localStorage.
+ *
+ * @param storageKey - Storage key namespace
+ * @param bindings - Full current binding set
+ */
 export function saveShortcutBindings(storageKey: string, bindings: ShortcutBindings): void {
     if (typeof window === "undefined") return
 
@@ -166,6 +200,11 @@ export function saveShortcutBindings(storageKey: string, bindings: ShortcutBindi
     }
 }
 
+/**
+ * Removes persisted shortcut bindings from localStorage.
+ *
+ * @param storageKey - Storage key namespace
+ */
 export function clearShortcutBindings(storageKey: string): void {
     if (typeof window === "undefined") return
 
@@ -189,7 +228,7 @@ import {
 } from "react"
 import { registerShortcutMap, useShortcut, type UseShortcutOptions } from "@remcostoeten/use-shortcut"
 import { shortcutRegistry, type ShortcutActionId, type ShortcutBindings } from "./registry"
-import { createDefaultBindings, createShortcutMap } from "./runtime"
+import { buildShortcutMap, createDefaultShortcutBindings } from "./runtime"
 import { defaultActiveScopes, normalizeScopes, type ShortcutScope } from "./scopes"
 import {
     DEFAULT_SHORTCUT_STORAGE_KEY,
@@ -199,9 +238,9 @@ import {
 } from "./storage"
 import type { ShortcutContextValue, ShortcutHandlers } from "./types"
 
-const ShortcutContext = createContext<ShortcutContextValue | null>(null)
+const _ShortcutContext = createContext<ShortcutContextValue | null>(null)
 
-function mergeBindings(defaultBindings: ShortcutBindings, persisted: Partial<ShortcutBindings>): ShortcutBindings {
+function _mergeBindings(defaultBindings: ShortcutBindings, persisted: Partial<ShortcutBindings>): ShortcutBindings {
     const merged = { ...defaultBindings }
 
     for (const actionId of Object.keys(defaultBindings) as ShortcutActionId[]) {
@@ -214,17 +253,17 @@ function mergeBindings(defaultBindings: ShortcutBindings, persisted: Partial<Sho
     return merged
 }
 
-function sameBinding(a: string | string[], b: string | string[]): boolean {
+function _isSameBinding(a: string | string[], b: string | string[]): boolean {
     const left = Array.isArray(a) ? a.join("|") : a
     const right = Array.isArray(b) ? b.join("|") : b
     return left === right
 }
 
-function hasBindingOverrides(bindings: ShortcutBindings): boolean {
-    const defaults = createDefaultBindings()
+function _hasBindingOverrides(bindings: ShortcutBindings): boolean {
+    const defaults = createDefaultShortcutBindings()
 
     for (const actionId of Object.keys(defaults) as ShortcutActionId[]) {
-        if (!sameBinding(bindings[actionId], defaults[actionId])) {
+        if (!_isSameBinding(bindings[actionId], defaults[actionId])) {
             return true
         }
     }
@@ -232,6 +271,7 @@ function hasBindingOverrides(bindings: ShortcutBindings): boolean {
     return false
 }
 
+/** Props for the scaffolded \`ShortcutProvider\`. */
 export type ShortcutProviderProps = {
     children: ReactNode
     handlers: ShortcutHandlers
@@ -242,6 +282,9 @@ export type ShortcutProviderProps = {
     shortcutOptions?: Omit<UseShortcutOptions, "activeScopes" | "disabled">
 }
 
+/**
+ * App-level provider that binds action handlers, scope state, and optional binding persistence.
+ */
 export function ShortcutProvider({
     children,
     handlers,
@@ -253,7 +296,7 @@ export function ShortcutProvider({
 }: ShortcutProviderProps) {
     const [activeScopes, setActiveScopes] = useState<ShortcutScope[]>(initialScopes)
     const [enabled, setEnabled] = useState(initialEnabled)
-    const [bindings, setBindings] = useState<ShortcutBindings>(() => createDefaultBindings())
+    const [bindings, setBindings] = useState<ShortcutBindings>(() => createDefaultShortcutBindings())
 
     useEffect(() => {
         setEnabled(initialEnabled)
@@ -263,7 +306,7 @@ export function ShortcutProvider({
         if (!persistBindings) return
 
         const persisted = loadShortcutBindings(storageKey)
-        setBindings((current) => mergeBindings(current, persisted))
+        setBindings((current) => _mergeBindings(current, persisted))
     }, [persistBindings, storageKey])
 
     useEffect(() => {
@@ -271,7 +314,7 @@ export function ShortcutProvider({
         saveShortcutBindings(storageKey, bindings)
     }, [bindings, persistBindings, storageKey])
 
-    const shortcutMap = useMemo(() => createShortcutMap(bindings, handlers), [bindings, handlers])
+    const shortcutMap = useMemo(() => buildShortcutMap(bindings, handlers), [bindings, handlers])
 
     const $ = useShortcut({
         ...shortcutOptions,
@@ -319,7 +362,7 @@ export function ShortcutProvider({
     }, [])
 
     const resetBindings = useCallback(() => {
-        setBindings(createDefaultBindings())
+        setBindings(createDefaultShortcutBindings())
         if (persistBindings) clearShortcutBindings(storageKey)
     }, [persistBindings, storageKey])
 
@@ -340,7 +383,7 @@ export function ShortcutProvider({
                 setEnabled,
             },
             meta: {
-                hasBindingOverrides: hasBindingOverrides(bindings),
+                hasBindingOverrides: _hasBindingOverrides(bindings),
                 availableActions: Object.keys(shortcutRegistry) as ShortcutActionId[],
             },
         }),
@@ -357,11 +400,14 @@ export function ShortcutProvider({
         ],
     )
 
-    return <ShortcutContext.Provider value={contextValue}>{children}</ShortcutContext.Provider>
+    return <_ShortcutContext.Provider value={contextValue}>{children}</_ShortcutContext.Provider>
 }
 
+/**
+ * Reads the shortcut manager context exposed by \`ShortcutProvider\`.
+ */
 export function useShortcutManager(): ShortcutContextValue {
-    const context = useContext(ShortcutContext)
+    const context = useContext(_ShortcutContext)
 
     if (!context) {
         throw new Error("useShortcutManager must be used within <ShortcutProvider>")
@@ -400,7 +446,7 @@ It follows a scalable architecture with a strict split between:
 3. Optionally expose a user-configurable key in your settings UI through \`useShortcutManager().actions.setBinding\`.
 4. Activate scopes from feature boundaries (for example editor route enters \`editor\` scope).
 
-${integrationSection}
+${_integrationSection}
 ## Rules For Scale
 
 - Keep handlers side-effect focused and feature-owned; keep the registry declarative.
