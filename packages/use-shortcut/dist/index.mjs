@@ -295,14 +295,12 @@ function isPureModifier(event) {
   return key === "shift" || key === "control" || key === "alt" || key === "meta";
 }
 function eventToCombo(event) {
-  const platform = detectPlatform();
-  const symbols = ModifierDisplaySymbols[platform];
   const modifiers = [];
-  if (event.ctrlKey) modifiers.push(symbols[ModifierKey.CTRL] === "\u2303" ? "ctrl" : "ctrl");
+  if (event.ctrlKey) modifiers.push("ctrl");
   if (event.altKey) modifiers.push("alt");
   if (event.shiftKey) modifiers.push("shift");
   if (event.metaKey) modifiers.push("cmd");
-  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key.toLowerCase();
+  const key = event.key === " " ? "space" : event.key.toLowerCase();
   return [...modifiers, key].join("+");
 }
 function isPrefix(a, b) {
@@ -725,7 +723,7 @@ function useShortcut(options = {}) {
       const scopes = Array.isArray(optionsRef.current.activeScopes) ? optionsRef.current.activeScopes : [optionsRef.current.activeScopes];
       registry.activeScopes = new Set(scopes.map((scope) => scope.trim()).filter(Boolean));
     }
-  });
+  }, [registry, options]);
   useEffect(() => {
     return () => {
       registry.listeners.forEach((entry) => entry.unbind());
@@ -736,7 +734,17 @@ function useShortcut(options = {}) {
 }
 function useShortcutMap(shortcutMap, options = {}) {
   const $ = useShortcut(options);
-  return registerShortcutMap($, shortcutMap);
+  const resultsRef = useRef({});
+  useEffect(() => {
+    const results = registerShortcutMap($, shortcutMap);
+    resultsRef.current = results;
+    return () => {
+      for (const result of Object.values(results)) {
+        result.unbind();
+      }
+    };
+  }, [$, shortcutMap]);
+  return resultsRef.current;
 }
 function createShortcut(options = {}) {
   const { builder } = createShortcutBuilder(options);

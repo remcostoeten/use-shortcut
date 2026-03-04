@@ -10,7 +10,24 @@ import type {
     ShortcutMapEntry,
     ShortcutGroup,
     ShortcutResult,
+    ShortcutHandler,
+    HandlerOptions,
+    ActionKey,
 } from "./types"
+
+type ShortcutMapSequenceChain = {
+    then: (step: string) => ShortcutMapSequenceChain
+    on: (handler: ShortcutHandler, options?: HandlerOptions) => ShortcutResult
+}
+
+type ShortcutMapChain = {
+    ctrl: ShortcutMapChain
+    shift: ShortcutMapChain
+    alt: ShortcutMapChain
+    cmd: ShortcutMapChain
+    mod: ShortcutMapChain
+    key: (key: ActionKey) => ShortcutMapSequenceChain
+}
 
 function normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
     if (Array.isArray(keys)) {
@@ -31,7 +48,7 @@ function normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
     return [trimmed]
 }
 
-function applyStep(builder: any, step: string): any {
+function applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequenceChain {
     const tokens = step
         .toLowerCase()
         .split("+")
@@ -74,7 +91,7 @@ function applyStep(builder: any, step: string): any {
         throw new Error(`[useShortcutMap] Unsupported modifier token "${token}" in step "${step}"`)
     }
 
-    return chain.key(key)
+    return chain.key(key as ActionKey)
 }
 
 export function registerShortcutMap<T extends ShortcutMap>(
@@ -127,7 +144,7 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
 
             registry.activeScopes = new Set(scopes.map((scope) => scope.trim()).filter(Boolean))
         }
-    })
+    }, [registry, options])
 
     useEffect(() => {
         return () => {
@@ -147,7 +164,20 @@ export function useShortcutMap<T extends ShortcutMap>(
     options: UseShortcutOptions = {},
 ): ShortcutMapResult<T> {
     const $ = useShortcut(options)
-    return registerShortcutMap($, shortcutMap)
+    const resultsRef = useRef<ShortcutMapResult<T>>({} as ShortcutMapResult<T>)
+
+    useEffect(() => {
+        const results = registerShortcutMap($, shortcutMap)
+        resultsRef.current = results
+
+        return () => {
+            for (const result of Object.values(results)) {
+                result.unbind()
+            }
+        }
+    }, [$, shortcutMap])
+
+    return resultsRef.current
 }
 
 /**

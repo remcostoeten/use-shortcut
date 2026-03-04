@@ -83,6 +83,15 @@ describe("advanced shortcut features", () => {
         await expect(recordPromise).resolves.toBe("ctrl+k")
     })
 
+    it("records space key combos as parseable tokens", async () => {
+        const $ = createShortcut({ target: window })
+
+        const recordPromise = $.record({ timeoutMs: 1000 })
+        dispatchKey(" ", { ctrlKey: true })
+
+        await expect(recordPromise).resolves.toBe("ctrl+space")
+    })
+
     it("respects priority and stopOnMatch for overlapping combos", () => {
         const $ = createShortcut({ target: window, ignoreInputs: false })
         const primary = vi.fn()

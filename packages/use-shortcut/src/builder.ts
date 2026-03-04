@@ -1,7 +1,6 @@
 import {
     detectPlatform,
     Platform,
-    ModifierDisplaySymbols,
     ModifierKey,
     ModifierDisplayOrder,
 } from "./constants"
@@ -167,16 +166,13 @@ function isPureModifier(event: KeyboardEvent): boolean {
 }
 
 function eventToCombo(event: KeyboardEvent): string {
-    const platform = detectPlatform()
-    const symbols = ModifierDisplaySymbols[platform]
-
     const modifiers: string[] = []
-    if (event.ctrlKey) modifiers.push(symbols[ModifierKey.CTRL] === "⌃" ? "ctrl" : "ctrl")
+    if (event.ctrlKey) modifiers.push("ctrl")
     if (event.altKey) modifiers.push("alt")
     if (event.shiftKey) modifiers.push("shift")
     if (event.metaKey) modifiers.push("cmd")
 
-    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key.toLowerCase()
+    const key = event.key === " " ? "space" : event.key.toLowerCase()
     return [...modifiers, key].join("+")
 }
 
