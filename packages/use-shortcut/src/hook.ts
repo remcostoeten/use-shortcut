@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useMemo } from "react"
+import { useEffect, useRef, useMemo, useState } from "react"
 import { createShortcutBuilder } from "./builder"
 import type {
     ShortcutBuilder,
@@ -164,20 +164,20 @@ export function useShortcutMap<T extends ShortcutMap>(
     options: UseShortcutOptions = {},
 ): ShortcutMapResult<T> {
     const $ = useShortcut(options)
-    const resultsRef = useRef<ShortcutMapResult<T>>({} as ShortcutMapResult<T>)
+    const [results, setResults] = useState<ShortcutMapResult<T>>({} as ShortcutMapResult<T>)
 
     useEffect(() => {
-        const results = registerShortcutMap($, shortcutMap)
-        resultsRef.current = results
+        const registrations = registerShortcutMap($, shortcutMap)
+        setResults(registrations)
 
         return () => {
-            for (const result of Object.values(results)) {
+            for (const result of Object.values(registrations)) {
                 result.unbind()
             }
         }
     }, [$, shortcutMap])
 
-    return resultsRef.current
+    return results
 }
 
 /**

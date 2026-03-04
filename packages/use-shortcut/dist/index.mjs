@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useMemo, useEffect, useState } from 'react';
 
 // src/constants.ts
 var Platform = {
@@ -734,17 +734,17 @@ function useShortcut(options = {}) {
 }
 function useShortcutMap(shortcutMap, options = {}) {
   const $ = useShortcut(options);
-  const resultsRef = useRef({});
+  const [results, setResults] = useState({});
   useEffect(() => {
-    const results = registerShortcutMap($, shortcutMap);
-    resultsRef.current = results;
+    const registrations = registerShortcutMap($, shortcutMap);
+    setResults(registrations);
     return () => {
-      for (const result of Object.values(results)) {
+      for (const result of Object.values(registrations)) {
         result.unbind();
       }
     };
   }, [$, shortcutMap]);
-  return resultsRef.current;
+  return results;
 }
 function createShortcut(options = {}) {
   const { builder } = createShortcutBuilder(options);

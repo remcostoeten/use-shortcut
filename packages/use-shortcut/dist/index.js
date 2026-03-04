@@ -736,17 +736,17 @@ function useShortcut(options = {}) {
 }
 function useShortcutMap(shortcutMap, options = {}) {
   const $ = useShortcut(options);
-  const resultsRef = react.useRef({});
+  const [results, setResults] = react.useState({});
   react.useEffect(() => {
-    const results = registerShortcutMap($, shortcutMap);
-    resultsRef.current = results;
+    const registrations = registerShortcutMap($, shortcutMap);
+    setResults(registrations);
     return () => {
-      for (const result of Object.values(results)) {
+      for (const result of Object.values(registrations)) {
         result.unbind();
       }
     };
   }, [$, shortcutMap]);
-  return resultsRef.current;
+  return results;
 }
 function createShortcut(options = {}) {
   const { builder } = createShortcutBuilder(options);
