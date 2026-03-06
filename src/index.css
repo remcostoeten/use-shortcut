@@ -1,0 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap');
+
+@font-face {
+  font-family: 'Geist Pixel Square';
+  src: url('/fonts/GeistPixel-Square.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Pixel Grid';
+  src: url('/fonts/GeistPixel-Grid.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Pixel Circle';
+  src: url('/fonts/GeistPixel-Circle.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Pixel Triangle';
+  src: url('/fonts/GeistPixel-Triangle.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Pixel Line';
+  src: url('/fonts/GeistPixel-Line.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html {
+  color-scheme: dark;
+  scrollbar-color: hsl(0 0% 24%) hsl(0 0% 6%);
+  scrollbar-width: thin;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  scroll-margin-top: 5rem;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 18 100% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 18 100% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 18 100% 50%;
+
+    --radius: 0rem;
+
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 18 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 18 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'Geist Mono', 'SF Mono', 'Fira Code', monospace;
+  }
+
+  .font-display {
+    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  }
+
+  kbd {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+}
+
+*::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+*::-webkit-scrollbar-track {
+  background: hsl(0 0% 6%);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, hsl(0 0% 24%), hsl(0 0% 16%));
+  border: 2px solid hsl(0 0% 6%);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, hsl(0 0% 30%), hsl(0 0% 20%));
+}
+
+*::-webkit-scrollbar-corner {
+  background: hsl(0 0% 6%);
+}
+
+@keyframes docs-result-flash {
+  0% {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.95), 0 0 0 0 hsl(var(--primary) / 0.22);
+    background-color: hsl(var(--primary) / 0.18);
+  }
+  45% {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.9), 0 0 0 12px hsl(var(--primary) / 0.08);
+    background-color: hsl(var(--primary) / 0.12);
+  }
+  100% {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.6), 0 0 0 0 hsl(var(--primary) / 0);
+    background-color: transparent;
+  }
+}
+
+[data-flash="true"] {
+  animation: docs-result-flash 680ms cubic-bezier(0.22, 1, 0.36, 1);
+}
