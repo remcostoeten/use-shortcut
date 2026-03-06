@@ -1,0 +1,31 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">use-shortcut docs</title>
+  <desc id="desc">Typed React keyboard shortcuts with sequences, scopes, parser utilities, and recording.</desc>
+  <defs>
+    <linearGradient id="bg" x1="80" y1="40" x2="1120" y2="590" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A0A0A" />
+      <stop offset="1" stop-color="#111827" />
+    </linearGradient>
+    <linearGradient id="accent" x1="132" y1="126" x2="1038" y2="508" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22C55E" />
+      <stop offset="1" stop-color="#38BDF8" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" rx="36" fill="url(#bg)" />
+  <rect x="44" y="44" width="1112" height="542" rx="28" fill="#0F172A" stroke="rgba(255,255,255,0.12)" />
+  <rect x="90" y="96" width="1020" height="438" rx="24" fill="url(#accent)" fill-opacity="0.08" stroke="rgba(255,255,255,0.1)" />
+  <rect x="132" y="126" width="168" height="42" rx="21" fill="#111827" stroke="rgba(255,255,255,0.16)" />
+  <text x="156" y="153" fill="#86EFAC" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="24">react hook</text>
+  <text x="132" y="244" fill="#F8FAFC" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="76" font-weight="700">use-shortcut</text>
+  <text x="132" y="304" fill="#93C5FD" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="34">typed keyboard shortcuts for React</text>
+  <text x="132" y="382" fill="#E2E8F0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="28">mod+s  sequences  scopes  parser  recorder</text>
+  <rect x="132" y="432" width="284" height="64" rx="16" fill="#020617" stroke="rgba(255,255,255,0.14)" />
+  <text x="164" y="472" fill="#F8FAFC" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="32">docs</text>
+  <rect x="804" y="172" width="214" height="112" rx="18" fill="#020617" stroke="rgba(255,255,255,0.14)" />
+  <text x="840" y="218" fill="#86EFAC" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="24">~3kb</text>
+  <text x="840" y="252" fill="#CBD5E1" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20">zero deps</text>
+  <rect x="760" y="308" width="302" height="112" rx="18" fill="#020617" stroke="rgba(255,255,255,0.14)" />
+  <text x="796" y="354" fill="#38BDF8" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="24">chainable API</text>
+  <text x="796" y="388" fill="#CBD5E1" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20">perfect TS ergonomics</text>
+  <text x="132" y="554" fill="#64748B" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20">use-shortcut.vercel.app</text>
+</svg>
