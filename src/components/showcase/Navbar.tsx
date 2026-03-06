@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, Github, Menu, X } from "lucide-react";
 import type { NavLink as ShowcaseNavLink } from "@/config/types";
 import { Link } from "react-router-dom";
+import { trackDocsEvent } from "@/lib/analytics";
 
 interface NavbarProps {
   packageName: string;
@@ -113,6 +114,11 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
     const normalizedQuery = query.trim().toLowerCase();
     if (normalizedQuery.length === 0) return;
 
+    trackDocsEvent("docs_search_submitted", {
+      query: normalizedQuery,
+      results: docsMatchIds.length,
+    });
+
     if (docsMatchIds.length > 0) {
       const first = docsMatchIds[0];
       if (first) {
@@ -205,6 +211,11 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
                 }
                 event.preventDefault();
                 scrollToHash(link.url);
+                trackDocsEvent("nav_anchor_clicked", {
+                  label: link.label,
+                  href: link.url,
+                  location: "desktop",
+                });
               }}
               className={[
                 "inline-flex h-8 whitespace-nowrap items-center border px-2.5 font-mono text-[11px] lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -223,6 +234,13 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => {
+                trackDocsEvent("nav_external_clicked", {
+                  label: link.label,
+                  href: link.url,
+                  location: "desktop",
+                });
+              }}
               className="inline-flex h-8 whitespace-nowrap items-center border border-border px-2.5 font-mono text-[11px] lowercase text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {link.label}
@@ -289,6 +307,12 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
             href={githubUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => {
+              trackDocsEvent("github_link_clicked", {
+                href: githubUrl,
+                location: "header",
+              });
+            }}
             className="inline-flex h-11 w-11 touch-manipulation items-center justify-center rounded border border-border text-muted-foreground hover:text-foreground transition-colors"
             aria-label="View on GitHub"
           >
@@ -298,7 +322,13 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
           {/* Mobile hamburger */}
           <button
             type="button"
-            onClick={() => setMobileOpen(!mobileOpen)}
+            onClick={() => {
+              const nextOpen = !mobileOpen;
+              setMobileOpen(nextOpen);
+              trackDocsEvent("mobile_menu_toggled", {
+                open: nextOpen,
+              });
+            }}
             className="md:hidden flex h-11 w-11 touch-manipulation items-center justify-center rounded border border-dashed border-border text-muted-foreground hover:text-foreground hover:bg-card/50 transition-colors"
             aria-label="Toggle menu"
             aria-expanded={mobileOpen}
@@ -346,6 +376,11 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
                 event.preventDefault();
                 scrollToHash(link.url);
                 setMobileOpen(false);
+                trackDocsEvent("nav_anchor_clicked", {
+                  label: link.label,
+                  href: link.url,
+                  location: "mobile",
+                });
               }}
               className={[
                 "inline-flex h-10 items-center border px-3 font-mono text-xs lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -364,7 +399,14 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => setMobileOpen(false)}
+              onClick={() => {
+                setMobileOpen(false);
+                trackDocsEvent("nav_external_clicked", {
+                  label: link.label,
+                  href: link.url,
+                  location: "mobile",
+                });
+              }}
               className="inline-flex h-10 items-center border border-border px-3 font-mono text-xs lowercase text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {link.label}

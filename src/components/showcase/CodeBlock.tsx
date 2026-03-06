@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { SyntaxHighlight } from "./SyntaxHighlight";
+import { trackDocsEvent } from "@/lib/analytics";
 
 interface CodeBlockProps {
   title?: string;
@@ -15,6 +16,10 @@ export function CodeBlock({ title, code, language = "tsx" }: CodeBlockProps) {
   const copy = async () => {
     await navigator.clipboard.writeText(code);
     setCopied(true);
+    trackDocsEvent("code_example_copied", {
+      title: title ?? "untitled",
+      language,
+    });
     setTimeout(() => setCopied(false), 2000);
   };
 

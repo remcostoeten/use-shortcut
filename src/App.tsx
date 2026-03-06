@@ -8,11 +8,13 @@ import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import PackagePage from "./pages/PackagePage";
 import NotFound from "./pages/NotFound";
+import {
+  analyticsEnabled,
+  analyticsIngestUrl,
+  analyticsProjectId,
+} from "./lib/analytics";
 
 const queryClient = new QueryClient();
-const analyticsIngestUrl = import.meta.env.VITE_REMCO_ANALYTICS_URL as
-  | string
-  | undefined;
 
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
@@ -21,9 +23,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Analytics
-          projectId="use-shortcut-docs"
+          projectId={analyticsProjectId}
           ingestUrl={analyticsIngestUrl}
-          disabled={!analyticsIngestUrl}
+          disabled={!analyticsEnabled}
           debug={import.meta.env.DEV}
         />
         <BrowserRouter>

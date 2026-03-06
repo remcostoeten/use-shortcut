@@ -17,6 +17,7 @@ import type { PackageConfig } from "@/config/types";
 import { ArrowRight } from "lucide-react";
 import { applySeoMeta } from "@/lib/seo";
 import { applySoftwareStructuredData, applyWebsiteStructuredData } from "@/lib/structured-data";
+import { trackDocsEvent } from "@/lib/analytics";
 
 type Props = {
   config: PackageConfig;
@@ -48,6 +49,11 @@ export function PackageShowcase({ config, demoContent }: Props) {
       .filter((cta) => Boolean(cta.shortcutKey))
       .map((cta) =>
         $.key(cta.shortcutKey as Parameters<typeof $.key>[0]).on(() => {
+          trackDocsEvent("cta_shortcut_triggered", {
+            label: cta.label,
+            href: cta.url,
+            shortcutKey: cta.shortcutKey,
+          });
           if (cta.url.startsWith("#")) {
             document.querySelector(cta.url)?.scrollIntoView({ behavior: "smooth" });
           } else {
@@ -131,6 +137,13 @@ export function PackageShowcase({ config, demoContent }: Props) {
                   <a
                     key={cta.label}
                     href={cta.url}
+                    onClick={() => {
+                      trackDocsEvent("cta_clicked", {
+                        label: cta.label,
+                        href: cta.url,
+                        primary: true,
+                      });
+                    }}
                     className="inline-flex min-h-9 items-center gap-2 border border-primary/40 bg-primary/12 px-3 py-2 font-mono text-[11px] font-medium text-primary hover:bg-primary/18 transition-colors"
                   >
                     {cta.label}
@@ -144,6 +157,13 @@ export function PackageShowcase({ config, demoContent }: Props) {
                   <a
                     key={cta.label}
                     href={cta.url}
+                    onClick={() => {
+                      trackDocsEvent("cta_clicked", {
+                        label: cta.label,
+                        href: cta.url,
+                        primary: false,
+                      });
+                    }}
                     className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {cta.label}

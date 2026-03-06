@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Check, Copy, Download, FileCode2, Sparkles, TerminalSquare } from "lucide-react";
+import { trackDocsEvent } from "@/lib/analytics";
 
 interface InstallCommandProps {
   packageName?: string;
@@ -63,6 +64,11 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
   const copy = async () => {
     await navigator.clipboard.writeText(command);
     setCopied(true);
+    trackDocsEvent("install_command_copied", {
+      packageName,
+      packageManager: active,
+      command,
+    });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -105,7 +111,13 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
               role="tab"
               aria-selected={active === m.id}
               tabIndex={active === m.id ? 0 : -1}
-              onClick={() => setActive(m.id)}
+              onClick={() => {
+                setActive(m.id);
+                trackDocsEvent("package_manager_selected", {
+                  packageName,
+                  packageManager: m.id,
+                });
+              }}
               onKeyDown={(e) => handleKeyDown(e, m.id)}
               className={`rounded-sm px-2.5 py-1.5 font-mono text-xs lowercase transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${active === m.id
                 ? "text-foreground"
@@ -146,6 +158,13 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                 key={asset.href}
                 href={asset.href}
                 download
+                onClick={() => {
+                  trackDocsEvent("install_asset_downloaded", {
+                    packageName,
+                    asset: asset.label,
+                    href: asset.href,
+                  });
+                }}
                 className="group flex min-h-24 touch-manipulation flex-col justify-between border border-border bg-background px-3 py-3 transition-colors hover:border-primary/50 hover:bg-card/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <div className="flex items-center justify-between gap-3">
