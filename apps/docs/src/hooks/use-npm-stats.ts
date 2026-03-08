@@ -1,16 +1,37 @@
 import { useQuery } from "@tanstack/react-query";
 
+export interface NpmMeta {
+    version: string | null;
+    lastPublishedAt: string | null;
+    isLoading: boolean;
+}
+
 interface NpmStats {
     version: string | null;
+    lastPublishedAt: string | null;
     weeklyDownloads: number | null;
     isLoading: boolean;
 }
 
-async function fetchLatestVersion(pkg: string): Promise<string> {
-    const res = await fetch(`https://registry.npmjs.org/${pkg}/latest`);
-    if (!res.ok) throw new Error("Failed to fetch version");
-    const data = await res.json();
-    return data.version;
+function encodeNpmPackageName(pkg: string): string {
+    return encodeURIComponent(pkg);
+}
+
+type NpmRegistryPackageResponse = {
+    "dist-tags"?: Record<string, string>;
+    time?: Record<string, string>;
+};
+
+async function fetchLatestPackageMeta(
+    pkg: string,
+): Promise<{ version: string; lastPublishedAt: string | null }> {
+    const res = await fetch(`https://registry.npmjs.org/${encodeNpmPackageName(pkg)}`);
+    if (!res.ok) throw new Error("Failed to fetch npm metadata");
+    const data = (await res.json()) as NpmRegistryPackageResponse;
+    const version = data["dist-tags"]?.latest;
+    if (!version) throw new Error("Missing npm dist-tag latest");
+    const lastPublishedAt = data.time?.[version] ?? data.time?.modified ?? null;
+    return { version, lastPublishedAt };
 }
 
 async function fetchWeeklyDownloads(pkg: string): Promise<number> {
@@ -22,13 +43,23 @@ async function fetchWeeklyDownloads(pkg: string): Promise<number> {
     return data.downloads;
 }
 
-export function useNpmStats(packageName: string): NpmStats {
-    const versionQuery = useQuery({
-        queryKey: ["npm-version", packageName],
-        queryFn: () => fetchLatestVersion(packageName),
+export function useNpmMeta(packageName: string): NpmMeta {
+    const query = useQuery({
+        queryKey: ["npm-meta", packageName],
+        queryFn: () => fetchLatestPackageMeta(packageName),
         staleTime: 1000 * 60 * 60,
         retry: 1,
     });
+
+    return {
+        version: query.data?.version ?? null,
+        lastPublishedAt: query.data?.lastPublishedAt ?? null,
+        isLoading: query.isLoading,
+    };
+}
+
+export function useNpmStats(packageName: string): NpmStats {
+    const meta = useNpmMeta(packageName);
 
     const downloadsQuery = useQuery({
         queryKey: ["npm-downloads", packageName],
@@ -38,8 +69,9 @@ export function useNpmStats(packageName: string): NpmStats {
     });
 
     return {
-        version: versionQuery.data ?? null,
+        version: meta.version,
+        lastPublishedAt: meta.lastPublishedAt,
         weeklyDownloads: downloadsQuery.data ?? null,
-        isLoading: versionQuery.isLoading || downloadsQuery.isLoading,
+        isLoading: meta.isLoading || downloadsQuery.isLoading,
     };
 }

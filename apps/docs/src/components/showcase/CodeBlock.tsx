@@ -24,27 +24,26 @@ export function CodeBlock({ title, code, language = "tsx" }: CodeBlockProps) {
   };
 
   return (
-    <div className="w-full">
-      {title && (
-        <div className="flex items-center justify-between mb-2">
-          <span className="font-mono text-xs lowercase text-muted-foreground">{title}</span>
+    <div className="w-full overflow-hidden border border-border/80 bg-card/10">
+      <div className="flex items-center justify-between gap-3 border-b border-border/80 bg-card/40 px-4 py-2">
+        <div className="min-w-0">
+          {title ? (
+            <p className="truncate font-display text-sm font-semibold lowercase tracking-tight text-foreground">
+              {title}
+            </p>
+          ) : null}
         </div>
-      )}
-      <div className="border border-border overflow-hidden">
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card/50">
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-muted-foreground/20" />
-            <span className="h-2 w-2 rounded-full bg-muted-foreground/20" />
-            <span className="h-2 w-2 rounded-full bg-muted-foreground/20" />
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="border border-border/70 bg-background/75 px-2 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+            {language}
+          </span>
           <button
             onClick={copy}
-            className="relative h-6 w-6 flex items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
+            className="relative flex h-8 w-8 items-center justify-center border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-background/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Copy code"
           >
             <Copy
-              className={`h-3 w-3 absolute transition-all duration-300 ${
+              className={`absolute h-3.5 w-3.5 transition-all duration-300 ${
                 copied
                   ? "opacity-0 scale-50 rotate-12"
                   : "opacity-100 scale-100 rotate-0"
@@ -61,25 +60,27 @@ export function CodeBlock({ title, code, language = "tsx" }: CodeBlockProps) {
             />
           </button>
         </div>
-        {/* Code area with line numbers */}
-        <div className="bg-background">
-          <pre className="py-3">
-            {lines.map((line, i) => (
-              <div key={i} className="flex hover:bg-card/30 transition-colors">
-                <span className="select-none w-10 shrink-0 text-right pr-4 font-mono text-[11px] leading-relaxed text-muted-foreground/25">
-                  {i + 1}
-                </span>
-                <span className="min-w-0 flex-1 border-l border-border/30 pl-4 pr-4 font-mono text-[11px] leading-relaxed break-words [overflow-wrap:anywhere]">
-                  {line ? (
-                    <SyntaxHighlight code={line} language={language} />
-                  ) : (
-                    "\u00A0"
-                  )}
-                </span>
-              </div>
-            ))}
-          </pre>
-        </div>
+      </div>
+      <div className="overflow-x-hidden bg-background/95">
+        <pre className="py-2">
+          {lines.map((line, i) => (
+            <div
+              key={i}
+              className="group flex min-w-0 items-start border-l border-transparent transition-colors hover:border-primary/25 hover:bg-card/20"
+            >
+              <span className="w-10 shrink-0 select-none px-4 py-1 text-right font-mono text-[11px] leading-[1.35] text-muted-foreground/30 tabular-nums">
+                {i + 1}
+              </span>
+              <span className="min-w-0 flex-1 border-l border-border/40 px-4 py-1 font-mono text-[11px] leading-[1.35] whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                {line ? (
+                  <SyntaxHighlight code={line} language={language} />
+                ) : (
+                  "\u00A0"
+                )}
+              </span>
+            </div>
+          ))}
+        </pre>
       </div>
     </div>
   );

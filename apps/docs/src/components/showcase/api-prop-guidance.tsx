@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/accordion";
 import { SyntaxHighlight } from "./SyntaxHighlight";
 
-type Props = {
+interface Props {
   title?: string;
   description?: string;
   items: ApiPropGuidanceItem[];
@@ -59,7 +59,7 @@ export function ApiPropGuidance({
               {item.example ? (
                 <div>
                   <p className="mb-1 font-mono text-[11px] lowercase text-primary">example</p>
-                  <pre className="overflow-x-auto border border-border bg-background p-3 text-[11px] leading-relaxed">
+                  <pre className="overflow-x-hidden border border-border bg-background p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                     <SyntaxHighlight code={item.example} language={item.exampleLanguage ?? "tsx"} />
                   </pre>
                 </div>

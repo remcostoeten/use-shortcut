@@ -81,7 +81,8 @@ const assets = [
     href: "/skill.sh",
     label: "skills.sh",
     title: "Install the agent skill",
-    description: "Use the skills.sh CLI to install the use-shortcut skill from this repository.",
+    description: "Install the use-shortcut skill for AI agents using the skills.sh CLI.",
+    tooltip: "Registers this repository as a Vercel skills.sh skill for AI agents. Installed agents can automatically load the guide, understand the use-shortcut API, and apply the correct patterns when generating code.",
     icon: TerminalSquare,
   },
   {
@@ -238,7 +239,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
           </button>
         </div>
         <Tooltip.Provider delayDuration={300}>
-          <div className="mt-3 flex items-center gap-2">
+          <div className="mt-3 flex items-center gap-2 relative z-50">
             <span className="font-mono text-[11px] lowercase text-primary">install helpers</span>
             <Tooltip.Root>
               <Tooltip.Trigger asChild>
@@ -252,12 +253,18 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
               </Tooltip.Trigger>
               <Tooltip.Portal>
                 <Tooltip.Content
-                  className="max-w-[280px] rounded-md border bg-popover p-3 text-xs shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+                  className="z-50 max-w-[280px] rounded-md border bg-popover p-3 text-xs text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
                   sideOffset={5}
                 >
                   <p className="leading-relaxed text-foreground">
                     Use <strong>skills.sh</strong> when you want the reusable agent skill from this repo. Use <strong>llm.txt</strong> when you want an LLM to install and wire it up with the right shortcut patterns.
                   </p>
+                  <div className="mt-2 pt-2 border-t border-border/50">
+                    <p className="font-mono text-[10px] lowercase text-primary mb-1">what to grab</p>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Use `npx skills add https://github.com/remcostoeten/use-shortcut --skill use-shortcut` for the agent skill, or `llm.txt` for a coding model.
+                    </p>
+                  </div>
                   <Tooltip.Arrow className="fill-popover" />
                 </Tooltip.Content>
               </Tooltip.Portal>
@@ -319,9 +326,39 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                     <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
                     <span className="font-mono text-[11px] lowercase text-primary">{asset.label}</span>
                   </div>
-                  <p className="text-xs font-medium leading-relaxed text-foreground">
-                    {asset.title}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs font-medium leading-relaxed text-foreground">
+                      {asset.title}
+                    </p>
+                    {'tooltip' in asset && (
+                      <div className="relative z-50">
+                        <Tooltip.Provider delayDuration={300}>
+                          <Tooltip.Root>
+                            <Tooltip.Trigger asChild>
+                              <button
+                                type="button"
+                                className="flex h-3 w-3 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                aria-label={`More info about ${asset.label}`}
+                              >
+                                <HelpCircle className="h-2.5 w-2.5" />
+                              </button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                              <Tooltip.Content
+                                className="z-50 max-w-[280px] rounded-md border bg-popover p-3 text-xs text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+                                sideOffset={5}
+                              >
+                                <p className="leading-relaxed text-foreground">
+                                  {(asset as any).tooltip}
+                                </p>
+                                <Tooltip.Arrow className="fill-popover" />
+                              </Tooltip.Content>
+                            </Tooltip.Portal>
+                          </Tooltip.Root>
+                        </Tooltip.Provider>
+                      </div>
+                    )}
+                  </div>
                   <p className="pr-2 text-xs leading-relaxed text-muted-foreground">
                     {asset.description}
                   </p>
@@ -367,14 +404,6 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
               </div>
             );
           })}
-        </div>
-      </div>
-      <div className="border border-dashed border-border bg-card/20 px-4 py-3">
-        <div className="flex flex-col gap-1.5">
-          <p className="font-mono text-[11px] lowercase text-primary">what to grab</p>
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            Use `npx skills add https://github.com/remcostoeten/use-shortcut --skill use-shortcut` if you want the reusable agent skill from this repo. Use `llm.txt` if you want a coding model to install and implement shortcuts correctly.
-          </p>
         </div>
       </div>
 

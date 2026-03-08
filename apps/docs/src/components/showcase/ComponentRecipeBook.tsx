@@ -66,93 +66,83 @@ function AvatarLoginRecipePreview({ recipe }: RecipePreviewProps) {
   }, { preventDefault: true });
 
   return (
-    <div className="relative overflow-hidden border border-border bg-[radial-gradient(circle_at_top_right,rgba(255,98,0,0.14),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0)),linear-gradient(135deg,#0f0f0f,#050505)] p-4 sm:p-5">
+    <div className="relative overflow-hidden border border-border bg-[radial-gradient(circle_at_top_right,rgba(255,98,0,0.14),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0)),linear-gradient(135deg,#0f0f0f,#050505)] p-3">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] opacity-30" aria-hidden="true" />
 
       <div className="relative">
-        <div className="mb-3">
-          <p className="font-mono text-[11px] lowercase text-primary">live preview</p>
-          <p className="mt-1 text-xs lowercase leading-relaxed text-muted-foreground">
-            just the avatar trigger and the context menu.
+        <div className="mb-2">
+          <p className="font-mono text-[10px] lowercase text-primary">live preview</p>
+          <p className="text-xs lowercase leading-relaxed text-muted-foreground">
+            avatar trigger with keyboard shortcuts.
           </p>
         </div>
 
-        <div className="relative min-h-[220px] border border-white/10 bg-black/20 p-4">
+        <div className="relative min-h-[140px] border border-white/10 bg-black/20 p-3">
           <div className="flex items-center justify-end">
             <div className="flex items-center gap-2">
-              <span className="inline-flex min-h-8 items-center border border-primary/25 bg-primary/10 px-2 font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
-                open menu
+              <span className="inline-flex min-h-6 items-center border border-primary/25 bg-primary/10 px-1.5 font-mono text-[9px] uppercase tracking-[0.14em] text-primary">
+                menu
               </span>
               <button
                 type="button"
                 onClick={() => setMenuOpen((open) => !open)}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-foreground transition-colors hover:border-primary/40 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="inline-flex min-h-8 min-w-8 items-center justify-center rounded-full border border-white/10 bg-white/5 text-foreground transition-colors hover:border-primary/40 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 aria-label="Open profile actions"
                 aria-expanded={menuOpen}
               >
-                <UserCircle2 className="h-6 w-6" aria-hidden="true" />
+                <UserCircle2 className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-2">
-            <kbd className={`inline-flex min-h-7 items-center justify-center border px-2 font-mono text-[10px] uppercase transition-colors ${
-              activeCombo === "shift+l"
-                ? "border-primary/50 bg-primary/12 text-primary"
-                : "border-white/10 bg-white/5 text-muted-foreground"
-            }`}>
-              shift + l
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            <kbd className={`inline-flex min-h-5 items-center justify-center border px-1.5 font-mono text-[9px] uppercase transition-colors ${activeCombo === "shift+l"
+              ? "border-primary/50 bg-primary/12 text-primary"
+              : "border-white/10 bg-white/5 text-muted-foreground"
+              }`}>
+              shift+l
             </kbd>
-            <kbd className={`inline-flex min-h-7 items-center justify-center border px-2 font-mono text-[10px] uppercase transition-colors ${
-              activeCombo === "shift+d"
-                ? "border-primary/50 bg-primary/12 text-primary"
-                : "border-white/10 bg-white/5 text-muted-foreground"
-            }`}>
-              shift + d
+            <kbd className={`inline-flex min-h-5 items-center justify-center border px-1.5 font-mono text-[9px] uppercase transition-colors ${activeCombo === "shift+d"
+              ? "border-primary/50 bg-primary/12 text-primary"
+              : "border-white/10 bg-white/5 text-muted-foreground"
+              }`}>
+              shift+d
             </kbd>
           </div>
 
-          <p className="mt-3 max-w-[34ch] text-sm lowercase leading-relaxed text-muted-foreground">
-            use the avatar to open the menu, or trigger login and logout directly from the keyboard.
-          </p>
-
           <div
-            className={`absolute right-4 top-[62px] w-[244px] origin-top-right border border-white/10 bg-[#0d0d0d] p-3 shadow-[0_20px_40px_rgba(0,0,0,0.45)] transition duration-200 ${
-              menuOpen
-                ? "translate-y-0 scale-100 opacity-100"
-                : "pointer-events-none -translate-y-2 scale-[0.98] opacity-0"
-            }`}
+            className={`absolute right-3 top-[48px] w-[200px] origin-top-right border border-white/10 bg-[#0d0d0d] p-2 shadow-[0_20px_40px_rgba(0,0,0,0.45)] transition duration-200 ${menuOpen
+              ? "translate-y-0 scale-100 opacity-100"
+              : "pointer-events-none -translate-y-2 scale-[0.98] opacity-0"
+              }`}
           >
-            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary/85">
-              profile actions
-            </p>
-            <p className="mt-2 text-xs lowercase leading-relaxed text-muted-foreground">
-              compact now, extensible later.
+            <p className="font-mono text-[9px] uppercase tracking-[0.16em] text-primary/85">
+              profile
             </p>
             <button
               type="button"
               onClick={() => triggerAction("login", "button", "shift+l")}
-              className="mt-4 inline-flex min-h-11 w-full items-center justify-between gap-3 border border-primary/35 bg-primary/10 px-3 text-left transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="mt-2 inline-flex min-h-8 w-full items-center justify-between gap-2 border border-primary/35 bg-primary/10 px-2 text-left transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span className="flex items-center gap-2 text-sm lowercase text-primary">
-                <LogIn className="h-4 w-4" aria-hidden="true" />
+              <span className="flex items-center gap-1.5 text-xs lowercase text-primary">
+                <LogIn className="h-3.5 w-3.5" aria-hidden="true" />
                 login
               </span>
-              <kbd className="inline-flex min-h-6 items-center justify-center border border-primary/25 bg-background/60 px-1.5 font-mono text-[10px] uppercase text-primary/80">
-                shift + l
+              <kbd className="inline-flex min-h-5 items-center justify-center border border-primary/25 bg-background/60 px-1 font-mono text-[9px] uppercase text-primary/80">
+                shift+l
               </kbd>
             </button>
             <button
               type="button"
               onClick={() => triggerAction("logout", "button", "shift+d")}
-              className="mt-2 inline-flex min-h-11 w-full items-center justify-between gap-3 border border-white/10 bg-white/5 px-3 text-left transition-colors hover:border-primary/30 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="mt-1.5 inline-flex min-h-8 w-full items-center justify-between gap-2 border border-white/10 bg-white/5 px-2 text-left transition-colors hover:border-primary/30 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <span className="flex items-center gap-2 text-sm lowercase text-foreground">
-                <LogOut className="h-4 w-4" aria-hidden="true" />
+              <span className="flex items-center gap-1.5 text-xs lowercase text-foreground">
+                <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
                 logout
               </span>
-              <kbd className="inline-flex min-h-6 items-center justify-center border border-white/10 bg-background/60 px-1.5 font-mono text-[10px] uppercase text-muted-foreground">
-                shift + d
+              <kbd className="inline-flex min-h-5 items-center justify-center border border-white/10 bg-background/60 px-1 font-mono text-[9px] uppercase text-muted-foreground">
+                shift+d
               </kbd>
             </button>
           </div>

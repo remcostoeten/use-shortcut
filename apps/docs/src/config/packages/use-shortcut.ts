@@ -16,7 +16,8 @@ const useShortcutConfig: PackageConfig = {
   packageName: "use-shortcut",
   installName: "@remcostoeten/use-shortcut",
   tagline: "@remcostoeten",
-  description: "typed keyboard shortcuts for react.",
+  description: "a tiny react hook for keyboard shortcuts that feels fluent, stays fully typed, and scales from one save shortcut to full command palettes, sequences, and scoped app navigation.",
+  heroSubcopy: "built for real product flows: save actions, editor shortcuts, layered scopes, and fast keyboard-first navigation.",
   heroTitle: "use-shortcut",
   bundleSizeKb: 3,
 

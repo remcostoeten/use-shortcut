@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useShortcut } from "@remcostoeten/use-shortcut";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Navbar } from "./Navbar";
 import { InstallCommand } from "./InstallCommand";
 import { DemoSection } from "./DemoSection";
@@ -8,6 +9,7 @@ import { ApiTable } from "./ApiTable";
 import { CodeExamples } from "./CodeExamples";
 import { CodeBlock } from "./CodeBlock";
 import { ComponentRecipeBook } from "./ComponentRecipeBook";
+import { PixelHeading } from "@/components/ui/pixel-heading";
 import { FooterSection } from "./FooterSection";
 import { ShowcaseSection } from "./ShowcaseSection";
 import { ApiCapabilities } from "./ApiCapabilities";
@@ -17,6 +19,7 @@ import type { PackageConfig } from "@/config/types";
 import { applySeoMeta } from "@/lib/seo";
 import { applySoftwareStructuredData, applyWebsiteStructuredData } from "@/lib/structured-data";
 import { trackDocsEvent } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 
 type Props = {
   config: PackageConfig;
@@ -25,6 +28,9 @@ type Props = {
 
 export function PackageShowcase({ config, demoContent }: Props) {
   const $ = useShortcut();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isLeaving, setIsLeaving] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantRequest, setAssistantRequest] = useState<{
     query?: string;
@@ -49,8 +55,8 @@ export function PackageShowcase({ config, demoContent }: Props) {
 
   useEffect(() => {
     applySeoMeta({
-      title: `${config.packageName} docs | typed React keyboard shortcuts`,
-      description: `${config.packageName} is a typed React keyboard shortcut library with combos, sequences, scopes, parser utilities, and shortcut recording.`,
+      title: `${config.packageName} docs | ${config.description}`,
+      description: `${config.packageName} - ${config.description}`,
       path: `/${config.slug}`,
     });
     if (config.slug === "use-shortcut") {
@@ -58,6 +64,14 @@ export function PackageShowcase({ config, demoContent }: Props) {
       applySoftwareStructuredData();
     }
   }, [config.description, config.packageName, config.slug]);
+
+  // Handle smooth navigation when clicking registry link
+  const handleRegistryNavigation = () => {
+    setIsLeaving(true);
+    setTimeout(() => {
+      navigate("/", { replace: true });
+    }, 300);
+  };
 
   useEffect(() => {
     if (window.location.hash) return;
@@ -103,15 +117,8 @@ export function PackageShowcase({ config, demoContent }: Props) {
 
   return (
     <div className="min-h-screen bg-background relative overflow-x-clip">
-      <Navbar
-        navLinks={config.navLinks}
-        githubUrl={config.links.github}
-      />
-
-      <div className="hidden lg:block pointer-events-none select-none absolute inset-0" aria-hidden="true">
-        <div className="absolute top-[320px] left-0 right-0 h-px bg-border/40" />
-        <div className="absolute top-[320px] left-0 right-0 h-px border-t border-dashed border-border/30" style={{ top: "520px" }} />
-        <div className="absolute left-0 right-0 h-px border-t border-dashed border-border/20" style={{ top: "780px" }} />
+      <div className={isLeaving ? "animate-fade-out-up" : "animate-fade-down"}>
+        <Navbar navLinks={config.navLinks} currentSlug={config.slug} onRegistryClick={handleRegistryNavigation} />
       </div>
 
       <main id="main-content" className="mx-auto max-w-2xl border-x border-border min-h-screen relative z-10">
@@ -119,51 +126,79 @@ export function PackageShowcase({ config, demoContent }: Props) {
           id="overview"
           data-doc-search-scope="true"
           data-search-label="overview"
-          className="border-b border-border px-4 pb-8 pt-6 sm:px-8 sm:pb-10 sm:pt-8"
+          className={cn(
+            "border-b border-border px-4 pb-8 pt-6 sm:px-8 sm:pb-10 sm:pt-8",
+            isLeaving ? "animate-fade-out-down" : "animate-fade-up"
+          )}
         >
           <div className="flex flex-col gap-6">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                {config.tagline ? (
-                  config.tagline.startsWith("@") ? (
-                    <a
-                      href={config.author.url}
-                      className="inline-flex items-center font-mono text-xs text-primary/85 transition-colors hover:text-primary"
-                    >
-                      [{config.tagline}]
-                    </a>
-                  ) : (
-                    <p className="font-mono text-xs text-primary">
-                      [{config.tagline}]
-                    </p>
-                  )
+            <div className="flex flex-col gap-4 lg:justify-between">
+              <div className="min-w-0">
+                <div className={cn("flex flex-wrap items-center gap-x-3 gap-y-2", !isLeaving && "animate-fade-up stagger-1")}>
+                  {config.tagline ? (
+                    config.tagline.startsWith("@") ? (
+                      <a
+                        href={config.author.url}
+                        className="inline-flex items-center font-mono text-xs text-primary/85 transition-colors hover:text-primary"
+                      >
+                        [{config.tagline}]
+                      </a>
+                    ) : (
+                      <p className="font-mono text-xs text-primary">
+                        [{config.tagline}]
+                      </p>
+                    )
+                  ) : null}
+                  <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground/55">
+                    react package
+                  </span>
+                  <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground/45">
+                    {(config.author.handle.startsWith("@") ? config.author.handle : `@${config.author.handle}`)}
+                  </span>
+                </div>
+
+                <div className={!isLeaving ? "animate-fade-up stagger-2" : undefined}>
+                  <PixelHeading
+                    as="h1"
+                    mode="wave"
+                    autoPlay
+                    cycleInterval={250}
+                    staggerDelay={60}
+                    initialFont="square"
+                    className="mt-4 text-3xl font-bold lowercase tracking-tight text-foreground sm:text-4xl leading-[1.02]"
+                  >
+                    {config.heroTitle}
+                  </PixelHeading>
+                </div>
+
+                <p className={cn(
+                  "mt-4 max-w-xl text-sm lowercase leading-relaxed text-muted-foreground",
+                  !isLeaving && "animate-fade-up stagger-3"
+                )}>
+                  {config.description}
+                </p>
+                {config.heroSubcopy ? (
+                  <p className={cn(
+                    "mt-2 max-w-xl text-xs lowercase leading-relaxed text-muted-foreground/80",
+                    !isLeaving && "animate-fade-up stagger-4"
+                  )}>
+                    {config.heroSubcopy}
+                  </p>
                 ) : null}
-                <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground/55">
-                  typed react keyboard shortcuts
-                </span>
               </div>
 
-              <h1 className="mt-4 font-display text-3xl font-bold lowercase leading-[1.02] tracking-tight text-foreground sm:text-4xl">
-                {config.heroTitle}
-              </h1>
-
-              <p className="mt-4 max-w-xl text-sm lowercase leading-relaxed text-muted-foreground">
-                {config.description}
-              </p>
-              <p className="mt-2 max-w-xl text-xs lowercase leading-relaxed text-muted-foreground/80">
-                install it first, test the bindings, then copy the exact pattern you need.
-              </p>
+              <div className={!isLeaving ? "animate-fade-up stagger-4" : undefined}>
+                <BadgeBar
+                  installName={config.installName}
+                  npmUrl={config.links.npm}
+                  githubUrl={config.links.github}
+                  bundleSizeKb={config.bundleSizeKb}
+                  variant="hero"
+                  alignEnd={false}
+                  className="max-w-full"
+                />
+              </div>
             </div>
-
-            <BadgeBar
-              installName={config.installName}
-              npmUrl={config.links.npm}
-              githubUrl={config.links.github}
-              bundleSizeKb={config.bundleSizeKb}
-              variant="hero"
-              alignEnd={false}
-              className="max-w-full"
-            />
 
             <div className="grid gap-4 mt-8">
               <div className="border border-border bg-card/24 p-4 sm:p-5">
@@ -189,10 +224,25 @@ export function PackageShowcase({ config, demoContent }: Props) {
 
                 <div className="mt-4">
                   <CodeBlock
-                    title="shortcut-binding"
+                    title={config.slug === "use-shortcut" ? "shortcut-binding" : "next-js-setup"}
                     language="tsx"
-                    code={`const $ = useShortcut()
-$.mod.key("k").on(openSearch, { preventDefault: true })`}
+                    code={config.slug === "use-shortcut"
+                      ? `const $ = useShortcut()
+$.mod.key("k").on(openSearch, { preventDefault: true })`
+                      : `import { Analytics } from '@remcostoeten/analytics'
+
+// app/layout.tsx
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <Analytics />
+      </body>
+    </html>
+  )
+}`
+                    }
                   />
                 </div>
               </div>
@@ -258,17 +308,44 @@ $.mod.key("k").on(openSearch, { preventDefault: true })`}
             <div>
               <p className="font-mono text-xs text-primary">[install]</p>
               <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground lowercase">
-                pick a package manager and copy the command. helper files stay right below it.
+                {config.slug === "use-shortcut"
+                  ? "pick a package manager and copy the command. helper files stay right below it."
+                  : "pick a package manager and copy the command."
+                }
               </p>
             </div>
             <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/45">
               start here
             </span>
           </div>
-          <InstallCommand packageName={config.installName} />
+          {config.slug === "use-shortcut" ? (
+            <InstallCommand packageName={config.installName} />
+          ) : (
+            <div className="w-full space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: "npm", label: "npm", cmd: `npm i ${config.installName}` },
+                  { id: "yarn", label: "yarn", cmd: `yarn add ${config.installName}` },
+                  { id: "pnpm", label: "pnpm", cmd: `pnpm add ${config.installName}` },
+                  { id: "bun", label: "bun", cmd: `bun add ${config.installName}` },
+                ].map((manager) => (
+                  <button
+                    key={manager.id}
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(manager.cmd);
+                    }}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-sm border border-border bg-background px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="font-mono">{manager.cmd}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
 
-        <div className="flex flex-col gap-0">
+        <div className="flex flex-col gap-0 ">
           {demoContent ? (
             <ShowcaseSection id="demo" data-doc-search-scope="true" data-search-label="demo">
               <div className="mb-1">
@@ -361,10 +438,7 @@ $.mod.key("k").on(openSearch, { preventDefault: true })`}
               <ApiMethodMatrix methodGroups={config.apiMethodGroups} optionGroups={config.apiOptionGroups} />
             </div>
           )}
-
-
-
-          <div id="footer" data-doc-search-scope="true" data-search-label="footer" className="border-t border-dashed border-border px-4 sm:px-8">
+          <div id="footer" data-doc-search-scope="true" data-search-label="footer" className="border-t border-dashed border-border px-6">
             <FooterSection
               author={config.author.name}
               authorUrl={config.author.url}

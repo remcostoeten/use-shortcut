@@ -315,7 +315,7 @@ export function DocsAssistantDialog({
                 {answer.example ? (
                   <div className="mt-5">
                     <p className="mb-2 font-mono text-[11px] lowercase text-primary">example</p>
-                    <pre className="overflow-x-auto border border-border bg-background p-3 text-[11px] leading-relaxed">
+                    <pre className="overflow-x-hidden border border-border bg-background p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                       <SyntaxHighlight
                         code={answer.example}
                         language={answer.exampleLanguage ?? "tsx"}

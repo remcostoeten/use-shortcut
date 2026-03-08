@@ -106,6 +106,7 @@ export interface PackageConfig {
   installName: string;
   tagline?: string;
   description: string;
+  heroSubcopy?: string;
   heroTitle: string;
   bundleSizeKb?: number;
 

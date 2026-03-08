@@ -1,0 +1,79 @@
+@remcostoeten/analytics
+
+Package:
+- npm: @remcostoeten/analytics
+- github: https://github.com/remcostoeten/analytics
+- docs: https://use-shortcut.vercel.app/analytics
+
+What this is:
+- Privacy focused, cookie free analytics SDK for React apps.
+- Sends pageviews and custom events to your own ingestion endpoint.
+- Uses navigator.sendBeacon with fetch keepalive fallback.
+- Respects Do Not Track and provides opt-out controls.
+- Client-side deduplication and session management.
+
+Install first:
+```bash
+npm install @remcostoeten/analytics
+```
+
+If you are an LLM implementing this package:
+- Install the package before writing code.
+- Import from '@remcostoeten/analytics'.
+- Set NEXT_PUBLIC_REMCO_ANALYTICS_URL env var to your ingestion base URL.
+- Use <Analytics /> component for automatic pageview tracking.
+- For Next.js App Router, create a PageViews component with usePathname.
+- Use trackEvent, trackClick, trackError for custom events.
+- Respect privacy: check isOptedOut() and checkDoNotTrack().
+- Include projectId to separate analytics by application.
+- Keep meta payloads small (<64KB for fetch keepalive).
+
+Minimal example:
+```tsx
+'use client'
+
+import { Analytics, trackEvent } from '@remcostoeten/analytics'
+
+export default function App() {
+  const handleSignup = () => {
+    trackEvent('signup', { plan: 'pro', source: 'landing' })
+  }
+
+  return (
+    <>
+      <Analytics projectId="my-app" />
+      <button onClick={handleSignup}>Sign Up</button>
+    </>
+  )
+}
+```
+
+Next.js App Router pattern:
+```tsx
+'use client'
+
+import { useEffect } from 'react'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { trackPageView } from '@remcostoeten/analytics'
+
+export function PageViews({ projectId }: { projectId?: string }) {
+  const path = usePathname()
+  const search = useSearchParams()
+
+  useEffect(() => {
+    trackPageView(undefined, { projectId })
+  }, [path, search, projectId])
+
+  return null
+}
+```
+
+Mental model:
+- <Analytics /> tracks pageview on mount/prop changes.
+- trackPageView() for manual pageview tracking.
+- trackEvent(name, meta) for custom events.
+- trackClick(element, meta) for click interactions.
+- trackError(error, meta) for error tracking.
+- getVisitorId()/getSessionId() for identity management.
+- optOut()/optIn() for privacy controls.
+- Events sent via POST {ingestUrl}/ingest using sendBeacon.

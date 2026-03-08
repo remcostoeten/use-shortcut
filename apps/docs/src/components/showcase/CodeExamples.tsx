@@ -92,12 +92,9 @@ function QuickStartTester() {
   return (
     <div className="mt-3 border border-dashed border-border bg-card/30 p-3">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <p className="font-mono text-[11px] lowercase text-primary">try it</p>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            focus the tester, then press <kbd className="font-mono text-[11px] text-foreground">shift+s</kbd> or <kbd className="font-mono text-[11px] text-foreground">escape</kbd>.
-          </p>
-        </div>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          Focus the tester, then press <kbd className="font-mono text-[11px] text-foreground">shift+s</kbd> or <kbd className="font-mono text-[11px] text-foreground">escape</kbd>.
+        </p>
         <button
           type="button"
           onClick={() => {
@@ -407,11 +404,7 @@ function ExampleDetails({
                 </div>
               </div>
             ) : null}
-            {children ? (
-              <div className="border-t border-dashed border-border pt-4">
-                {children}
-              </div>
-            ) : null}
+            {children ? <div>{children}</div> : null}
           </AccordionContent>
         </AccordionItem>
       </Accordion>
@@ -430,17 +423,12 @@ export function CodeExamples({ examples = defaultExamples, uiUseCases = [] }: Co
 
             return (
               <>
-                <div>
-                  <h3 className="font-display text-base font-bold tracking-tight text-foreground">
-                    {ex.title}
-                  </h3>
-                  {ex.description ? (
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      {ex.description}
-                    </p>
-                  ) : null}
-                </div>
-                <CodeBlock code={ex.code} language={ex.language} />
+                {ex.description ? (
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {ex.description}
+                  </p>
+                ) : null}
+                <CodeBlock title={ex.title} code={ex.code} language={ex.language} />
                 {(match || isQuickStart) ? (
                   <ExampleDetails
                     id={`example-details-${normalize(ex.title).replace(/\s+/g, "-")}`}

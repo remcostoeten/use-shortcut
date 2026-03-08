@@ -78,7 +78,7 @@ export function ApiTable({
                                 {detail.example ? (
                                   <div>
                                     <p className="mb-1 font-mono text-[11px] lowercase text-primary">example</p>
-                                    <pre className="overflow-x-auto border border-border bg-background p-3 text-[11px] leading-relaxed">
+                                    <pre className="overflow-x-hidden border border-border bg-background p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
                                       <SyntaxHighlight code={detail.example} language={detail.exampleLanguage ?? "tsx"} />
                                     </pre>
                                   </div>

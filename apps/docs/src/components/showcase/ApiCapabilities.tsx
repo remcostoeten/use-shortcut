@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import type { ApiCapability } from "@/config/types";
 import { SyntaxHighlight } from "./SyntaxHighlight";
 
-type Props = {
+interface Props {
   capabilities: ApiCapability[];
-};
+}
 
 const KINDS: Array<"function" | "constant" | "type"> = ["function", "constant", "type"];
 const TOKEN_SPLIT = /[^a-z0-9]+/g;
@@ -238,51 +238,51 @@ export function ApiCapabilities({ capabilities }: Props) {
 
       <div className="relative">
         <div className="grid gap-3">
-        {visibleItems.map((item, index) => (
-          <article
-            key={item.name}
-            id={`api-capability-result-${index}`}
-            tabIndex={0}
-            onFocus={() => setActiveResultIndex(index)}
-            className="group border border-border bg-gradient-to-br from-card via-card to-card/60 p-4 shadow-[0_0_0_1px_hsl(var(--border)/0.25)] transition-colors hover:border-primary/50"
-            data-active={activeResultIndex === index ? "true" : "false"}
-            data-flash={flashResultIndex === index ? "true" : "false"}
-            aria-current={activeResultIndex === index ? "true" : undefined}
-            style={
-              activeResultIndex === index
-                ? { boxShadow: "0 0 0 1px hsl(var(--primary) / 0.6)" }
-                : undefined
-            }
-          >
-            <header className="mb-2 flex items-start justify-between gap-3">
-              <h3 className="font-mono text-xs font-semibold text-foreground">{item.name}</h3>
-              <span className="inline-flex min-h-7 items-center border border-border bg-background px-2 font-mono text-[10px] lowercase text-primary">
-                {item.kind}
-              </span>
-            </header>
+          {visibleItems.map((item, index) => (
+            <article
+              key={item.name}
+              id={`api-capability-result-${index}`}
+              tabIndex={0}
+              onFocus={() => setActiveResultIndex(index)}
+              className="group border border-border bg-gradient-to-br from-card via-card to-card/60 p-4 shadow-[0_0_0_1px_hsl(var(--border)/0.25)] transition-colors hover:border-primary/50"
+              data-active={activeResultIndex === index ? "true" : "false"}
+              data-flash={flashResultIndex === index ? "true" : "false"}
+              aria-current={activeResultIndex === index ? "true" : undefined}
+              style={
+                activeResultIndex === index
+                  ? { boxShadow: "0 0 0 1px hsl(var(--primary) / 0.6)" }
+                  : undefined
+              }
+            >
+              <header className="mb-2 flex items-start justify-between gap-3">
+                <h3 className="font-mono text-xs font-semibold text-foreground">{item.name}</h3>
+                <span className="inline-flex min-h-7 items-center border border-border bg-background px-2 font-mono text-[10px] lowercase text-primary">
+                  {item.kind}
+                </span>
+              </header>
 
-            <p className="mb-2 text-xs lowercase text-foreground/90">{item.summary}</p>
-            <p className="text-xs lowercase leading-relaxed text-muted-foreground">{item.possible}</p>
+              <p className="mb-2 text-xs lowercase text-foreground/90">{item.summary}</p>
+              <p className="text-xs lowercase leading-relaxed text-muted-foreground">{item.possible}</p>
 
-            <div className="mt-3 border-t border-dashed border-border pt-3">
-              <div className="mb-2">
-                <p className="mb-1 font-mono text-[11px] lowercase text-primary">example</p>
-                <pre className="border border-border bg-background p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-                  <SyntaxHighlight code={item.example || _fallbackExample(item)} language={item.exampleLanguage ?? "tsx"} />
-                </pre>
-              </div>
-
-              {item.result ? (
-                <div>
-                  <p className="mb-1 font-mono text-[11px] lowercase text-emerald-400">result</p>
+              <div className="mt-3 border-t border-dashed border-border pt-3">
+                <div className="mb-2">
+                  <p className="mb-1 font-mono text-[11px] lowercase text-primary">example</p>
                   <pre className="border border-border bg-background p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
-                    <SyntaxHighlight code={item.result} language={item.resultLanguage ?? "json"} />
+                    <SyntaxHighlight code={item.example || _fallbackExample(item)} language={item.exampleLanguage ?? "tsx"} />
                   </pre>
                 </div>
-              ) : null}
-            </div>
-          </article>
-        ))}
+
+                {item.result ? (
+                  <div>
+                    <p className="mb-1 font-mono text-[11px] lowercase text-emerald-400">result</p>
+                    <pre className="border border-border bg-background p-3 text-[11px] leading-relaxed whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
+                      <SyntaxHighlight code={item.result} language={item.resultLanguage ?? "json"} />
+                    </pre>
+                  </div>
+                ) : null}
+              </div>
+            </article>
+          ))}
         </div>
         {shouldCollapse && !showAll ? (
           <div

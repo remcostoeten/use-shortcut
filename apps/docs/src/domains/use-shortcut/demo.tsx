@@ -37,8 +37,18 @@ export function UseShortcutDemo() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const idRef = useRef(0);
+  const helpOpenRef = useRef(false);
+  const toastRef = useRef<string | null>(null);
   const flashTimeoutRef = useRef<number | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    helpOpenRef.current = helpOpen;
+  }, [helpOpen]);
+
+  useEffect(() => {
+    toastRef.current = toast;
+  }, [toast]);
 
   useEffect(() => {
     return () => {
@@ -60,11 +70,15 @@ export function UseShortcutDemo() {
   };
 
   const showToast = (message: string) => {
+    toastRef.current = message;
     setToast(message);
     if (toastTimeoutRef.current) {
       window.clearTimeout(toastTimeoutRef.current);
     }
-    toastTimeoutRef.current = window.setTimeout(() => setToast(null), 2200);
+    toastTimeoutRef.current = window.setTimeout(() => {
+      toastRef.current = null;
+      setToast(null);
+    }, 2200);
   };
 
   const pushEvent = (combo: string, display: string, label: string) => {
@@ -114,11 +128,13 @@ export function UseShortcutDemo() {
 
   const dismissSurface = () => {
     let dismissed = false;
-    if (helpOpen) {
+    if (helpOpenRef.current) {
+      helpOpenRef.current = false;
       setHelpOpen(false);
       dismissed = true;
     }
-    if (toast) {
+    if (toastRef.current) {
+      toastRef.current = null;
       setToast(null);
       dismissed = true;
     }
@@ -129,23 +145,29 @@ export function UseShortcutDemo() {
   };
 
   const $ = useShortcut({ disabled: !isActive, ignoreInputs: true });
+  useEffect(() => {
+    const registrations = [
+      $.cmd.key("s").on(saveDraft, { preventDefault: true }),
+      $.mod.key("k").on(openSearch, { preventDefault: true }),
+      $.mod.key("z").on(undoDraft, { preventDefault: true }),
+      $.mod.key("c").on(copySnippet, { preventDefault: true }),
+      $.key("slash").except("typing").on(focusSearchOnly, { preventDefault: true }),
+      $.shift.key("slash").except("typing").on(toggleHelp, { preventDefault: true }),
+      $.key("escape").on(dismissSurface),
+    ];
 
-  const save = $.cmd.key("s").on(saveDraft, { preventDefault: true });
-  const search = $.mod.key("k").on(openSearch, { preventDefault: true });
-  const undo = $.mod.key("z").on(undoDraft, { preventDefault: true });
-  const copy = $.mod.key("c").on(copySnippet, { preventDefault: true });
-
-  $.key("slash").except("typing").on(focusSearchOnly, { preventDefault: true });
-  $.shift.key("slash").except("typing").on(toggleHelp, { preventDefault: true });
-  $.key("escape").on(dismissSurface);
+    return () => {
+      registrations.forEach((registration) => registration.unbind());
+    };
+  }, [$]);
 
   const shortcuts = DEMO_SHORTCUTS.map((shortcut, index) => ({
     ...shortcut,
     display:
-      index === 0 ? save.display
-      : index === 1 ? search.display
-      : index === 2 ? undo.display
-      : index === 3 ? copy.display
+      index === 0 ? formatShortcut("cmd+s")
+      : index === 1 ? formatShortcut("mod+k")
+      : index === 2 ? formatShortcut("mod+z")
+      : index === 3 ? formatShortcut("mod+c")
       : shortcut.display,
   }));
 
