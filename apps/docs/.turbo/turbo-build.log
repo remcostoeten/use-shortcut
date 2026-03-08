@@ -1,0 +1,16 @@
+
+[0m[2m[35m$[0m [2m[1mnode scripts/generate-sitemap.mjs[0m
+Generated sitemap for 1 routes at https://use-shortcut.vercel.app
+[0m[2m[35m$[0m [2m[1mvite build[0m
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+[2K[1Gtransforming (1) [2mindex.html[22m[2K[1Gtransforming (3) [2msrc/main.tsx[22m[2K[1Gtransforming (4) [2msrc/App.tsx[22m[2K[1Gtransforming (6) [2m../../node_modules/.bun/@tanstack+react-query@5.90.21+f4eacebf2041cd4f/node_modules/@tanstac[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1Gtransforming (40) [2m../../node_modules/.bun/react@18.3.1/node_modules/react/index.js[22m[2K[1Gtransforming (46) [2m../../node_modules/.bun/@radix-ui+react-tooltip@1.2.8+5d079b7778d3bdd6/node_modules/@radix-[2K[1G[2K[1G[2K[1G[2K[1G[2K[1Gtransforming (1058) [2m../../node_modules/.bun/lucide-react@0.462.0+f4eacebf2041cd4f/node_modules/lucide-react/d[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1Gtransforming (1658) [2m../../node_modules/.bun/react-dom@18.3.1+f4eacebf2041cd4f/node_modules/react-dom/cjs/reac[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1Gtransforming (1708) [2m../../node_modules/.bun/react-remove-scroll@2.7.2+32264e8fb3466d46/node_modules/react-rem[2K[1G[32m✓[39m 1742 modules transformed.
+[2K[1Grendering chunks (1)...[2K[1Grendering chunks (2)...[2K[1G[2K[1Gcomputing gzip size (0)...[2K[1Gcomputing gzip size (1)...[2K[1Gcomputing gzip size (2)...[2K[1Gcomputing gzip size (3)...[2K[1Gcomputing gzip size (4)...[2K[1G[2mdist/[22m[32mindex.html                 [39m[1m[2m  2.79 kB[22m[1m[22m[2m │ gzip:   0.79 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-B8JagbCE.css  [39m[1m[2m 45.74 kB[22m[1m[22m[2m │ gzip:   8.67 kB[22m
+[2mdist/[22m[2massets/[22m[36mdemo-st3gasry.js    [39m[1m[2m  9.99 kB[22m[1m[22m[2m │ gzip:   3.04 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-DmoyVE8n.js   [39m[1m[33m512.71 kB[39m[22m[2m │ gzip: 154.34 kB[22m
+[33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 2.13s[39m

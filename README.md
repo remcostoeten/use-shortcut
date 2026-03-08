@@ -1,73 +1,99 @@
-# Welcome to your Lovable project
+# use-shortcut
 
-## Project info
+[![npm version](https://badge.fury.io/js/%40remcostoeten%2Fuse-shortcut.svg)](https://badge.fury.io/js/%40remcostoeten%2Fuse-shortcut)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/)
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Typed React keyboard shortcuts with combos, sequences, scopes, parser utilities, and shortcut recording.
 
-## How can I edit this code?
+**Live Demo**: [use-shortcut.vercel.app](https://use-shortcut.vercel.app)
 
-There are several ways of editing your application.
+**Documentation**: [use-shortcut.vercel.app/use-shortcut](https://use-shortcut.vercel.app/use-shortcut)
 
-**Use Lovable**
+## Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- Type-safe with full TypeScript support and autocompletion
+- Lightweight with tiny bundle size and zero dependencies
+- Support for combos and sequences with complex shortcut patterns
+- Context-aware shortcut management with scopes
+- Parser utilities to parse and validate shortcut strings
+- Built-in shortcut recording functionality
+- ARIA-compliant and keyboard-friendly
 
-Changes made via Lovable will be committed automatically to this repo.
+## Quick Start
 
-**Use your preferred IDE**
+## Installation Commands
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+pnpm add @remcostoeten/use-shortcut
+bun add @remcostoeten/use-shortcut
+// or npm....
+```
+```tsx
+import { useShortcut } from '@remcostoeten/use-shortcut';
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+function App() {
+  const $ = useShortcut();
 
-Follow these steps:
+  // Simple shortcut
+  $.key('k').on(() => console.log('k pressed'));
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+  // Combo shortcut
+  $.mod.key('s').on(() => console.log('Ctrl/Cmd+S'));
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+  // Sequence shortcut
+  $.seq('g', 'g').on(() => console.log('gg pressed'));
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+  return <div>Your app content</div>;
+}
 ```
 
-**Edit a file directly in GitHub**
+## Documentation
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Visit [use-shortcut.vercel.app](https://use-shortcut.vercel.app) for:
+- Complete API documentation
+- Interactive examples and demos
+- Copy-ready component recipes
+- Advanced configuration options
+- Shortcut recording guide
 
-**Use GitHub Codespaces**
+## Workspace Layout
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Monorepo structure for development:
 
-## What technologies are used for this project?
+- `packages/use-shortcut`: Core library source, tests, and package metadata
+- `apps/docs`: Documentation, demos, examples, and marketing site
+- `skills/use-shortcut`: Local agent skill for this repository
 
-This project is built with:
+## Development
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Install dependencies from the workspace root:
 
-## How can I deploy this project?
+```bash
+bun install
+```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Run docs app locally:
 
-## Can I connect a custom domain to my Lovable project?
+```bash
+bun run docs:dev
+```
 
-Yes, you can!
+Build and test the package:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+```bash
+bun run package:build
+bun run package:test
+bun run package:typecheck
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Run workspace-wide checks:
+
+```bash
+bun run build
+bun run lint
+bun run test
+```
+
+MIT 

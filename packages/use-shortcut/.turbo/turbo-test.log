@@ -1,0 +1,12 @@
+$ vitest run --environment jsdom
+
+ RUN  v2.1.9 /home/remcostoeten/projects/use-shortcut/packages/use-shortcut
+
+ ✓ cli/templates.test.ts (3 tests) 3ms
+ ✓ src/__tests__/features.test.ts (10 tests) 18ms
+
+ Test Files  2 passed (2)
+      Tests  13 passed (13)
+   Start at  02:59:43
+   Duration  805ms (transform 137ms, setup 0ms, collect 138ms, tests 21ms, environment 301ms, prepare 173ms)
+

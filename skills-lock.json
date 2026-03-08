@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "use-shortcut": {
+      "source": "/home/remcostoeten/projects/use-shortcut",
+      "sourceType": "local",
+      "computedHash": "9145f4a87f105e20cab253095e1de0e396ef29986a4837a795c345b0c6ae7251"
+    }
+  }
+}
