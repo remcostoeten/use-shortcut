@@ -62,6 +62,23 @@ export interface CodeExample {
   language?: string;
 }
 
+export interface ComponentRecipeShortcut {
+  label: string;
+  combo: string;
+}
+
+export interface ComponentRecipe {
+  id: string;
+  title: string;
+  summary: string;
+  description?: string;
+  code: string;
+  language?: string;
+  previewId?: string;
+  shortcuts?: ComponentRecipeShortcut[];
+  notes?: string[];
+}
+
 export interface UiUseCaseAction {
   label: string;
   shortcut: string;
@@ -119,6 +136,7 @@ export interface PackageConfig {
   apiCapabilities?: ApiCapability[];
   apiMethodGroups?: ApiMethodGroup[];
   apiOptionGroups?: ApiOptionGroup[];
+  componentRecipes?: ComponentRecipe[];
   codeExamples?: CodeExample[];
   uiUseCases?: UiUseCase[];
   useCases?: string;

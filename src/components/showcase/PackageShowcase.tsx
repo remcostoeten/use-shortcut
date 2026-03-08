@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useShortcut } from "@remcostoeten/use-shortcut";
 import { Navbar } from "./Navbar";
 import { InstallCommand } from "./InstallCommand";
@@ -6,12 +6,13 @@ import { DemoSection } from "./DemoSection";
 
 import { ApiTable } from "./ApiTable";
 import { CodeExamples } from "./CodeExamples";
+import { ComponentRecipeBook } from "./ComponentRecipeBook";
 import { FooterSection } from "./FooterSection";
 import { BadgeBar } from "./BadgeBar";
 import { ShowcaseSection } from "./ShowcaseSection";
 import { ApiCapabilities } from "./ApiCapabilities";
 import { ApiMethodMatrix } from "./ApiMethodMatrix";
-import { ApiPropGuidance } from "./ApiPropGuidance";
+import { DocsAssistantDialog } from "./DocsAssistantDialog";
 import { PixelHeading } from "@/components/ui/pixel-heading";
 import type { PackageConfig } from "@/config/types";
 import { ArrowRight } from "lucide-react";
@@ -26,6 +27,27 @@ type Props = {
 
 export function PackageShowcase({ config, demoContent }: Props) {
   const $ = useShortcut();
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const [assistantRequest, setAssistantRequest] = useState<{
+    query?: string;
+    entryId?: string;
+    source?: string;
+    nonce: number;
+  } | null>(null);
+
+  const openAssistant = (request?: {
+    query?: string;
+    entryId?: string;
+    source?: string;
+  }) => {
+    setAssistantRequest({
+      query: request?.query,
+      entryId: request?.entryId,
+      source: request?.source ?? "unknown",
+      nonce: Date.now(),
+    });
+    setAssistantOpen(true);
+  };
 
   useEffect(() => {
     applySeoMeta({
@@ -67,12 +89,27 @@ export function PackageShowcase({ config, demoContent }: Props) {
     };
   }, [$, config.ctas]);
 
+  useEffect(() => {
+    const registration = $.mod.key("k").on(() => {
+      setAssistantRequest({
+        source: "shortcut",
+        nonce: Date.now(),
+      });
+      setAssistantOpen(true);
+    }, { preventDefault: true });
+
+    return () => {
+      registration.unbind();
+    };
+  }, [$]);
+
   return (
     <div className="min-h-screen bg-background relative overflow-x-clip">
       <Navbar
         packageName={config.packageName}
         navLinks={config.navLinks}
         githubUrl={config.links.github}
+        onOpenAssistant={(source) => openAssistant({ source })}
       />
 
       <div className="hidden lg:block pointer-events-none select-none absolute inset-0" aria-hidden="true">
@@ -82,120 +119,144 @@ export function PackageShowcase({ config, demoContent }: Props) {
       </div>
 
       <main id="main-content" className="mx-auto max-w-2xl border-x border-border min-h-screen relative z-10">
-        <header id="overview" data-doc-search-scope="true" data-search-label="overview" className="border-b border-border px-4 pb-5 pt-4 sm:px-8">
-          <div className="flex">
-            {config.tagline && (
-              config.tagline.startsWith("@") ? (
-                <a
-                  href={config.author.url}
-                  className="inline-flex translate-y-[6px] items-center font-mono text-sm text-primary/85 hover:text-primary transition-colors"
-                >
-                  {config.tagline}
-                </a>
-              ) : (
-                <p className="font-mono text-xs text-primary mb-4">
-                  [{config.tagline}]
-                </p>
-              )
-            )}
-          </div>
-
-          <PixelHeading
-            as="h1"
-            mode="wave"
-            autoPlay
-            cycleInterval={250}
-            staggerDelay={60}
-            initialFont="square"
-            className="text-3xl font-bold lowercase tracking-tight text-foreground sm:text-4xl leading-[1.1] mb-2"
-          >
-            {config.heroTitle}
-          </PixelHeading>
-
-          <p className="text-sm leading-relaxed text-muted-foreground lowercase max-w-lg">
-            {config.description}
-          </p>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground/80 lowercase max-w-xl">
-            install it, try the shortcuts, then copy the pattern you need.
-          </p>
-
-          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <BadgeBar
-              installName={config.installName}
-              npmUrl={config.links.npm}
-              githubUrl={config.links.github}
-              bundleSizeKb={config.bundleSizeKb}
-              variant="hero"
-              alignEnd={false}
-              className="max-w-full"
-            />
-
-            {config.ctas && config.ctas.length > 0 && (
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              {config.ctas.map((cta) =>
-                cta.primary ? (
-                  <a
-                    key={cta.label}
-                    href={cta.url}
-                    onClick={() => {
-                      trackDocsEvent("cta_clicked", {
-                        label: cta.label,
-                        href: cta.url,
-                        primary: true,
-                      });
-                    }}
-                    className="inline-flex min-h-9 items-center gap-2 border border-primary/40 bg-primary/12 px-3 py-2 font-mono text-[11px] font-medium text-primary hover:bg-primary/18 transition-colors"
-                  >
-                    {cta.label}
-                    {cta.shortcutKey && (
-                      <kbd className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-primary/30 bg-background/40 px-1 font-mono text-[10px] font-normal uppercase text-primary/80">
-                        {cta.shortcutKey}
-                      </kbd>
-                    )}
-                  </a>
-                ) : (
-                  <a
-                    key={cta.label}
-                    href={cta.url}
-                    onClick={() => {
-                      trackDocsEvent("cta_clicked", {
-                        label: cta.label,
-                        href: cta.url,
-                        primary: false,
-                      });
-                    }}
-                    className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {cta.label}
-                    {cta.shortcutKey && (
-                      <kbd className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[10px] font-normal uppercase text-muted-foreground">
-                        {cta.shortcutKey}
-                      </kbd>
-                    )}
-                    <ArrowRight className="h-3 w-3" />
-                  </a>
-                )
-              )}
+        <header id="overview" data-doc-search-scope="true" data-search-label="overview" className="border-b border-border px-4 pb-6 pt-5 sm:px-8 sm:pb-8 sm:pt-6">
+          <div className="flex flex-col gap-6">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                {config.tagline && (
+                  config.tagline.startsWith("@") ? (
+                    <a
+                      href={config.author.url}
+                      className="inline-flex items-center font-mono text-xs text-primary/85 transition-colors hover:text-primary"
+                    >
+                      [{config.tagline}]
+                    </a>
+                  ) : (
+                    <p className="font-mono text-xs text-primary">
+                      [{config.tagline}]
+                    </p>
+                  )
+                )}
+                <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground/55">
+                  typed react keyboard shortcuts
+                </span>
               </div>
-            )}
+
+              <PixelHeading
+                as="h1"
+                mode="wave"
+                autoPlay
+                cycleInterval={250}
+                staggerDelay={60}
+                initialFont="square"
+                className="mt-4 text-3xl font-bold lowercase tracking-tight text-foreground sm:text-4xl leading-[1.02]"
+              >
+                {config.heroTitle}
+              </PixelHeading>
+
+              <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground lowercase">
+                {config.description}
+              </p>
+              <p className="mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground/80 lowercase">
+                install it first, test the bindings, then copy the exact pattern you need.
+              </p>
+
+              <div className="mt-5 flex flex-col gap-3">
+                <BadgeBar
+                  installName={config.installName}
+                  npmUrl={config.links.npm}
+                  githubUrl={config.links.github}
+                  bundleSizeKb={config.bundleSizeKb}
+                  variant="hero"
+                  alignEnd={false}
+                  className="max-w-full"
+                />
+
+                {config.ctas && config.ctas.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    {config.ctas.map((cta) =>
+                      cta.primary ? (
+                        <a
+                          key={cta.label}
+                          href={cta.url}
+                          onClick={() => {
+                            trackDocsEvent("cta_clicked", {
+                              label: cta.label,
+                              href: cta.url,
+                              primary: true,
+                            });
+                          }}
+                          className="inline-flex min-h-9 items-center gap-2 border border-primary/40 bg-primary/12 px-3 py-2 font-mono text-[11px] font-medium text-primary transition-colors hover:bg-primary/18"
+                        >
+                          {cta.label}
+                          {cta.shortcutKey && (
+                            <kbd className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-primary/30 bg-background/40 px-1 font-mono text-[10px] font-normal uppercase text-primary/80">
+                              {cta.shortcutKey}
+                            </kbd>
+                          )}
+                        </a>
+                      ) : (
+                        <a
+                          key={cta.label}
+                          href={cta.url}
+                          onClick={() => {
+                            trackDocsEvent("cta_clicked", {
+                              label: cta.label,
+                              href: cta.url,
+                              primary: false,
+                            });
+                          }}
+                          className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                          {cta.label}
+                          {cta.shortcutKey && (
+                            <kbd className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[10px] font-normal uppercase text-muted-foreground">
+                              {cta.shortcutKey}
+                            </kbd>
+                          )}
+                          <ArrowRight className="h-3 w-3" />
+                        </a>
+                      )
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <section
+              id="install"
+              data-doc-search-scope="true"
+              data-search-label="install"
+              className="border border-border bg-card/28 p-3 sm:p-4"
+            >
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-mono text-xs text-primary">[install]</p>
+                  <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground lowercase">
+                    pick a package manager and copy the command. helper files stay right below it.
+                  </p>
+                </div>
+                <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/45">
+                  start here
+                </span>
+              </div>
+              <InstallCommand packageName={config.installName} />
+            </section>
           </div>
         </header>
 
         <div className="flex flex-col gap-0">
-          <ShowcaseSection id="install" data-doc-search-scope="true" data-search-label="install">
-            <InstallCommand packageName={config.installName} />
-            {demoContent ? (
-              <div id="demo" data-doc-search-scope="true" data-search-label="demo" className="border-t border-dashed border-border pt-6">
-                <div className="mb-5">
-                  <p className="font-mono text-xs text-primary mb-1.5">[test it]</p>
-                  <p className="text-xs text-muted-foreground lowercase leading-relaxed max-w-md">
-                    press the shortcuts below. each combo highlights the matching code.
-                  </p>
-                </div>
-                <DemoSection>{demoContent}</DemoSection>
+          {demoContent ? (
+            <ShowcaseSection id="demo" data-doc-search-scope="true" data-search-label="demo">
+              <div className="mb-1">
+                <p className="mb-1.5 font-mono text-xs text-primary">[test it]</p>
+                <p className="max-w-md text-xs leading-relaxed text-muted-foreground lowercase">
+                  press the shortcuts below. each combo highlights the matching code in place.
+                </p>
               </div>
-            ) : null}
-          </ShowcaseSection>
+              <DemoSection>{demoContent}</DemoSection>
+            </ShowcaseSection>
+          ) : null}
 
           {config.codeExamples && config.codeExamples.length > 0 && (
             <div id="syntax" data-doc-search-scope="true" data-search-label="syntax" className="px-4 py-8 sm:px-8">
@@ -212,14 +273,39 @@ export function PackageShowcase({ config, demoContent }: Props) {
             </div>
           )}
 
+          {config.componentRecipes && config.componentRecipes.length > 0 && (
+            <div
+              id="components"
+              data-doc-search-scope="true"
+              data-search-label="component recipes"
+              className="border-y border-dashed border-border -mx-[1px] bg-card/24 px-4 py-8 sm:px-8"
+            >
+              <div className="mb-6">
+                <p className="font-mono text-xs text-primary mb-1.5">[components]</p>
+                <h2 className="font-display text-base font-bold lowercase tracking-tight text-foreground mb-1.5">
+                  copy-ready component recipes
+                </h2>
+                <p className="text-xs text-muted-foreground lowercase leading-relaxed max-w-md">
+                  complete components with shortcuts wired in so people can copy the whole thing and adapt it later.
+                </p>
+              </div>
+              <ComponentRecipeBook recipes={config.componentRecipes} />
+            </div>
+          )}
+
           {config.apiProps && config.apiProps.length > 0 && (
             <div id="api" data-doc-search-scope="true" data-search-label="api options" className="border-y border-dashed border-border -mx-[1px] bg-card/30 px-4 py-8 sm:px-8">
-              <ApiTable props={config.apiProps} />
-              {config.apiPropGuidance && config.apiPropGuidance.length > 0 ? (
-                <div className="mt-4">
-                  <ApiPropGuidance items={config.apiPropGuidance} />
-                </div>
-              ) : null}
+              <ApiTable
+                props={config.apiProps}
+                guidance={config.apiPropGuidance}
+                onAskProp={(propName) => {
+                  openAssistant({
+                    query: `when should i use ${propName}?`,
+                    entryId: `prop:${propName}`,
+                    source: "api-table",
+                  });
+                }}
+              />
             </div>
           )}
 
@@ -266,6 +352,13 @@ export function PackageShowcase({ config, demoContent }: Props) {
           </div>
         </div>
       </main>
+
+      <DocsAssistantDialog
+        config={config}
+        open={assistantOpen}
+        onOpenChange={setAssistantOpen}
+        request={assistantRequest}
+      />
     </div>
   );
 }

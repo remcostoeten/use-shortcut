@@ -30,6 +30,7 @@ const useShortcutConfig: PackageConfig = {
     { label: "setup", url: "#install" },
     { label: "test", url: "#demo" },
     { label: "recipes", url: "#syntax" },
+    { label: "components", url: "#components" },
     { label: "options", url: "#api" },
     { label: "api", url: "#api-reference" },
     { label: "full", url: "#api-matrix" },
@@ -38,12 +39,7 @@ const useShortcutConfig: PackageConfig = {
   links: {
     npm: "https://www.npmjs.com/package/@remcostoeten/use-shortcut",
     github: "https://github.com/remcostoeten/use-shortcut",
-    demo: "https://use-shortcuts.vercel.app/",
   },
-
-  ctas: [
-    { label: "open playground", url: "https://use-shortcuts.vercel.app/", primary: true, shortcutKey: "p" },
-  ],
 
   why: {
     paragraphs: [
@@ -406,28 +402,17 @@ setUserShortcut(combo)`,
   codeExamples: [
     {
       title: "quick start",
-      description: "Use this when your app only needs a couple of stable shortcuts (save/search) and you want defaults that are safe in form fields.",
+      description: "Use this when you want the smallest possible starter: one save shortcut and one escape hatch, with no app-shell wiring yet.",
       code: `import { useShortcut } from "@remcostoeten/use-shortcut"
 
 function App() {
   const $ = useShortcut()
 
-  $.cmd.key("s").on(() => save())
-  $.mod.key("k").on(() => search())
-  $.key("/").except("typing").on(() => focusSearch())
+  $.shift.key("s").on(() => saveDraft())
+  $.key("escape").on(() => closePanel())
 
-  return <div>press ⌘+s or ⌘+k</div>
+  return <div>press Shift+S or Esc</div>
 }`,
-      language: "tsx",
-    },
-    {
-      title: "global app shortcuts",
-      description: "Use global shortcuts for command palette/help/search in your app shell. Keep them enabled across pages, but skip active typing contexts.",
-      code: `const $ = useShortcut({ ignoreInputs: true })
-
-$.mod.key("k").on(openCommandPalette, { preventDefault: true })
-$.mod.shift.key("p").on(openProjectSearch, { preventDefault: true })
-$.shift.key("slash").except("typing").on(() => setHelpOpen(true))`,
       language: "tsx",
     },
     {
@@ -468,48 +453,36 @@ window.addEventListener("keydown", (event) => {
     },
     {
       title: "record a user shortcut",
-      description: "Use recording mode in settings screens where users can press their preferred combo instead of typing key names manually.",
-      code: `const [value, setValue] = useState<string>("")
-
-async function startCapture() {
-  try {
-    const combo = await $.record({ timeoutMs: 5000 })
-    setValue(combo) // "ctrl+k" or "cmd+k"
-  } catch {
-    toast("capture timed out")
-  }
-}`,
-      language: "tsx",
-    },
-    {
-      title: "record a keychain (sequence) in settings",
-      description: "Record one step at a time for sequence-based bindings, then persist and re-register with .then(...).",
-      code: `async function recordDashboardSequence() {
-  const first = await $.record({ timeoutMs: 4000 })   // e.g. "g"
-  const second = await $.record({ timeoutMs: 4000 })  // e.g. "d" or "shift+d"
-
-  saveUserBinding([first, second])
-  $.key(first).then(second).on(() => goToDashboard())
-}`,
-      language: "tsx",
-    },
-    {
-      title: "recorder output + copyable binding",
-      description: "Capture once, preview the generated binding code, and let users copy what will be saved.",
-      code: `const [recorded, setRecorded] = useState("")
-const [outputCode, setOutputCode] = useState("")
+      description: "A solid settings-screen pattern: capture the combo, preview it immediately, and save only after the user confirms it.",
+      code: `const [pendingShortcut, setPendingShortcut] = useState("")
+const [savedShortcut, setSavedShortcut] = useState("shift+slash")
+const [isRecording, setIsRecording] = useState(false)
 
 async function captureShortcut() {
-  const combo = await $.record({ timeoutMs: 5000 }) // e.g. "shift+slash"
-  setRecorded(combo)
+  setIsRecording(true)
+  try {
+    const combo = await $.record({ timeoutMs: 5000 }) // e.g. "shift+slash"
+    setPendingShortcut(combo)
+  } catch {
+    toast("capture timed out")
+  } finally {
+    setIsRecording(false)
+  }
+}
 
-  const generated = \`$.key("\${combo}").except("typing").on(() => toggleHelp())\`
-  setOutputCode(generated)
+function saveShortcut() {
+  if (!pendingShortcut) return
+  setSavedShortcut(pendingShortcut)
+  toast("shortcut saved")
 }
 
 // render
-// <button onClick={captureShortcut}>record</button>
-// <pre>{outputCode || "// waiting for capture..."}</pre>`,
+// <button onClick={captureShortcut}>record shortcut</button>
+// <p>saved: {savedShortcut}</p>
+// <p>pending: {pendingShortcut || "waiting for capture..."}</p>
+// <button onClick={saveShortcut} disabled={!pendingShortcut || isRecording}>save</button>
+
+$.key(savedShortcut).except("typing").on(() => toggleHelp())`,
       language: "tsx",
     },
     {
@@ -530,35 +503,88 @@ npx @remcostoeten/use-shortcut scaffold
     },
   ],
 
+  componentRecipes: [
+    {
+      id: "avatar-login-trigger",
+      title: "avatar login trigger",
+      summary: "An avatar button opens a small auth surface, and shift+l triggers the login action from the keyboard.",
+      description: "Use this when you want a lightweight account entry point now, but need a clean place to add profile, billing, logout, or team actions later.",
+      language: "tsx",
+      previewId: "avatar-login-trigger",
+      shortcuts: [
+        { label: "trigger login", combo: "shift+l" },
+        { label: "open avatar menu", combo: "click avatar" },
+      ],
+      notes: [
+        "the component is self-contained and can be dropped into a nav bar or app shell as-is.",
+        "future menu actions can be added by extending the opened panel without changing the shortcut wiring shape.",
+      ],
+      code: `import { useState } from "react"
+import { useShortcut } from "@remcostoeten/use-shortcut"
+import { LogIn, UserCircle2 } from "lucide-react"
+
+export function AvatarLoginTrigger() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [status, setStatus] = useState("idle")
+  const $ = useShortcut()
+
+  function triggerLogin() {
+    setMenuOpen(true)
+    setStatus("login triggered")
+  }
+
+  $.shift.key("l").on(triggerLogin, { preventDefault: true })
+
+  return (
+    <div className="flex items-start gap-3">
+      <button
+        type="button"
+        aria-expanded={menuOpen}
+        aria-label="Open profile actions"
+        onClick={() => setMenuOpen((open) => !open)}
+        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-white"
+      >
+        <UserCircle2 className="h-6 w-6" />
+      </button>
+
+      <div className="min-w-[220px] border border-neutral-800 bg-neutral-950 p-3 text-white">
+        <p className="text-xs text-neutral-400">status: {status}</p>
+
+        {menuOpen ? (
+          <button
+            type="button"
+            onClick={triggerLogin}
+            className="mt-3 inline-flex min-h-11 items-center gap-2 border border-orange-500/40 bg-orange-500/10 px-3 text-sm text-orange-300"
+          >
+            <LogIn className="h-4 w-4" />
+            login
+            <kbd className="ml-1 border border-neutral-700 px-1.5 py-0.5 text-[10px] uppercase text-neutral-300">
+              shift+l
+            </kbd>
+          </button>
+        ) : (
+          <p className="mt-3 text-sm text-neutral-300">click the avatar to open login</p>
+        )}
+      </div>
+    </div>
+  )
+}`,
+    },
+  ],
+
   uiUseCases: [
     {
       id: "quick-start",
       title: "quick start",
-      summary: "basic save/search/focus shortcuts for a single-page app shell.",
-      whenToUse: "you need a simple and reliable starter setup with minimal configuration.",
+      summary: "a tiny starter with one save shortcut and one escape action.",
+      whenToUse: "you want to prove the hook works before designing broader app-level shortcut flows.",
       actions: [
-        { label: "save current document", shortcut: "mod+s" },
-        { label: "open search", shortcut: "mod+k" },
-        { label: "focus inline search", shortcut: "/" },
+        { label: "save draft", shortcut: "shift+s" },
+        { label: "dismiss active panel", shortcut: "escape" },
       ],
       notes: [
-        "use preventDefault on mod+s to avoid browser save behavior.",
-        "keep ignoreInputs enabled so typing fields are not hijacked.",
-      ],
-    },
-    {
-      id: "global-app-shortcuts",
-      title: "global app shortcuts",
-      summary: "cross-page command palette/help/navigation shortcuts in the app layout.",
-      whenToUse: "your product has global navigation actions available from every route.",
-      actions: [
-        { label: "open command palette", shortcut: "mod+k" },
-        { label: "open project search", shortcut: "mod+shift+p" },
-        { label: "toggle help", shortcut: "shift+/" },
-      ],
-      notes: [
-        "register these in your shell component so all screens share the same bindings.",
-        "combine with except('typing') for question-mark style help toggles.",
+        "use a non-browser combo like shift+s when you want a friction-free first test.",
+        "start small, then graduate to app-shell shortcuts once the basics feel right.",
       ],
     },
   ],

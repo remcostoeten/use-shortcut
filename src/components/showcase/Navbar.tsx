@@ -3,19 +3,18 @@ import { Search, Github, Menu, X } from "lucide-react";
 import type { NavLink as ShowcaseNavLink } from "@/config/types";
 import { Link } from "react-router-dom";
 import { trackDocsEvent } from "@/lib/analytics";
+import { scrollToDocsSection } from "@/lib/docs-navigation";
 
 interface NavbarProps {
   packageName: string;
   navLinks: ShowcaseNavLink[];
   githubUrl: string;
+  onOpenAssistant: (source: string) => void;
 }
 
-export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
+export function Navbar({ packageName, navLinks, githubUrl, onOpenAssistant }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeHash, setActiveHash] = useState<string>("");
-  const [docsMatchIds, setDocsMatchIds] = useState<string[]>([]);
-  const [docsMatchCursor, setDocsMatchCursor] = useState(0);
 
   const anchorLinks = useMemo(
     () => navLinks.filter((link) => link.url.startsWith("#")),
@@ -28,19 +27,8 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
 
   const scrollToHash = (hash: string) => {
     if (!hash.startsWith("#")) return false;
-    const id = hash.slice(1);
-    const target = document.getElementById(id);
-    if (!target) return false;
-
-    const nav = document.getElementById("docs-navbar");
-    const navOffset = nav?.offsetHeight ?? 0;
-    const top = target.getBoundingClientRect().top + window.scrollY - navOffset - 8;
-    window.scrollTo({ top, behavior: "smooth" });
     setActiveHash(hash);
-    if (window.location.hash !== hash) {
-      window.history.replaceState(null, "", hash);
-    }
-    return true;
+    return scrollToDocsSection(hash);
   };
 
   useEffect(() => {
@@ -84,7 +72,7 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
       if (window.location.hash) {
         setActiveHash(window.location.hash);
       }
-    };
+      };
     window.addEventListener("hashchange", handleHashChange);
 
     return () => {
@@ -93,105 +81,15 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
     };
   }, [anchorLinks]);
 
-  const dispatchSearchQuery = (query: string) => {
-    window.dispatchEvent(
-      new CustomEvent("docs:api-search", {
-        detail: { query },
-      }),
-    );
-  };
-
-  const dispatchSearchNav = (direction: "next" | "prev") => {
-    window.dispatchEvent(
-      new CustomEvent("docs:api-search-nav", {
-        detail: { direction },
-      }),
-    );
-  };
-
-  const runSearch = (query: string) => {
-    dispatchSearchQuery(query);
-    const normalizedQuery = query.trim().toLowerCase();
-    if (normalizedQuery.length === 0) return;
-
-    trackDocsEvent("docs_search_submitted", {
-      query: normalizedQuery,
-      results: docsMatchIds.length,
-    });
-
-    if (docsMatchIds.length > 0) {
-      const first = docsMatchIds[0];
-      if (first) {
-        setDocsMatchCursor(0);
-        scrollToHash(`#${first}`);
-      }
-      return;
-    }
-
-    const fallbackTarget = document.getElementById("api-reference") || document.getElementById("api");
-    if (fallbackTarget) {
-      scrollToHash(`#${fallbackTarget.id}`);
-    }
-  };
-
-  useEffect(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) {
-      setDocsMatchIds([]);
-      setDocsMatchCursor(0);
-      return;
-    }
-
-    const scopes = Array.from(document.querySelectorAll<HTMLElement>("[data-doc-search-scope='true']"));
-    if (scopes.length === 0) {
-      setDocsMatchIds([]);
-      setDocsMatchCursor(0);
-      return;
-    }
-
-    const tokens = query.split(/\s+/).filter(Boolean);
-    const matches = scopes
-      .map((scope) => {
-        if (!scope.id) return null;
-        const label = (scope.dataset.searchLabel ?? "").toLowerCase();
-        const text = (scope.textContent ?? "").toLowerCase();
-        const corpus = `${label} ${text}`;
-        const isMatch = tokens.every((token) => corpus.includes(token));
-        return isMatch ? scope.id : null;
-      })
-      .filter((id): id is string => Boolean(id));
-
-    setDocsMatchIds(matches);
-    setDocsMatchCursor(0);
-  }, [searchQuery]);
-
-  const jumpDocsMatch = (direction: "next" | "prev") => {
-    if (docsMatchIds.length === 0) {
-      dispatchSearchNav(direction);
-      return;
-    }
-
-    const nextIndex = direction === "next"
-      ? (docsMatchCursor + 1) % docsMatchIds.length
-      : docsMatchCursor === 0
-        ? docsMatchIds.length - 1
-        : docsMatchCursor - 1;
-
-    const targetId = docsMatchIds[nextIndex];
-    setDocsMatchCursor(nextIndex);
-    if (targetId) {
-      scrollToHash(`#${targetId}`);
-    }
-  };
-
   return (
     <nav id="docs-navbar" className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-sm">
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link
           to="/"
-          className="whitespace-nowrap font-mono text-sm font-bold lowercase tracking-wide text-foreground transition-colors hover:text-primary"
+          aria-label={`Back to ${packageName} registry`}
+          className="whitespace-nowrap font-mono text-xs font-medium uppercase tracking-[0.22em] text-muted-foreground transition-colors hover:text-primary"
         >
-          {packageName.toLowerCase()}
+          [registry]
         </Link>
 
         <div className="hidden md:flex items-center gap-2 overflow-x-auto pr-2">
@@ -218,14 +116,14 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
                 });
               }}
               className={[
-                "inline-flex h-8 whitespace-nowrap items-center border px-2.5 font-mono text-[11px] lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "inline-flex h-8 whitespace-nowrap items-center px-1.5 font-mono text-[11px] lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 activeHash === link.url
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground",
               ].join(" ")}
               aria-current={activeHash === link.url ? "location" : undefined}
             >
-              {link.label}
+              [{link.label}]
             </a>
           ))}
           {externalLinks.map((link) => (
@@ -241,68 +139,35 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
                   location: "desktop",
                 });
               }}
-              className="inline-flex h-8 whitespace-nowrap items-center border border-border px-2.5 font-mono text-[11px] lowercase text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex h-8 whitespace-nowrap items-center px-1.5 font-mono text-[11px] lowercase text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {link.label}
+              [{link.label}]
             </a>
           ))}
         </div>
 
         <div className="flex items-center gap-2.5">
-          <div className="relative hidden md:block">
-            <form
-              className="relative flex h-11 w-[220px] touch-manipulation items-center border border-border bg-card/50 pl-8 pr-9 transition-colors hover:bg-card/80 focus-within:ring-1 focus-within:ring-primary"
-              onSubmit={(event) => {
-                event.preventDefault();
-                runSearch(searchQuery);
-              }}
-            >
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-              <input
-                id="docs-header-search"
-                value={searchQuery}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setSearchQuery(value);
-                  dispatchSearchQuery(value);
-                }}
-                onKeyDown={(event) => {
-                  const key = event.key.toLowerCase();
-                  if (key === "n" || key === "b") {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    jumpDocsMatch(key === "n" ? "next" : "prev");
-                  }
-                }}
-                placeholder="search docs…"
-                className="h-full w-full bg-transparent font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground"
-                aria-label="Search docs"
-                inputMode="search"
-              />
-              <button
-                type="submit"
-                className="absolute right-1.5 inline-flex h-7 w-7 items-center justify-center border border-border text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="Run search"
-              >
-                <Search className="h-3 w-3" />
-              </button>
-            </form>
-            {searchQuery.trim() ? (
-              <div
-                className="pointer-events-none absolute right-0 top-[calc(100%+6px)] z-10 min-w-max border border-border/80 bg-background/95 px-2.5 py-1.5 font-mono text-[10px] lowercase text-muted-foreground shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-sm"
-                aria-hidden="true"
-              >
-                <p className="flex items-center gap-1.5 whitespace-nowrap">
-                  <span>{docsMatchIds.length} matches</span>
-                  <span>•</span>
-                  <kbd className="inline-flex h-5 min-w-[22px] items-center justify-center border border-border bg-secondary px-1 uppercase text-[10px]">n</kbd>
-                  <span>next</span>
-                  <kbd className="inline-flex h-5 min-w-[22px] items-center justify-center border border-border bg-secondary px-1 uppercase text-[10px]">b</kbd>
-                  <span>prev</span>
-                </p>
-              </div>
-            ) : null}
-          </div>
+          <button
+            type="button"
+            onClick={() => onOpenAssistant("navbar")}
+            className="hidden min-h-11 min-w-[244px] touch-manipulation items-center justify-between gap-4 border border-border bg-card/55 px-3 transition-colors hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:inline-flex"
+            aria-label="Open docs assistant"
+          >
+            <span className="flex items-center gap-2">
+              <Search className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+              <span className="font-mono text-xs lowercase text-muted-foreground">
+                ask or search docs…
+              </span>
+            </span>
+            <span className="flex items-center gap-1">
+              <kbd className="inline-flex h-6 min-w-[28px] items-center justify-center border border-border bg-background px-1 font-mono text-[10px] uppercase text-muted-foreground">
+                ⌘
+              </kbd>
+              <kbd className="inline-flex h-6 min-w-[28px] items-center justify-center border border-border bg-background px-1 font-mono text-[10px] uppercase text-muted-foreground">
+                k
+              </kbd>
+            </span>
+          </button>
           <a
             href={githubUrl}
             target="_blank"
@@ -383,14 +248,14 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
                 });
               }}
               className={[
-                "inline-flex h-10 items-center border px-3 font-mono text-xs lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "inline-flex min-h-11 items-center px-1 font-mono text-xs lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 activeHash === link.url
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:text-foreground",
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-foreground",
               ].join(" ")}
               aria-current={activeHash === link.url ? "location" : undefined}
             >
-              {link.label}
+              [{link.label}]
             </a>
           ))}
           {externalLinks.map((link) => (
@@ -407,59 +272,30 @@ export function Navbar({ packageName, navLinks, githubUrl }: NavbarProps) {
                   location: "mobile",
                 });
               }}
-              className="inline-flex h-10 items-center border border-border px-3 font-mono text-xs lowercase text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="inline-flex min-h-11 items-center px-1 font-mono text-xs lowercase text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {link.label}
+              [{link.label}]
             </a>
           ))}
-          <form
-            className="relative mt-1 flex h-11 w-full touch-manipulation items-center border border-border bg-card/50 pl-8 pr-9 transition-colors hover:bg-card/80 focus-within:ring-1 focus-within:ring-primary"
-            onSubmit={(event) => {
-              event.preventDefault();
-              runSearch(searchQuery);
+          <button
+            type="button"
+            onClick={() => {
+              onOpenAssistant("mobile-nav");
               setMobileOpen(false);
             }}
+            className="mt-1 inline-flex min-h-11 w-full touch-manipulation items-center justify-between border border-border bg-card/50 px-3 text-left transition-colors hover:bg-card/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Open docs assistant"
           >
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-            <input
-              id="docs-header-search-mobile"
-              value={searchQuery}
-              onChange={(event) => {
-                const value = event.target.value;
-                setSearchQuery(value);
-                dispatchSearchQuery(value);
-              }}
-              onKeyDown={(event) => {
-                const key = event.key.toLowerCase();
-                if (key === "n" || key === "b") {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  jumpDocsMatch(key === "n" ? "next" : "prev");
-                }
-              }}
-              className="h-full w-full bg-transparent font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground"
-              placeholder="search docs…"
-              aria-label="Search docs"
-              inputMode="search"
-            />
-            <button
-              type="submit"
-              className="absolute right-1.5 inline-flex h-7 w-7 items-center justify-center border border-border text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              aria-label="Run search"
-            >
-              <Search className="h-3 w-3" />
-            </button>
-          </form>
-          {searchQuery.trim() ? (
-            <p className="mt-1 flex items-center gap-1.5 font-mono text-[10px] lowercase text-muted-foreground">
-              <span>{docsMatchIds.length} matches</span>
-              <span>•</span>
-              <kbd className="inline-flex h-5 min-w-[22px] items-center justify-center border border-border bg-secondary px-1 uppercase">n</kbd>
-              <span>next</span>
-              <kbd className="inline-flex h-5 min-w-[22px] items-center justify-center border border-border bg-secondary px-1 uppercase">b</kbd>
-              <span>prev</span>
-            </p>
-          ) : null}
+            <span className="flex items-center gap-2">
+              <Search className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+              <span className="font-mono text-sm lowercase text-muted-foreground">
+                ask or search docs…
+              </span>
+            </span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              grounded
+            </span>
+          </button>
         </div>
       ) : null}
     </nav>
