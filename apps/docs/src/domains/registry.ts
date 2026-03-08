@@ -7,6 +7,10 @@ const demoModules: DemoRegistry = {
         import("@/domains/use-shortcut/demo").then((m) => ({
             default: m.UseShortcutDemo,
         })),
+    "analytics": () =>
+        import("@/domains/analytics/demo").then((m) => ({
+            default: m.default,
+        })),
 };
 
 export function getDemoComponent(slug: string) {
