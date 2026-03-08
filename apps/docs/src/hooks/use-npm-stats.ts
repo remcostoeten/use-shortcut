@@ -43,10 +43,12 @@ async function fetchWeeklyDownloads(pkg: string): Promise<number> {
     return data.downloads;
 }
 
-export function useNpmMeta(packageName: string): NpmMeta {
+export function useNpmMeta(packageName?: string): NpmMeta {
+    const enabled = Boolean(packageName);
     const query = useQuery({
         queryKey: ["npm-meta", packageName],
-        queryFn: () => fetchLatestPackageMeta(packageName),
+        queryFn: () => fetchLatestPackageMeta(packageName ?? ""),
+        enabled,
         staleTime: 1000 * 60 * 60,
         retry: 1,
     });
@@ -54,16 +56,18 @@ export function useNpmMeta(packageName: string): NpmMeta {
     return {
         version: query.data?.version ?? null,
         lastPublishedAt: query.data?.lastPublishedAt ?? null,
-        isLoading: query.isLoading,
+        isLoading: enabled ? query.isLoading : false,
     };
 }
 
-export function useNpmStats(packageName: string): NpmStats {
+export function useNpmStats(packageName?: string): NpmStats {
     const meta = useNpmMeta(packageName);
+    const enabled = Boolean(packageName);
 
     const downloadsQuery = useQuery({
         queryKey: ["npm-downloads", packageName],
-        queryFn: () => fetchWeeklyDownloads(packageName),
+        queryFn: () => fetchWeeklyDownloads(packageName ?? ""),
+        enabled,
         staleTime: 1000 * 60 * 60,
         retry: 1,
     });
@@ -72,6 +76,6 @@ export function useNpmStats(packageName: string): NpmStats {
         version: meta.version,
         lastPublishedAt: meta.lastPublishedAt,
         weeklyDownloads: downloadsQuery.data ?? null,
-        isLoading: meta.isLoading || downloadsQuery.isLoading,
+        isLoading: meta.isLoading || (enabled ? downloadsQuery.isLoading : false),
     };
 }

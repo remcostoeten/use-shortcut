@@ -116,12 +116,16 @@ export function PackageShowcase({ config, demoContent }: Props) {
   }, [$]);
 
   return (
-    <div className="min-h-screen bg-background relative overflow-x-clip">
-      <div className={isLeaving ? "animate-fade-out-up" : "animate-fade-down"}>
-        <Navbar navLinks={config.navLinks} currentSlug={config.slug} onRegistryClick={handleRegistryNavigation} />
-      </div>
+    <div className="min-h-screen bg-background relative">
+      <Navbar
+        navLinks={config.navLinks}
+        currentSlug={config.slug}
+        onRegistryClick={handleRegistryNavigation}
+        className={isLeaving ? "animate-fade-out-up" : "animate-fade-down"}
+      />
 
-      <main id="main-content" className="mx-auto max-w-2xl border-x border-border min-h-screen relative z-10">
+      <div className="overflow-x-clip">
+        <main id="main-content" className="mx-auto max-w-2xl border-x border-border min-h-screen relative z-10">
         <header
           id="overview"
           data-doc-search-scope="true"
@@ -224,14 +228,12 @@ export function PackageShowcase({ config, demoContent }: Props) {
 
                 <div className="mt-4">
                   <CodeBlock
-                    title={config.slug === "use-shortcut" ? "shortcut-binding" : "next-js-setup"}
+                    title={config.slug === "use-shortcut" ? "shortcut-binding" : "main/layout.tsx"}
                     language="tsx"
                     code={config.slug === "use-shortcut"
                       ? `const $ = useShortcut()
 $.mod.key("k").on(openSearch, { preventDefault: true })`
                       : `import { Analytics } from '@remcostoeten/analytics'
-
-// app/layout.tsx
 export default function RootLayout({ children }) {
   return (
     <html>
@@ -351,7 +353,9 @@ export default function RootLayout({ children }) {
               <div className="mb-1">
                 <p className="mb-1.5 font-mono text-xs text-primary">[example]</p>
                 <p className="max-w-md text-xs leading-relaxed text-muted-foreground lowercase">
-                  press the shortcuts below. each combo highlights the matching code in place.
+                  {config.slug === "analytics"
+                    ? "how the sdk, your ingestion endpoint, and your database fit together in practice."
+                    : "press the shortcuts below. each combo highlights the matching code in place."}
                 </p>
               </div>
               <DemoSection>{demoContent}</DemoSection>
@@ -450,12 +454,13 @@ export default function RootLayout({ children }) {
         </div>
       </main>
 
-      <DocsAssistantDialog
-        config={config}
-        open={assistantOpen}
-        onOpenChange={setAssistantOpen}
-        request={assistantRequest}
-      />
+        <DocsAssistantDialog
+          config={config}
+          open={assistantOpen}
+          onOpenChange={setAssistantOpen}
+          request={assistantRequest}
+        />
+      </div>
     </div>
   );
 }

@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { ArrowLeft, Menu, X } from "lucide-react";
 import type { NavLink as ShowcaseNavLink } from "@/config/types";
 import { Link, useLocation } from "react-router-dom";
 import { packages } from "@/config/registry";
 import { trackDocsEvent } from "@/lib/analytics";
 import { scrollToDocsSection } from "@/lib/docs-navigation";
+import { cn } from "@/lib/utils";
 
 interface NavbarProps {
   navLinks?: ShowcaseNavLink[];
   currentSlug?: string;
   onRegistryClick?: () => void;
+  className?: string;
 }
 
-export function Navbar({ navLinks = [], currentSlug, onRegistryClick }: NavbarProps) {
+export function Navbar({ navLinks = [], currentSlug, onRegistryClick, className }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeHash, setActiveHash] = useState<string>("");
   const [isCompact, setIsCompact] = useState(false);
@@ -39,6 +41,27 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick }: NavbarPr
     [],
   );
   const isRegistryPage = location.pathname === "/";
+  const resolvedSlug = currentSlug ?? location.pathname.replace(/^\//, "");
+  const showCompactBackLink = isCompact && !isRegistryPage;
+  const currentPackage = useMemo(
+    () => packages.find((pkg) => pkg.slug === resolvedSlug),
+    [resolvedSlug],
+  );
+  const currentPackageLabel = currentPackage?.installName ?? currentPackage?.packageName ?? resolvedSlug;
+  const activeSectionLabel = useMemo(() => {
+    if (!activeHash) return null;
+    const match = anchorLinks.find((link) => link.url === activeHash);
+    return match?.label ?? null;
+  }, [activeHash, anchorLinks]);
+  const registryControlClassName = [
+    "inline-flex items-center rounded border font-mono transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+    showCompactBackLink
+      ? "min-h-8 gap-1.5 px-2 text-[0.625rem] uppercase tracking-[0.14em]"
+      : "min-h-8 px-2.5 text-tiny uppercase tracking-[0.2em]",
+    isRegistryPage
+      ? "border-primary/35 bg-primary/8 text-primary"
+      : "border-border bg-card/35 text-muted-foreground hover:text-foreground",
+  ].join(" ");
 
   const scrollToHash = (hash: string) => {
     if (!hash.startsWith("#")) return false;
@@ -55,6 +78,8 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick }: NavbarPr
       .filter((node): node is HTMLElement => Boolean(node));
 
     if (sections.length === 0) return;
+
+    const navOffset = document.getElementById("docs-navbar")?.offsetHeight ?? 52;
 
     const byTop = [...sections].sort(
       (a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top,
@@ -76,7 +101,7 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick }: NavbarPr
       },
       {
         root: null,
-        rootMargin: "-52px 0px -60% 0px",
+        rootMargin: `-${navOffset + 12}px 0px -60% 0px`,
         threshold: [0.05, 0.2, 0.4],
       },
     );
@@ -112,7 +137,10 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick }: NavbarPr
   return (
     <nav
       id="docs-navbar"
-      className="sticky top-0 z-50 border-b border-border bg-background/94 backdrop-blur-md transition-[background-color] duration-200"
+      className={cn(
+        "sticky top-0 z-50 border-b border-border bg-background/94 backdrop-blur-md transition-[background-color] duration-200",
+        className,
+      )}
     >
       <div className="mx-auto w-full max-w-2xl border-x border-border">
         <div
@@ -120,76 +148,59 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick }: NavbarPr
             }`}
         >
           <div className={`flex min-w-0 items-center transition-[gap] duration-200 ${isCompact ? "gap-3 sm:gap-4" : "gap-4 sm:gap-5"}`}>
-            <div className="hidden min-w-0 items-center gap-2 lg:flex">
-              {onRegistryClick && (
+            <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2">
+              {onRegistryClick ? (
                 <button
                   onClick={onRegistryClick}
-                  className={[
-                    "inline-flex min-h-8 items-center rounded border px-2.5 font-mono text-tiny uppercase tracking-[0.2em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    isRegistryPage
-                      ? "border-primary/35 bg-primary/8 text-primary"
-                      : "border-border bg-card/35 text-muted-foreground hover:text-foreground",
-                  ].join(" ")}
+                  className={registryControlClassName}
                   aria-current={isRegistryPage ? "page" : undefined}
+                  aria-label={showCompactBackLink ? "Back to registry" : undefined}
                 >
-                  registry
+                  {showCompactBackLink ? (
+                    <>
+                      <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />
+                      <span>back</span>
+                    </>
+                  ) : (
+                    "registry"
+                  )}
                 </button>
-              )}
-              <div className="flex min-w-0 items-center gap-1.5">
-                {packageLinks.map((pkg) => (
-                  <Link
-                    key={pkg.slug}
-                    to={pkg.href}
-                    className={[
-                      "inline-flex min-h-8 items-center rounded border px-2.5 font-mono text-tiny lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                      currentSlug === pkg.slug
-                        ? "border-primary/35 bg-primary/8 text-primary"
-                        : "border-border/80 bg-card/35 text-muted-foreground hover:text-foreground",
-                    ].join(" ")}
-                    aria-current={currentSlug === pkg.slug ? "page" : undefined}
-                  >
-                    {pkg.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="hidden min-w-0 items-center gap-1 xl:flex">
-              {primaryDesktopLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.url}
-                  onClick={(event) => {
-                    if (
-                      event.metaKey
-                      || event.ctrlKey
-                      || event.shiftKey
-                      || event.altKey
-                      || event.button !== 0
-                    ) {
-                      return;
-                    }
-                    event.preventDefault();
-                    scrollToHash(link.url);
-                    trackDocsEvent("nav_anchor_clicked", {
-                      label: link.label,
-                      href: link.url,
-                      location: "desktop",
-                    });
-                  }}
-                  className={[
-                    `inline-flex items-center whitespace-nowrap rounded px-2.5 font-mono text-tiny lowercase transition-[color,min-height,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isCompact ? "min-h-7" : "min-h-9"
-                    }`,
-                    activeHash === link.url
-                      ? "border border-primary/25 bg-primary/8 text-primary"
-                      : "border border-transparent text-muted-foreground hover:border-border hover:bg-card/30 hover:text-foreground",
-                  ].join(" ")}
-                  aria-current={activeHash === link.url ? "location" : undefined}
+              ) : (
+                <Link
+                  to="/"
+                  className={registryControlClassName}
+                  aria-current={isRegistryPage ? "page" : undefined}
+                  aria-label={showCompactBackLink ? "Back to registry" : undefined}
                 >
-                  {link.label === "options" ? "api" : link.label}
-                </a>
-              ))}
-            </div>
+                  {showCompactBackLink ? (
+                    <>
+                      <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />
+                      <span>back</span>
+                    </>
+                  ) : (
+                    "registry"
+                  )}
+                </Link>
+              )}
+
+              {!isRegistryPage && currentPackageLabel ? (
+                <>
+                  <span className="text-muted-foreground/35">/</span>
+                  <span className="min-w-0 truncate font-mono text-tiny lowercase text-foreground/90" aria-current="page">
+                    {currentPackageLabel}
+                  </span>
+                </>
+              ) : null}
+
+              {!isRegistryPage && activeSectionLabel ? (
+                <span className="hidden min-w-0 items-center gap-2 md:inline-flex">
+                  <span className="text-muted-foreground/35">/</span>
+                  <span className="truncate font-mono text-tiny lowercase text-muted-foreground">
+                    {activeSectionLabel === "options" ? "api" : activeSectionLabel}
+                  </span>
+                </span>
+              ) : null}
+            </nav>
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
@@ -230,6 +241,49 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick }: NavbarPr
           </div>
         </div>
       </div>
+
+      {anchorLinks.length > 0 ? (
+        <div className="hidden border-t border-dashed border-border/80 bg-background/80 md:block">
+          <div className="mx-auto w-full max-w-2xl border-x border-border px-4 py-2 sm:px-8">
+            <div className="flex max-w-full items-center gap-1 overflow-x-auto [-webkit-overflow-scrolling:touch]">
+              {primaryDesktopLinks.map((link) => (
+                <a
+                  key={link.label}
+                  href={link.url}
+                  onClick={(event) => {
+                    if (
+                      event.metaKey
+                      || event.ctrlKey
+                      || event.shiftKey
+                      || event.altKey
+                      || event.button !== 0
+                    ) {
+                      return;
+                    }
+                    event.preventDefault();
+                    scrollToHash(link.url);
+                    trackDocsEvent("nav_anchor_clicked", {
+                      label: link.label,
+                      href: link.url,
+                      location: "sticky",
+                    });
+                  }}
+                  className={[
+                    "inline-flex min-h-9 shrink-0 touch-manipulation items-center rounded border px-2.5 font-mono text-tiny lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    activeHash === link.url
+                      ? "border-primary/25 bg-primary/8 text-primary"
+                      : "border-border/80 bg-card/20 text-muted-foreground hover:bg-card/35 hover:text-foreground",
+                  ].join(" ")}
+                  aria-current={activeHash === link.url ? "location" : undefined}
+                >
+                  {link.label === "options" ? "api" : link.label}
+                </a>
+              ))}
+              <span className="w-2 shrink-0" aria-hidden="true" />
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {mobileOpen ? (
         <div

@@ -142,3 +142,19 @@ export interface PackageConfig {
   uiUseCases?: UiUseCase[];
   useCases?: string;
 }
+
+export type RegistryItemKind = "package" | "cli" | "extension";
+export type RegistryItemStatus = "live" | "upcoming";
+
+export interface RegistryItem {
+  id: string;
+  title: string;
+  description: string;
+  kind: RegistryItemKind;
+  status: RegistryItemStatus;
+  label: string;
+  href?: string;
+  githubUrl?: string;
+  npmPackageName?: string;
+  tagline?: string;
+}
