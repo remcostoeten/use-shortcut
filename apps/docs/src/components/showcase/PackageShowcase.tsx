@@ -65,7 +65,6 @@ export function PackageShowcase({ config, demoContent }: Props) {
     }
   }, [config.description, config.packageName, config.slug]);
 
-  // Handle smooth navigation when clicking registry link
   const handleRegistryNavigation = () => {
     setIsLeaving(true);
     setTimeout(() => {
@@ -300,6 +299,7 @@ export default function RootLayout({ children }) {
           </div>
         </header>
 
+<<<<<<< HEAD
         <section
           id="install"
           data-doc-search-scope="true"
@@ -348,8 +348,16 @@ export default function RootLayout({ children }) {
         </section>
 
         <div className="flex flex-col gap-0 ">
+=======
+        <div className="flex flex-col">
+          <InstallCommand
+            packageName={config.installName}
+            authorHandle={config.author.handle}
+          />
+
+>>>>>>> 4f7f43b (Rework docs registry landing page)
           {demoContent ? (
-            <ShowcaseSection id="demo" data-doc-search-scope="true" data-search-label="demo">
+            <ShowcaseSection id="demo" eyebrow="[live-demo]" title="test the behavior before wiring it in">
               <div className="mb-1">
                 <p className="mb-1.5 font-mono text-xs text-primary">[example]</p>
                 <p className="max-w-md text-xs leading-relaxed text-muted-foreground lowercase">
@@ -362,57 +370,65 @@ export default function RootLayout({ children }) {
             </ShowcaseSection>
           ) : null}
 
-          {config.codeExamples && config.codeExamples.length > 0 && (
-            <div id="syntax" data-doc-search-scope="true" data-search-label="syntax" className="px-4 py-8 sm:px-8">
-              <div className="mb-6">
-                <p className="font-mono text-xs text-primary mb-1.5">[recipes]</p>
-                <h2 className="font-display text-base font-bold lowercase tracking-tight text-foreground mb-1.5">
-                  copy-ready examples
-                </h2>
-                <p className="text-xs text-muted-foreground lowercase leading-relaxed max-w-md">
-                  common patterns for app shortcuts, scopes, parsing, and custom keybinds.
-                </p>
+          {config.why && config.why.paragraphs.length > 0 ? (
+            <ShowcaseSection id="why" eyebrow="[why]" title="why this exists">
+              <div className="space-y-3 max-w-xl">
+                {config.why.paragraphs.map((paragraph) => (
+                  <p key={paragraph} className="text-sm lowercase leading-relaxed text-muted-foreground">
+                    {paragraph}
+                  </p>
+                ))}
               </div>
-              <CodeExamples examples={config.codeExamples} uiUseCases={config.uiUseCases} />
-            </div>
-          )}
+            </ShowcaseSection>
+          ) : null}
 
-          {config.componentRecipes && config.componentRecipes.length > 0 && (
-            <div
-              id="components"
-              data-doc-search-scope="true"
-              data-search-label="component recipes"
-              className="border-y border-dashed border-border -mx-[1px] bg-card/24 px-4 py-8 sm:px-8"
-            >
-              <div className="mb-6">
-                <p className="font-mono text-xs text-primary mb-1.5">[components]</p>
-                <h2 className="font-display text-base font-bold lowercase tracking-tight text-foreground mb-1.5">
-                  copy-ready component recipes
-                </h2>
-                <p className="text-xs text-muted-foreground lowercase leading-relaxed max-w-md">
-                  complete components with shortcuts wired in so people can copy the whole thing and adapt it later.
-                </p>
+          {config.features && config.features.length > 0 ? (
+            <ShowcaseSection id="features" eyebrow="[features]" title="what you get">
+              <div className="grid gap-px border border-border bg-border sm:grid-cols-2">
+                {config.features.map((feature) => (
+                  <div key={feature.label} className="bg-background p-4">
+                    {feature.value ? (
+                      <p className="font-mono text-xs text-primary">{feature.value}</p>
+                    ) : null}
+                    <h3 className="mt-2 text-sm font-medium lowercase text-foreground">{feature.label}</h3>
+                    <p className="mt-1 text-xs lowercase leading-relaxed text-muted-foreground">{feature.description}</p>
+                  </div>
+                ))}
               </div>
+            </ShowcaseSection>
+          ) : null}
+
+          {config.apiProps && config.apiProps.length > 0 ? (
+            <ShowcaseSection id="api" eyebrow="[api]" title="config surface">
+              <ApiTable rows={config.apiProps} />
+            </ShowcaseSection>
+          ) : null}
+
+          {config.apiCapabilities && config.apiCapabilities.length > 0 ? (
+            <ShowcaseSection id="api-reference" eyebrow="[api-reference]" title="public api">
+              <ApiCapabilities capabilities={config.apiCapabilities} onOpenAssistant={openAssistant} />
+            </ShowcaseSection>
+          ) : null}
+
+          {config.apiMethodGroups && config.apiMethodGroups.length > 0 ? (
+            <ShowcaseSection id="api-matrix" eyebrow="[api-matrix]" title="method matrix">
+              <ApiMethodMatrix groups={config.apiMethodGroups} />
+            </ShowcaseSection>
+          ) : null}
+
+          {config.componentRecipes && config.componentRecipes.length > 0 ? (
+            <ShowcaseSection id="components" eyebrow="[component-recipes]" title="copyable component patterns">
               <ComponentRecipeBook recipes={config.componentRecipes} />
-            </div>
-          )}
+            </ShowcaseSection>
+          ) : null}
 
-          {config.apiProps && config.apiProps.length > 0 && (
-            <div id="api" data-doc-search-scope="true" data-search-label="api options" className="border-y border-dashed border-border -mx-[1px] bg-card/30 px-4 py-8 sm:px-8">
-              <ApiTable
-                props={config.apiProps}
-                guidance={config.apiPropGuidance}
-                onAskProp={(propName) => {
-                  openAssistant({
-                    query: `when should i use ${propName}?`,
-                    entryId: `prop:${propName}`,
-                    source: "api-table",
-                  });
-                }}
-              />
-            </div>
-          )}
+          {config.codeExamples && config.codeExamples.length > 0 ? (
+            <ShowcaseSection id="syntax" eyebrow="[examples]" title="copy a working pattern">
+              <CodeExamples examples={config.codeExamples} />
+            </ShowcaseSection>
+          ) : null}
 
+<<<<<<< HEAD
           {config.apiCapabilities && config.apiCapabilities.length > 0 && (
             <div id="api-reference" data-doc-search-scope="true" data-search-label="api reference" className="px-4 py-8 sm:px-8">
               <div className="mb-6">
@@ -451,6 +467,13 @@ export default function RootLayout({ children }) {
               ctas={config.ctas}
             />
           </div>
+=======
+          <FooterSection
+            packageName={config.packageName}
+            npmUrl={config.links.npm}
+            githubUrl={config.links.github}
+          />
+>>>>>>> 4f7f43b (Rework docs registry landing page)
         </div>
       </main>
 
