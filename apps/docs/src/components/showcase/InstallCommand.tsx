@@ -240,7 +240,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
         </div>
         <Tooltip.Provider delayDuration={300}>
           <div className="mt-3 flex items-center gap-2 relative z-50">
-            <span className="font-mono text-[11px] lowercase text-primary">install helpers</span>
+            <span className="font-mono text-tiny lowercase text-primary">install helpers</span>
             <Tooltip.Root>
               <Tooltip.Trigger asChild>
                 <button
@@ -260,7 +260,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                     Use <strong>skills.sh</strong> when you want the reusable agent skill from this repo. Use <strong>llm.txt</strong> when you want an LLM to install and wire it up with the right shortcut patterns.
                   </p>
                   <div className="mt-2 pt-2 border-t border-border/50">
-                    <p className="font-mono text-[10px] lowercase text-primary mb-1">what to grab</p>
+                    <p className="font-mono text-tiny lowercase text-primary mb-1">what to grab</p>
                     <p className="text-xs leading-relaxed text-muted-foreground">
                       Use `npx skills add https://github.com/remcostoeten/use-shortcut --skill use-shortcut` for the agent skill, or `llm.txt` for a coding model.
                     </p>
@@ -324,7 +324,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
-                    <span className="font-mono text-[11px] lowercase text-primary">{asset.label}</span>
+                    <span className="font-mono text-tiny lowercase text-primary">{asset.label}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <p className="text-xs font-medium leading-relaxed text-foreground">

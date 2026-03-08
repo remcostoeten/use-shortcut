@@ -35,6 +35,73 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom typography scale for consistency */
+@layer utilities {
+  .text-micro {
+    @apply text-[0.625rem] leading-[0.75rem] tracking-[0.1em];
+  }
+  .text-tiny {
+    @apply text-[0.6875rem] leading-[0.875rem] tracking-[0.075em];
+  }
+  .text-xs {
+    @apply text-[0.75rem] leading-4 tracking-[0.05em];
+  }
+  .text-sm {
+    @apply text-[0.875rem] leading-5 tracking-[0.025em];
+  }
+  .text-base {
+    @apply text-[1rem] leading-6 tracking-normal;
+  }
+  .text-lg {
+    @apply text-[1.125rem] leading-7 tracking-[-0.025em];
+  }
+  .text-xl {
+    @apply text-[1.25rem] leading-7 tracking-[-0.025em];
+  }
+  .text-2xl {
+    @apply text-[1.5rem] leading-8 tracking-[-0.025em];
+  }
+  .text-3xl {
+    @apply text-[1.875rem] leading-9 tracking-[-0.025em];
+  }
+  .text-4xl {
+    @apply text-[2.25rem] leading-10 tracking-[-0.025em];
+  }
+}
+
+/* Prose classes for content typography */
+@layer components {
+  .prose-custom {
+    @apply prose prose-invert prose-sm max-w-none;
+  }
+  .prose-custom h1,
+  .prose-custom h2,
+  .prose-custom h3,
+  .prose-custom h4,
+  .prose-custom h5,
+  .prose-custom h6 {
+    @apply font-display font-bold tracking-tight;
+  }
+  .prose-custom h1 {
+    @apply text-3xl;
+  }
+  .prose-custom h2 {
+    @apply text-2xl;
+  }
+  .prose-custom h3 {
+    @apply text-xl;
+  }
+  .prose-custom p {
+    @apply text-sm leading-relaxed;
+  }
+  .prose-custom code {
+    @apply text-xs font-mono;
+  }
+  .prose-custom pre {
+    @apply text-xs;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

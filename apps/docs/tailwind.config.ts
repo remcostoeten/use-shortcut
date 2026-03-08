@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
+import typography from "@tailwindcss/typography";
 
 export default {
   darkMode: ["class"],
@@ -18,6 +19,18 @@ export default {
         sans: ['Geist', 'Inter', 'system-ui', 'sans-serif'],
         mono: ['Geist Mono', 'SF Mono', 'Fira Code', 'monospace'],
         display: ['Inter Tight', 'Geist', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        'xs': ['0.75rem', { lineHeight: '1rem', letterSpacing: '0.05em' }],
+        'sm': ['0.875rem', { lineHeight: '1.25rem', letterSpacing: '0.025em' }],
+        'base': ['1rem', { lineHeight: '1.5rem', letterSpacing: '0em' }],
+        'lg': ['1.125rem', { lineHeight: '1.75rem', letterSpacing: '-0.025em' }],
+        'xl': ['1.25rem', { lineHeight: '1.75rem', letterSpacing: '-0.025em' }],
+        '2xl': ['1.5rem', { lineHeight: '2rem', letterSpacing: '-0.025em' }],
+        '3xl': ['1.875rem', { lineHeight: '2.25rem', letterSpacing: '-0.025em' }],
+        '4xl': ['2.25rem', { lineHeight: '2.5rem', letterSpacing: '-0.025em' }],
+        'micro': ['0.625rem', { lineHeight: '0.75rem', letterSpacing: '0.1em' }],
+        'tiny': ['0.6875rem', { lineHeight: '0.875rem', letterSpacing: '0.075em' }],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -83,7 +96,29 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            '--tw-prose-body': 'hsl(var(--foreground))',
+            '--tw-prose-headings': 'hsl(var(--foreground))',
+            '--tw-prose-lead': 'hsl(var(--muted-foreground))',
+            '--tw-prose-links': 'hsl(var(--primary))',
+            '--tw-prose-bold': 'hsl(var(--foreground))',
+            '--tw-prose-counters': 'hsl(var(--muted-foreground))',
+            '--tw-prose-bullets': 'hsl(var(--muted-foreground))',
+            '--tw-prose-hr': 'hsl(var(--border))',
+            '--tw-prose-quotes': 'hsl(var(--foreground))',
+            '--tw-prose-quote-borders': 'hsl(var(--border))',
+            '--tw-prose-captions': 'hsl(var(--muted-foreground))',
+            '--tw-prose-code': 'hsl(var(--foreground))',
+            '--tw-prose-pre-code': 'hsl(var(--foreground))',
+            '--tw-prose-pre-bg': 'hsl(var(--muted))',
+            '--tw-prose-th-borders': 'hsl(var(--border))',
+            '--tw-prose-td-borders': 'hsl(var(--border))',
+          },
+        },
+      },
     },
   },
-  plugins: [tailwindcssAnimate],
+  plugins: [tailwindcssAnimate, typography],
 } satisfies Config;

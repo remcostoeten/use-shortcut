@@ -149,10 +149,10 @@ export function PackageShowcase({ config, demoContent }: Props) {
                       </p>
                     )
                   ) : null}
-                  <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground/55">
+                  <span className="font-mono text-tiny uppercase tracking-[0.24em] text-muted-foreground/55">
                     react package
                   </span>
-                  <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground/45">
+                  <span className="font-mono text-tiny uppercase tracking-[0.24em] text-muted-foreground/45">
                     {(config.author.handle.startsWith("@") ? config.author.handle : `@${config.author.handle}`)}
                   </span>
                 </div>
@@ -212,10 +212,10 @@ export function PackageShowcase({ config, demoContent }: Props) {
                   <button
                     type="button"
                     onClick={() => openAssistant({ source: "hero" })}
-                    className="flex min-w-[200px] min-h-11 items-center justify-center gap-2 border border-border bg-background/80 px-3 font-mono text-[11px] lowercase text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex min-w-[200px] min-h-11 items-center justify-center gap-2 border border-border bg-background/80 px-3 font-mono text-tiny lowercase text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     open-docs-assistant
-                    <kbd className="flex min-h-6 items-center justify-center border border-border bg-card/70 px-2 font-mono text-[10px] uppercase text-muted-foreground">
+                    <kbd className="flex min-h-6 items-center justify-center border border-border bg-card/70 px-2 font-mono text-tiny uppercase text-muted-foreground">
                       <span>⌘</span>
                       <span className="ml-1">K</span>
                     </kbd>
@@ -261,11 +261,11 @@ export default function RootLayout({ children }) {
                             primary: true,
                           });
                         }}
-                        className="inline-flex min-h-9 items-center gap-2 border border-primary/40 bg-primary/12 px-3 py-2 font-mono text-[11px] font-medium text-primary transition-colors hover:bg-primary/18"
+                        className="inline-flex min-h-9 items-center gap-2 border border-primary/40 bg-primary/12 px-3 py-2 font-mono text-tiny font-medium text-primary transition-colors hover:bg-primary/18"
                       >
                         {cta.label}
                         {cta.shortcutKey ? (
-                          <kbd className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-primary/30 bg-background/40 px-1 font-mono text-[10px] font-normal uppercase text-primary/80">
+                          <kbd className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-primary/30 bg-background/40 px-1 font-mono text-tiny font-normal uppercase text-primary/80">
                             {cta.shortcutKey}
                           </kbd>
                         ) : null}
@@ -285,7 +285,7 @@ export default function RootLayout({ children }) {
                       >
                         {cta.label}
                         {cta.shortcutKey ? (
-                          <kbd className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[10px] font-normal uppercase text-muted-foreground">
+                          <kbd className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-border bg-muted px-1 font-mono text-tiny font-normal uppercase text-muted-foreground">
                             {cta.shortcutKey}
                           </kbd>
                         ) : null}
@@ -314,7 +314,7 @@ export default function RootLayout({ children }) {
                 }
               </p>
             </div>
-            <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/45">
+            <span className="font-mono text-tiny uppercase tracking-[0.2em] text-muted-foreground/45">
               start here
             </span>
           </div>

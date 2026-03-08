@@ -46,13 +46,13 @@ export default function Index() {
                 <p className="font-mono text-xs text-primary/85">
                   [package registry]
                 </p>
-                <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground/55">
+                <span className="font-mono text-tiny uppercase tracking-[0.24em] text-muted-foreground/55">
                   @remcostoeten
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground/55">
+                <span className="font-mono text-tiny uppercase tracking-[0.24em] text-muted-foreground/55">
                   react packages
                 </span>
-                <span className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground/45">
+                <span className="font-mono text-tiny uppercase tracking-[0.24em] text-muted-foreground/45">
                   {packages.length}-packages
                 </span>
               </div>

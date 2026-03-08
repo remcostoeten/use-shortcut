@@ -125,7 +125,7 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick }: NavbarPr
                 <button
                   onClick={onRegistryClick}
                   className={[
-                    "inline-flex min-h-8 items-center rounded border px-2.5 font-mono text-[10px] uppercase tracking-[0.2em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "inline-flex min-h-8 items-center rounded border px-2.5 font-mono text-tiny uppercase tracking-[0.2em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                     isRegistryPage
                       ? "border-primary/35 bg-primary/8 text-primary"
                       : "border-border bg-card/35 text-muted-foreground hover:text-foreground",
@@ -141,7 +141,7 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick }: NavbarPr
                     key={pkg.slug}
                     to={pkg.href}
                     className={[
-                      "inline-flex min-h-8 items-center rounded border px-2.5 font-mono text-[10px] lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "inline-flex min-h-8 items-center rounded border px-2.5 font-mono text-tiny lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       currentSlug === pkg.slug
                         ? "border-primary/35 bg-primary/8 text-primary"
                         : "border-border/80 bg-card/35 text-muted-foreground hover:text-foreground",
@@ -178,7 +178,7 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick }: NavbarPr
                     });
                   }}
                   className={[
-                    `inline-flex items-center whitespace-nowrap rounded px-2.5 font-mono text-[11px] lowercase transition-[color,min-height,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isCompact ? "min-h-7" : "min-h-9"
+                    `inline-flex items-center whitespace-nowrap rounded px-2.5 font-mono text-tiny lowercase transition-[color,min-height,background-color,border-color] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${isCompact ? "min-h-7" : "min-h-9"
                     }`,
                     activeHash === link.url
                       ? "border border-primary/25 bg-primary/8 text-primary"
