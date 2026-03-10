@@ -32,6 +32,10 @@ export type {
     ShortcutScope,
     ShortcutConflict,
     ShortcutRecordingOptions,
+    ShortcutMapEntry,
+    ShortcutMap,
+    ShortcutMapResult,
+    ShortcutGroup,
 } from "./types"
 
 export {
@@ -45,4 +49,8 @@ export { formatShortcut } from "./formatter"
 
 export {
     useShortcut,
+    useShortcutMap,
+    registerShortcutMap,
+    createShortcutGroup,
+    useShortcutGroup,
 } from "./hook"
