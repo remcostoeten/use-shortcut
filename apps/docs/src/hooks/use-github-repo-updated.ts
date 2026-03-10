@@ -16,6 +16,7 @@ function parseGitHubRepoUrl(url: string): { owner: string; repo: string } | null
 }
 
 type GitHubRepoResponse = {
+  pushed_at?: string;
   updated_at?: string;
 };
 
@@ -29,8 +30,9 @@ async function fetchGitHubRepoUpdatedAt(githubUrl: string): Promise<string> {
   });
   if (!res.ok) throw new Error("Failed to fetch GitHub repo metadata");
   const data = (await res.json()) as GitHubRepoResponse;
-  if (!data.updated_at) throw new Error("Missing updated_at");
-  return data.updated_at;
+  const latestCodeUpdateAt = data.pushed_at ?? data.updated_at;
+  if (!latestCodeUpdateAt) throw new Error("Missing pushed_at and updated_at");
+  return latestCodeUpdateAt;
 }
 
 export function useGitHubRepoUpdatedAt(githubUrl?: string): {
@@ -51,4 +53,3 @@ export function useGitHubRepoUpdatedAt(githubUrl?: string): {
     isLoading: enabled ? query.isLoading : false,
   };
 }
-

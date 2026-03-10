@@ -1,4 +1,4 @@
-import { PACKAGE_OG_IMAGE_URL, SITE_URL } from "@/config/site";
+import { PACKAGE_OG_IMAGE_URL, toCanonicalUrl } from "@/config/site";
 
 type SeoMeta = {
   title: string;
@@ -55,7 +55,7 @@ export function applySeoMeta({
   type = "website",
   noIndex = false,
 }: SeoMeta) {
-  const canonicalUrl = new URL(path, SITE_URL).toString();
+  const canonicalUrl = toCanonicalUrl(path);
   const safeTitle = sanitizeTitle(title);
 
   document.title = safeTitle;

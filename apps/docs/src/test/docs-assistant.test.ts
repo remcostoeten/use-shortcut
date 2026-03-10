@@ -28,10 +28,4 @@ describe("docs assistant", () => {
     expect(answer.citations[0]?.entry.id).toBe("prop:ignoreInputs");
     expect(answer.bullets.some((bullet) => bullet.toLowerCase().includes("when to use"))).toBe(true);
   });
-
-  it("finds component recipes by concrete ui queries", () => {
-    const result = searchDocsKnowledge(entries, "avatar login shift l", 1)[0];
-
-    expect(result?.entry.id).toBe("component:avatar-login-trigger");
-  });
 });

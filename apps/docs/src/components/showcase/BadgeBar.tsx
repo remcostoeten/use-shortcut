@@ -9,7 +9,11 @@ function formatDownloads(n: number): string {
 }
 
 interface BadgeBarProps {
-  installName: string;
+  installName?: string;
+  primaryLabel?: string;
+  primaryUrl?: string;
+  primaryValue?: string | null;
+  secondaryValue?: string | null;
   npmUrl?: string;
   githubUrl?: string;
   bundleSizeKb?: number;
@@ -20,6 +24,10 @@ interface BadgeBarProps {
 
 export function BadgeBar({
   installName,
+  primaryLabel = "npm",
+  primaryUrl,
+  primaryValue,
+  secondaryValue,
   npmUrl = "#",
   githubUrl = "#",
   bundleSizeKb,
@@ -27,6 +35,7 @@ export function BadgeBar({
   alignEnd = true,
   variant = "default",
 }: BadgeBarProps) {
+  const shouldLoadNpmStats = Boolean(installName);
   const { version, weeklyDownloads, isLoading } = useNpmStats(installName);
 
   const skeletonClass =
@@ -35,33 +44,43 @@ export function BadgeBar({
   const itemClassName = hero
     ? "inline-flex min-h-8 items-center gap-1.5 rounded border border-border/80 bg-card/70 px-2.5 py-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
     : "inline-flex items-center gap-1.5 rounded border border-dashed border-border px-2.5 py-1 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground";
+  const resolvedPrimaryUrl = primaryUrl ?? npmUrl;
+  const resolvedPrimaryValue = shouldLoadNpmStats
+    ? isLoading
+      ? null
+      : version
+        ? `v${version}`
+        : "live"
+    : primaryValue;
+  const resolvedSecondaryValue = shouldLoadNpmStats
+    ? isLoading
+      ? null
+      : weeklyDownloads !== null
+        ? formatDownloads(weeklyDownloads)
+        : "—"
+    : secondaryValue;
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2.5", className)}>
       <a
-        href={npmUrl}
+        href={resolvedPrimaryUrl}
         target="_blank"
         rel="noopener noreferrer"
         className={itemClassName}
       >
-        npm
-        {isLoading ? (
+        {primaryLabel}
+        {resolvedPrimaryValue === null ? (
           <span className={skeletonClass} />
         ) : (
-          <span className="text-primary">v{version}</span>
+          <span className="text-primary">{resolvedPrimaryValue}</span>
         )}
       </a>
 
-      <span className={cn(itemClassName, "hover:border-border hover:text-muted-foreground")}>
-        ↓{" "}
-        {isLoading ? (
-          <span className={skeletonClass} />
-        ) : weeklyDownloads !== null ? (
-          formatDownloads(weeklyDownloads)
-        ) : (
-          "—"
-        )}
-      </span>
+      {resolvedSecondaryValue ? (
+        <span className={cn(itemClassName, "hover:border-border hover:text-muted-foreground")}>
+          {resolvedSecondaryValue}
+        </span>
+      ) : null}
 
       {bundleSizeKb && (
         <span className={cn(itemClassName, "hover:border-border hover:text-muted-foreground")}>

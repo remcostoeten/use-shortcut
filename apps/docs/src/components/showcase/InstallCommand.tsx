@@ -94,6 +94,12 @@ const assets = [
   },
 ] as const;
 
+type Manager = (typeof managers)[number];
+type Asset = (typeof assets)[number];
+type TabItem =
+  | { kind: "manager"; id: string; label: string; manager: Manager }
+  | { kind: "asset"; id: string; label: string; asset: Asset };
+
 export function InstallCommand({ packageName = "package-name" }: InstallCommandProps) {
   const [active, setActive] = useState("npm");
   const [copied, setCopied] = useState(false);
@@ -103,8 +109,24 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
   const [copiedAsset, setCopiedAsset] = useState<string | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-
-  const command = managers.find((m) => m.id === active)!.cmd(packageName);
+  const tabItems: TabItem[] = [
+    ...managers.map((manager) => ({
+      kind: "manager" as const,
+      id: manager.id,
+      label: manager.label,
+      manager,
+    })),
+    ...assets.map((asset) => ({
+      kind: "asset" as const,
+      id: asset.href,
+      label: asset.label,
+      asset,
+    })),
+  ];
+  const activeTab = tabItems.find((item) => item.id === active) ?? tabItems[0];
+  const command = activeTab.kind === "manager" ? activeTab.manager.cmd(packageName) : null;
+  const activeAsset = activeTab.kind === "asset" ? activeTab.asset : null;
+  const activeAssetContent = activeAsset ? assetContent[activeAsset.href] || "" : null;
 
   useEffect(() => {
     const btn = buttonRefs.current[active];
@@ -119,6 +141,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
   }, [active]);
 
   const copy = async () => {
+    if (!command) return;
     await navigator.clipboard.writeText(command);
     setCopied(true);
     trackDocsEvent("install_command_copied", {
@@ -151,24 +174,21 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, id: string) => {
-    const currentIndex = managers.findIndex((m) => m.id === id);
+    const currentIndex = tabItems.findIndex((item) => item.id === id);
     let nextIndex = null;
 
     if (e.key === "ArrowRight") {
-      nextIndex = currentIndex === managers.length - 1 ? 0 : currentIndex + 1;
+      nextIndex = currentIndex === tabItems.length - 1 ? 0 : currentIndex + 1;
     } else if (e.key === "ArrowLeft") {
-      nextIndex = currentIndex === 0 ? managers.length - 1 : currentIndex - 1;
+      nextIndex = currentIndex === 0 ? tabItems.length - 1 : currentIndex - 1;
     }
 
     if (nextIndex !== null) {
-      const nextId = managers[nextIndex].id;
+      const nextId = tabItems[nextIndex].id;
       setActive(nextId);
       buttonRefs.current[nextId]?.focus();
     }
   };
-
-  const initAsset = assets.find((asset) => asset.href === "/skill.sh");
-  const otherAssets = assets.filter((asset) => asset.href !== "/skill.sh");
 
   return (
     <div className="w-full space-y-4">
@@ -176,7 +196,12 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
         {copied ? "Copied command to clipboard" : ""}
       </span>
       <div className="border border-border bg-card/35 p-3">
-        <div ref={tabsRef} role="tablist" aria-label="Package managers" className="relative mb-0 flex items-center gap-1">
+        <div
+          ref={tabsRef}
+          role="tablist"
+          aria-label="Install options"
+          className="relative mb-0 flex flex-wrap items-center gap-1"
+        >
           <div
             className="absolute bottom-0 h-[2px] bg-primary transition-all duration-300"
             style={{
@@ -185,192 +210,110 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
               transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
             }}
           />
-          {managers.map((m) => (
+          {tabItems.map((item) => (
             <button
-              key={m.id}
-              ref={(el) => { buttonRefs.current[m.id] = el; }}
+              key={item.id}
+              ref={(el) => { buttonRefs.current[item.id] = el; }}
               role="tab"
-              aria-selected={active === m.id}
-              tabIndex={active === m.id ? 0 : -1}
+              aria-selected={active === item.id}
+              tabIndex={active === item.id ? 0 : -1}
               onClick={() => {
-                setActive(m.id);
-                trackDocsEvent("package_manager_selected", {
-                  packageName,
-                  packageManager: m.id,
-                });
+                setActive(item.id);
+                if (item.kind === "manager") {
+                  trackDocsEvent("package_manager_selected", {
+                    packageName,
+                    packageManager: item.manager.id,
+                  });
+                } else {
+                  trackDocsEvent("install_asset_selected", {
+                    packageName,
+                    asset: item.asset.label,
+                  });
+                }
               }}
-              onKeyDown={(e) => handleKeyDown(e, m.id)}
-              className={`rounded-sm px-2.5 py-1.5 font-mono text-xs lowercase transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${active === m.id
+              onKeyDown={(e) => handleKeyDown(e, item.id)}
+              className={`rounded-sm px-2.5 py-1.5 font-mono text-xs lowercase transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${active === item.id
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground"
                 }`}
               style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
             >
-              [{m.label}]
+              [{item.label}]
             </button>
           ))}
         </div>
-        <div className="mt-1 flex items-start justify-between gap-3 overflow-hidden border border-border bg-card px-4 py-3">
-          <div
-            className="flex min-w-0 flex-1 items-start gap-2 overflow-hidden"
-            aria-label={`Install command: ${command}`}
-          >
-            <span className="select-none font-mono text-sm text-primary" aria-hidden="true">$</span>
-            <pre className="min-w-0 flex-1 overflow-x-auto font-mono text-sm leading-relaxed text-muted-foreground">
-              <SyntaxHighlight code={command} language="bash" />
-            </pre>
-          </div>
-          <button
-            type="button"
-            onClick={copy}
-            className="relative ml-auto flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Copy install command"
-          >
-            <Copy
-              className={`absolute h-4 w-4 transition-all duration-300 ${copied ? "rotate-12 scale-50 opacity-0" : "rotate-0 scale-100 opacity-100"
-                }`}
-              style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
-            />
-            <Check
-              className={`absolute h-4 w-4 text-primary transition-all duration-300 ${copied ? "rotate-0 scale-100 opacity-100" : "-rotate-12 scale-50 opacity-0"
-                }`}
-              style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
-            />
-          </button>
-        </div>
-        <Tooltip.Provider delayDuration={300}>
-          <div className="mt-3 flex items-center gap-2 relative z-50">
-            <span className="font-mono text-tiny lowercase text-primary">install helpers</span>
-            <Tooltip.Root>
-              <Tooltip.Trigger asChild>
-                <button
-                  type="button"
-                  className="flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  aria-label="What are these install helpers?"
-                >
-                  <HelpCircle className="h-3 w-3" />
-                </button>
-              </Tooltip.Trigger>
-              <Tooltip.Portal>
-                <Tooltip.Content
-                  className="z-50 max-w-[280px] rounded-md border bg-popover p-3 text-xs text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
-                  sideOffset={5}
-                >
-                  <p className="leading-relaxed text-foreground">
-                    Use <strong>skills.sh</strong> when you want the reusable agent skill from this repo. Use <strong>llm.txt</strong> when you want an LLM to install and wire it up with the right shortcut patterns.
-                  </p>
-                  <div className="mt-2 pt-2 border-t border-border/50">
-                    <p className="font-mono text-tiny lowercase text-primary mb-1">what to grab</p>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      Use `npx skills add https://github.com/remcostoeten/use-shortcut --skill use-shortcut` for the agent skill, or `llm.txt` for a coding model.
-                    </p>
-                  </div>
-                  <Tooltip.Arrow className="fill-popover" />
-                </Tooltip.Content>
-              </Tooltip.Portal>
-            </Tooltip.Root>
-          </div>
-        </Tooltip.Provider>
-        {initAsset ? (
-          <div className="mt-2 border border-border bg-background px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <TerminalSquare className="h-4 w-4 text-primary" aria-hidden="true" />
-                  <span className="font-mono text-[11px] lowercase text-primary">{initAsset.label}</span>
-                </div>
-                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                  {initAsset.description}
-                </p>
+        <div className="mt-2 border border-border bg-background px-4 py-3">
+          {command ? (
+            <div className="flex items-start justify-between gap-3 overflow-hidden border border-border bg-card px-4 py-3">
+              <div
+                className="flex min-w-0 flex-1 items-start gap-2 overflow-hidden"
+                aria-label={`Install command: ${command}`}
+              >
+                <span className="select-none font-mono text-sm text-primary" aria-hidden="true">$</span>
+                <pre className="min-w-0 flex-1 overflow-x-auto font-mono text-sm leading-relaxed text-muted-foreground">
+                  <SyntaxHighlight code={command} language="bash" />
+                </pre>
               </div>
               <button
                 type="button"
-                onClick={() => copyAsset(assetContent[initAsset.href] || "", initAsset.label)}
-                className="inline-flex min-h-9 items-center gap-2 rounded-sm border border-border px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={`Copy ${initAsset.label} command`}
+                onClick={copy}
+                className="relative ml-auto flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label="Copy install command"
               >
-                {copiedAsset === initAsset.label ? (
-                  <>
-                    <Check className="h-4 w-4 text-primary" />
-                    <span>Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4" />
-                    <span>Copy</span>
-                  </>
-                )}
+                <Copy
+                  className={`absolute h-4 w-4 transition-all duration-300 ${copied ? "rotate-12 scale-50 opacity-0" : "rotate-0 scale-100 opacity-100"}`}
+                  style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+                />
+                <Check
+                  className={`absolute h-4 w-4 text-primary transition-all duration-300 ${copied ? "rotate-0 scale-100 opacity-100" : "-rotate-12 scale-50 opacity-0"}`}
+                  style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+                />
               </button>
             </div>
-            <div className="mt-3 flex items-start justify-between gap-3 overflow-hidden border border-border bg-card px-4 py-3">
-              <div className="flex min-w-0 flex-1 items-start gap-2 overflow-hidden">
-                <span className="select-none font-mono text-sm text-primary" aria-hidden="true">$</span>
-                <pre className="min-w-0 flex-1 overflow-x-auto font-mono text-sm leading-relaxed text-muted-foreground">
-                  <SyntaxHighlight code={assetContent[initAsset.href]} language="bash" />
-                </pre>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        <div className="mt-2 grid gap-2 sm:grid-cols-1">
-          {otherAssets.map((asset) => {
-            const Icon = asset.icon;
-            return (
-              <div
-                key={asset.href}
-                className="relative flex min-h-32 touch-manipulation flex-col justify-between border border-border bg-background px-3 py-3 transition-colors hover:border-primary/50 hover:bg-card/40"
-              >
-                <div className="space-y-2">
+          ) : activeAsset && activeAssetContent ? (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
-                    <span className="font-mono text-tiny lowercase text-primary">{asset.label}</span>
+                    <activeAsset.icon className="h-4 w-4 text-primary" aria-hidden="true" />
+                    <span className="font-mono text-[11px] lowercase text-primary">{activeAsset.label}</span>
+                    {"tooltip" in activeAsset ? (
+                      <Tooltip.Provider delayDuration={300}>
+                        <Tooltip.Root>
+                          <Tooltip.Trigger asChild>
+                            <button
+                              type="button"
+                              className="flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              aria-label={`More info about ${activeAsset.label}`}
+                            >
+                              <HelpCircle className="h-3 w-3" />
+                            </button>
+                          </Tooltip.Trigger>
+                          <Tooltip.Portal>
+                            <Tooltip.Content
+                              className="z-50 max-w-[280px] rounded-md border bg-popover p-3 text-xs text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+                              sideOffset={5}
+                            >
+                              <p className="leading-relaxed text-foreground">{activeAsset.tooltip}</p>
+                              <Tooltip.Arrow className="fill-popover" />
+                            </Tooltip.Content>
+                          </Tooltip.Portal>
+                        </Tooltip.Root>
+                      </Tooltip.Provider>
+                    ) : null}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-medium leading-relaxed text-foreground">
-                      {asset.title}
-                    </p>
-                    {'tooltip' in asset && (
-                      <div className="relative z-50">
-                        <Tooltip.Provider delayDuration={300}>
-                          <Tooltip.Root>
-                            <Tooltip.Trigger asChild>
-                              <button
-                                type="button"
-                                className="flex h-3 w-3 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                aria-label={`More info about ${asset.label}`}
-                              >
-                                <HelpCircle className="h-2.5 w-2.5" />
-                              </button>
-                            </Tooltip.Trigger>
-                            <Tooltip.Portal>
-                              <Tooltip.Content
-                                className="z-50 max-w-[280px] rounded-md border bg-popover p-3 text-xs text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
-                                sideOffset={5}
-                              >
-                                <p className="leading-relaxed text-foreground">
-                                  {(asset as any).tooltip}
-                                </p>
-                                <Tooltip.Arrow className="fill-popover" />
-                              </Tooltip.Content>
-                            </Tooltip.Portal>
-                          </Tooltip.Root>
-                        </Tooltip.Provider>
-                      </div>
-                    )}
-                  </div>
-                  <p className="pr-2 text-xs leading-relaxed text-muted-foreground">
-                    {asset.description}
+                  <p className="mt-2 max-w-xl text-xs leading-relaxed text-muted-foreground">
+                    {activeAsset.description}
                   </p>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    onClick={() => copyAsset(assetContent[asset.href] || "", asset.label)}
+                    onClick={() => copyAsset(activeAssetContent, activeAsset.label)}
                     className="inline-flex min-h-9 items-center gap-2 rounded-sm border border-border px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    aria-label={`Copy ${asset.label} to clipboard`}
+                    aria-label={`Copy ${activeAsset.label} to clipboard`}
                   >
-                    {copiedAsset === asset.label ? (
+                    {copiedAsset === activeAsset.label ? (
                       <>
                         <Check className="h-4 w-4 text-primary" />
                         <span>Copied</span>
@@ -384,26 +327,36 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleView(asset)}
+                    onClick={() => handleView(activeAsset)}
                     className="inline-flex min-h-9 items-center gap-2 rounded-sm border border-border px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    aria-label={`View ${asset.label}`}
+                    aria-label={`View ${activeAsset.label}`}
                   >
                     <Eye className="h-4 w-4" />
                     <span>View</span>
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDownload(asset)}
+                    onClick={() => handleDownload(activeAsset)}
                     className="inline-flex min-h-9 items-center gap-2 rounded-sm border border-border px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    aria-label={`Download ${asset.label}`}
+                    aria-label={`Download ${activeAsset.label}`}
                   >
                     <Download className="h-4 w-4" />
                     <span>Save</span>
                   </button>
                 </div>
               </div>
-            );
-          })}
+              <div className="flex items-start justify-between gap-3 overflow-hidden border border-border bg-card px-4 py-3">
+                <div className="flex min-w-0 flex-1 items-start gap-2 overflow-hidden">
+                  <span className="select-none font-mono text-sm text-primary" aria-hidden="true">
+                    {activeAsset.href === "/skill.sh" ? "$" : "#"}
+                  </span>
+                  <pre className="min-w-0 flex-1 overflow-x-auto font-mono text-sm leading-relaxed text-muted-foreground">
+                    <SyntaxHighlight code={activeAssetContent} language={activeAsset.href === "/skill.sh" ? "bash" : "md"} />
+                  </pre>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useShortcut } from "@remcostoeten/use-shortcut";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Navbar } from "./Navbar";
 import { InstallCommand } from "./InstallCommand";
 import { DemoSection } from "./DemoSection";
@@ -8,18 +8,18 @@ import { BadgeBar } from "./BadgeBar";
 import { ApiTable } from "./ApiTable";
 import { CodeExamples } from "./CodeExamples";
 import { CodeBlock } from "./CodeBlock";
-import { ComponentRecipeBook } from "./ComponentRecipeBook";
 import { PixelHeading } from "@/components/ui/pixel-heading";
 import { FooterSection } from "./FooterSection";
 import { ShowcaseSection } from "./ShowcaseSection";
 import { ApiCapabilities } from "./ApiCapabilities";
 import { ApiMethodMatrix } from "./ApiMethodMatrix";
 import { DocsAssistantDialog } from "./DocsAssistantDialog";
-import type { PackageConfig } from "@/config/types";
+import type { InstallMethod, PackageConfig } from "@/config/types";
 import { applySeoMeta } from "@/lib/seo";
 import { applySoftwareStructuredData, applyWebsiteStructuredData } from "@/lib/structured-data";
 import { trackDocsEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { getPackageDocsUrl, getRegistryUrl, isCurrentSiteUrl } from "@/config/site";
 
 type Props = {
   config: PackageConfig;
@@ -28,7 +28,6 @@ type Props = {
 
 export function PackageShowcase({ config, demoContent }: Props) {
   const $ = useShortcut();
-  const location = useLocation();
   const navigate = useNavigate();
   const [isLeaving, setIsLeaving] = useState(false);
   const [assistantOpen, setAssistantOpen] = useState(false);
@@ -57,7 +56,7 @@ export function PackageShowcase({ config, demoContent }: Props) {
     applySeoMeta({
       title: `${config.packageName} docs | ${config.description}`,
       description: `${config.packageName} - ${config.description}`,
-      path: `/${config.slug}`,
+      path: getPackageDocsUrl(config.slug),
     });
     if (config.slug === "use-shortcut") {
       applyWebsiteStructuredData();
@@ -65,10 +64,18 @@ export function PackageShowcase({ config, demoContent }: Props) {
     }
   }, [config.description, config.packageName, config.slug]);
 
+  // Handle smooth navigation when clicking registry link
   const handleRegistryNavigation = () => {
     setIsLeaving(true);
+    const registryUrl = getRegistryUrl();
+
     setTimeout(() => {
-      navigate("/", { replace: true });
+      if (isCurrentSiteUrl(registryUrl)) {
+        navigate("/", { replace: true });
+        return;
+      }
+
+      window.location.assign(registryUrl);
     }, 300);
   };
 
@@ -114,6 +121,63 @@ export function PackageShowcase({ config, demoContent }: Props) {
     };
   }, [$]);
 
+  const packageKind = config.kind ?? "package";
+  const kindLabel =
+    packageKind === "extension"
+      ? "vscode extension"
+      : packageKind === "cli"
+        ? "command-line tool"
+        : "react package";
+  const installHeading = config.install?.heading
+    ?? (config.slug === "use-shortcut"
+      ? "pick a package manager and copy the command. helper files stay right below it."
+      : packageKind === "extension"
+        ? "install from the marketplace or run the extension locally in the vscode extension host."
+        : "pick a package manager and copy the command.");
+  const installMethods: InstallMethod[] = config.install?.methods
+    ?? [
+      { id: "npm", label: "npm", command: `npm i ${config.installName}` },
+      { id: "yarn", label: "yarn", command: `yarn add ${config.installName}` },
+      { id: "pnpm", label: "pnpm", command: `pnpm add ${config.installName}` },
+      { id: "bun", label: "bun", command: `bun add ${config.installName}` },
+    ];
+  const heroCodeSample = config.slug === "use-shortcut"
+    ? {
+        title: "shortcut-binding",
+        language: "tsx",
+        code: `const $ = useShortcut()
+$.mod.key("k").on(openSearch, { preventDefault: true })`,
+      }
+    : packageKind === "extension"
+      ? {
+          title: "command-palette",
+          language: "text",
+          code: `Cmd/Ctrl+Shift+P
+
+Convert Filename to kebab-case
+Generate index.ts with exports
+Remove Unused from Current TS/TSX File`,
+        }
+      : {
+          title: "main/layout.tsx",
+          language: "tsx",
+          code: `import { Analytics } from '@remcostoeten/analytics'
+export default function RootLayout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <Analytics />
+      </body>
+    </html>
+  )
+}`,
+        };
+  const primaryLinkLabel = packageKind === "extension" ? "marketplace" : "npm";
+  const primaryLinkUrl = packageKind === "extension"
+    ? (config.links.marketplace ?? config.links.github)
+    : (config.links.npm ?? config.links.github);
+
   return (
     <div className="min-h-screen bg-background relative">
       <Navbar
@@ -153,7 +217,7 @@ export function PackageShowcase({ config, demoContent }: Props) {
                     )
                   ) : null}
                   <span className="font-mono text-tiny uppercase tracking-[0.24em] text-muted-foreground/55">
-                    react package
+                    {kindLabel}
                   </span>
                   <span className="font-mono text-tiny uppercase tracking-[0.24em] text-muted-foreground/45">
                     {(config.author.handle.startsWith("@") ? config.author.handle : `@${config.author.handle}`)}
@@ -192,7 +256,11 @@ export function PackageShowcase({ config, demoContent }: Props) {
 
               <div className={!isLeaving ? "animate-fade-up stagger-4" : undefined}>
                 <BadgeBar
-                  installName={config.installName}
+                  installName={packageKind === "package" ? config.installName : undefined}
+                  primaryLabel={packageKind === "extension" ? "marketplace" : "npm"}
+                  primaryUrl={packageKind === "extension" ? config.links.marketplace : config.links.npm}
+                  primaryValue={packageKind === "extension" ? "install" : undefined}
+                  secondaryValue={packageKind === "extension" ? "editor tooling" : undefined}
                   npmUrl={config.links.npm}
                   githubUrl={config.links.github}
                   bundleSizeKb={config.bundleSizeKb}
@@ -227,23 +295,9 @@ export function PackageShowcase({ config, demoContent }: Props) {
 
                 <div className="mt-4">
                   <CodeBlock
-                    title={config.slug === "use-shortcut" ? "shortcut-binding" : "main/layout.tsx"}
-                    language="tsx"
-                    code={config.slug === "use-shortcut"
-                      ? `const $ = useShortcut()
-$.mod.key("k").on(openSearch, { preventDefault: true })`
-                      : `import { Analytics } from '@remcostoeten/analytics'
-export default function RootLayout({ children }) {
-  return (
-    <html>
-      <body>
-        {children}
-        <Analytics />
-      </body>
-    </html>
-  )
-}`
-                    }
+                    title={heroCodeSample.title}
+                    language={heroCodeSample.language}
+                    code={heroCodeSample.code}
                   />
                 </div>
               </div>
@@ -299,7 +353,6 @@ export default function RootLayout({ children }) {
           </div>
         </header>
 
-<<<<<<< HEAD
         <section
           id="install"
           data-doc-search-scope="true"
@@ -310,11 +363,13 @@ export default function RootLayout({ children }) {
             <div>
               <p className="font-mono text-xs text-primary">[install]</p>
               <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground lowercase">
-                {config.slug === "use-shortcut"
-                  ? "pick a package manager and copy the command. helper files stay right below it."
-                  : "pick a package manager and copy the command."
-                }
+                {installHeading}
               </p>
+              {config.install?.description ? (
+                <p className="mt-2 max-w-md text-xs leading-relaxed text-muted-foreground/80 lowercase">
+                  {config.install.description}
+                </p>
+              ) : null}
             </div>
             <span className="font-mono text-tiny uppercase tracking-[0.2em] text-muted-foreground/45">
               start here
@@ -325,21 +380,16 @@ export default function RootLayout({ children }) {
           ) : (
             <div className="w-full space-y-4">
               <div className="flex flex-wrap gap-2">
-                {[
-                  { id: "npm", label: "npm", cmd: `npm i ${config.installName}` },
-                  { id: "yarn", label: "yarn", cmd: `yarn add ${config.installName}` },
-                  { id: "pnpm", label: "pnpm", cmd: `pnpm add ${config.installName}` },
-                  { id: "bun", label: "bun", cmd: `bun add ${config.installName}` },
-                ].map((manager) => (
+                {installMethods.map((manager) => (
                   <button
                     key={manager.id}
                     type="button"
                     onClick={() => {
-                      navigator.clipboard.writeText(manager.cmd);
+                      navigator.clipboard.writeText(manager.command);
                     }}
                     className="inline-flex min-h-9 items-center gap-2 rounded-sm border border-border bg-background px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <span className="font-mono">{manager.cmd}</span>
+                    <span className="font-mono">{manager.command}</span>
                   </button>
                 ))}
               </div>
@@ -348,16 +398,8 @@ export default function RootLayout({ children }) {
         </section>
 
         <div className="flex flex-col gap-0 ">
-=======
-        <div className="flex flex-col">
-          <InstallCommand
-            packageName={config.installName}
-            authorHandle={config.author.handle}
-          />
-
->>>>>>> 4f7f43b (Rework docs registry landing page)
           {demoContent ? (
-            <ShowcaseSection id="demo" eyebrow="[live-demo]" title="test the behavior before wiring it in">
+            <ShowcaseSection id="demo" data-doc-search-scope="true" data-search-label="demo">
               <div className="mb-1">
                 <p className="mb-1.5 font-mono text-xs text-primary">[example]</p>
                 <p className="max-w-md text-xs leading-relaxed text-muted-foreground lowercase">
@@ -370,65 +412,39 @@ export default function RootLayout({ children }) {
             </ShowcaseSection>
           ) : null}
 
-          {config.why && config.why.paragraphs.length > 0 ? (
-            <ShowcaseSection id="why" eyebrow="[why]" title="why this exists">
-              <div className="space-y-3 max-w-xl">
-                {config.why.paragraphs.map((paragraph) => (
-                  <p key={paragraph} className="text-sm lowercase leading-relaxed text-muted-foreground">
-                    {paragraph}
-                  </p>
-                ))}
+          {config.codeExamples && config.codeExamples.length > 0 && (
+            <div id="syntax" data-doc-search-scope="true" data-search-label="syntax" className="px-4 py-8 sm:px-8">
+              <div className="mb-6">
+                <p className="font-mono text-xs text-primary mb-1.5">[recipes]</p>
+                <h2 className="font-display text-base font-bold lowercase tracking-tight text-foreground mb-1.5">
+                  copy-ready examples
+                </h2>
+                <p className="text-xs text-muted-foreground lowercase leading-relaxed max-w-md">
+                  {packageKind === "extension"
+                    ? "command palette flows, explorer actions, and local development steps for the extension."
+                    : "common patterns for app shortcuts, scopes, parsing, and custom keybinds."}
+                </p>
               </div>
-            </ShowcaseSection>
-          ) : null}
+              <CodeExamples examples={config.codeExamples} uiUseCases={config.uiUseCases} />
+            </div>
+          )}
 
-          {config.features && config.features.length > 0 ? (
-            <ShowcaseSection id="features" eyebrow="[features]" title="what you get">
-              <div className="grid gap-px border border-border bg-border sm:grid-cols-2">
-                {config.features.map((feature) => (
-                  <div key={feature.label} className="bg-background p-4">
-                    {feature.value ? (
-                      <p className="font-mono text-xs text-primary">{feature.value}</p>
-                    ) : null}
-                    <h3 className="mt-2 text-sm font-medium lowercase text-foreground">{feature.label}</h3>
-                    <p className="mt-1 text-xs lowercase leading-relaxed text-muted-foreground">{feature.description}</p>
-                  </div>
-                ))}
-              </div>
-            </ShowcaseSection>
-          ) : null}
+          {config.apiProps && config.apiProps.length > 0 && (
+            <div id="api" data-doc-search-scope="true" data-search-label="api options" className="border-y border-dashed border-border -mx-[1px] bg-card/30 px-4 py-8 sm:px-8">
+              <ApiTable
+                props={config.apiProps}
+                guidance={config.apiPropGuidance}
+                onAskProp={(propName) => {
+                  openAssistant({
+                    query: `when should i use ${propName}?`,
+                    entryId: `prop:${propName}`,
+                    source: "api-table",
+                  });
+                }}
+              />
+            </div>
+          )}
 
-          {config.apiProps && config.apiProps.length > 0 ? (
-            <ShowcaseSection id="api" eyebrow="[api]" title="config surface">
-              <ApiTable rows={config.apiProps} />
-            </ShowcaseSection>
-          ) : null}
-
-          {config.apiCapabilities && config.apiCapabilities.length > 0 ? (
-            <ShowcaseSection id="api-reference" eyebrow="[api-reference]" title="public api">
-              <ApiCapabilities capabilities={config.apiCapabilities} onOpenAssistant={openAssistant} />
-            </ShowcaseSection>
-          ) : null}
-
-          {config.apiMethodGroups && config.apiMethodGroups.length > 0 ? (
-            <ShowcaseSection id="api-matrix" eyebrow="[api-matrix]" title="method matrix">
-              <ApiMethodMatrix groups={config.apiMethodGroups} />
-            </ShowcaseSection>
-          ) : null}
-
-          {config.componentRecipes && config.componentRecipes.length > 0 ? (
-            <ShowcaseSection id="components" eyebrow="[component-recipes]" title="copyable component patterns">
-              <ComponentRecipeBook recipes={config.componentRecipes} />
-            </ShowcaseSection>
-          ) : null}
-
-          {config.codeExamples && config.codeExamples.length > 0 ? (
-            <ShowcaseSection id="syntax" eyebrow="[examples]" title="copy a working pattern">
-              <CodeExamples examples={config.codeExamples} />
-            </ShowcaseSection>
-          ) : null}
-
-<<<<<<< HEAD
           {config.apiCapabilities && config.apiCapabilities.length > 0 && (
             <div id="api-reference" data-doc-search-scope="true" data-search-label="api reference" className="px-4 py-8 sm:px-8">
               <div className="mb-6">
@@ -462,18 +478,12 @@ export default function RootLayout({ children }) {
             <FooterSection
               author={config.author.name}
               authorUrl={config.author.url}
-              npmUrl={config.links.npm}
+              primaryLinkLabel={primaryLinkLabel}
+              primaryLinkUrl={primaryLinkUrl}
               githubUrl={config.links.github}
               ctas={config.ctas}
             />
           </div>
-=======
-          <FooterSection
-            packageName={config.packageName}
-            npmUrl={config.links.npm}
-            githubUrl={config.links.github}
-          />
->>>>>>> 4f7f43b (Rework docs registry landing page)
         </div>
       </main>
 

@@ -1,6 +1,8 @@
 import { trackEvent } from "@remcostoeten/analytics";
 
-export const analyticsProjectId = "use-shortcut-docs";
+export const analyticsProjectId =
+  (import.meta.env.VITE_ANALYTICS_PROJECT_ID as string | undefined)
+  || "use-shortcut-docs";
 
 export const analyticsIngestUrl = import.meta.env.VITE_REMCO_ANALYTICS_URL as
   | string

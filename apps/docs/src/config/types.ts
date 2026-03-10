@@ -62,23 +62,6 @@ export interface CodeExample {
   language?: string;
 }
 
-export interface ComponentRecipeShortcut {
-  label: string;
-  combo: string;
-}
-
-export interface ComponentRecipe {
-  id: string;
-  title: string;
-  summary: string;
-  description?: string;
-  code: string;
-  language?: string;
-  previewId?: string;
-  shortcuts?: ComponentRecipeShortcut[];
-  notes?: string[];
-}
-
 export interface UiUseCaseAction {
   label: string;
   shortcut: string;
@@ -100,8 +83,25 @@ export interface Cta {
   shortcutKey?: string;
 }
 
+export type PackageKind = "package" | "extension" | "cli";
+
+export interface InstallMethod {
+  id: string;
+  label: string;
+  command: string;
+  copyLabel?: string;
+}
+
+export interface InstallAsset {
+  label: string;
+  title: string;
+  description: string;
+  href: string;
+}
+
 export interface PackageConfig {
   slug: string;
+  kind?: PackageKind;
   packageName: string;
   installName: string;
   tagline?: string;
@@ -118,11 +118,19 @@ export interface PackageConfig {
 
   navLinks: NavLink[];
 
+  install?: {
+    heading?: string;
+    description?: string;
+    methods?: InstallMethod[];
+    assets?: InstallAsset[];
+  };
+
   links: {
-    npm: string;
+    npm?: string;
     github: string;
     docs?: string;
     demo?: string;
+    marketplace?: string;
   };
 
   ctas?: Cta[];
@@ -137,7 +145,6 @@ export interface PackageConfig {
   apiCapabilities?: ApiCapability[];
   apiMethodGroups?: ApiMethodGroup[];
   apiOptionGroups?: ApiOptionGroup[];
-  componentRecipes?: ComponentRecipe[];
   codeExamples?: CodeExample[];
   uiUseCases?: UiUseCase[];
   useCases?: string;
@@ -154,6 +161,7 @@ export interface RegistryItem {
   status: RegistryItemStatus;
   label: string;
   href?: string;
+  docsUrl?: string;
   githubUrl?: string;
   npmPackageName?: string;
   tagline?: string;

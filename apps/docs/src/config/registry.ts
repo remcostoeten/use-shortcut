@@ -1,22 +1,40 @@
 import type { PackageConfig, RegistryItem } from "./types";
 import useShortcutConfig from "./packages/use-shortcut";
 import { analyticsConfig } from "./packages/analytics";
+import vscodeCodeRefineryConfig from "./packages/vscode-code-refinery";
+import { getPackageDocsUrl, getPackagePath, isCurrentSiteUrl } from "./site";
 
-export const packages: PackageConfig[] = [useShortcutConfig, analyticsConfig];
+export const packages: PackageConfig[] = [
+  useShortcutConfig,
+  analyticsConfig,
+  vscodeCodeRefineryConfig,
+];
 
 export const registryItems: RegistryItem[] = [
-  ...packages.map((pkg) => ({
-    id: pkg.slug,
-    title: pkg.installName || pkg.packageName,
-    description: pkg.description,
-    kind: "package" as const,
-    status: "live" as const,
-    label: "react-package",
-    href: `/${pkg.slug}`,
-    githubUrl: pkg.links.github,
-    npmPackageName: pkg.installName || pkg.packageName,
-    tagline: pkg.tagline,
-  })),
+  ...packages.map((pkg) => {
+    const docsUrl = getPackageDocsUrl(pkg.slug);
+
+    return {
+      id: pkg.slug,
+      title: pkg.installName || pkg.packageName,
+      description: pkg.description,
+      kind: pkg.kind ?? "package",
+      status: "live" as const,
+      label:
+        pkg.kind === "extension"
+          ? "editor-extension"
+          : pkg.kind === "cli"
+            ? "command-line-tooling"
+            : "react-package",
+      href: isCurrentSiteUrl(docsUrl) ? getPackagePath(pkg.slug) : docsUrl,
+      docsUrl,
+      githubUrl: pkg.links.github,
+      npmPackageName: pkg.kind === "package" || !pkg.kind
+        ? pkg.installName || pkg.packageName
+        : undefined,
+      tagline: pkg.tagline,
+    };
+  }),
   {
     id: "tooling-clis",
     title: "tooling-clis",
@@ -26,16 +44,6 @@ export const registryItems: RegistryItem[] = [
     label: "command-line-tooling",
     githubUrl: "https://github.com/remcostoeten/use-shortcut",
     tagline: "planned",
-  },
-  {
-    id: "general-purpose-vscode-extension",
-    title: "general-purpose-vscode-extension",
-    description: "an upcoming vscode extension for reusable editor commands, workflow helpers, and tighter project ergonomics.",
-    kind: "extension",
-    status: "upcoming",
-    label: "editor-extension",
-    githubUrl: "https://github.com/remcostoeten/use-shortcut",
-    tagline: "upcoming",
   },
 ];
 

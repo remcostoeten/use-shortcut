@@ -5,6 +5,7 @@ import {
   parseShortcut,
   parseShortcuts,
 } from "@remcostoeten/use-shortcut";
+import { getPackageDocsUrl } from "../site";
 
 const activePlatform = detectPlatform();
 const stringifyResult = (value: unknown) => JSON.stringify(value, null, 2);
@@ -31,7 +32,6 @@ const useShortcutConfig: PackageConfig = {
     { label: "setup", url: "#install" },
     { label: "example", url: "#demo" },
     { label: "recipes", url: "#syntax" },
-    { label: "components", url: "#components" },
     { label: "options", url: "#api" },
     { label: "api reference", url: "#api-reference" },
     { label: "api matrix", url: "#api-matrix" },
@@ -40,6 +40,7 @@ const useShortcutConfig: PackageConfig = {
   links: {
     npm: "https://www.npmjs.com/package/@remcostoeten/use-shortcut",
     github: "https://github.com/remcostoeten/use-shortcut",
+    docs: getPackageDocsUrl("use-shortcut"),
   },
 
   why: {
@@ -501,91 +502,6 @@ npx @remcostoeten/use-shortcut init
 npx @remcostoeten/use-shortcut scaffold
 # generates a larger typed setup (scopes/registry/modules)`,
       language: "bash",
-    },
-  ],
-
-  componentRecipes: [
-    {
-      id: "avatar-login-trigger",
-      title: "avatar auth context menu",
-      summary: "An avatar button opens a compact account menu, with shift+l for login and shift+d for logout.",
-      description: "Use this when you want a real account context menu now, but still need a clean place to add profile, billing, or team actions later.",
-      language: "tsx",
-      previewId: "avatar-login-trigger",
-      shortcuts: [
-        { label: "trigger login", combo: "shift+l" },
-        { label: "trigger logout", combo: "shift+d" },
-        { label: "open avatar menu", combo: "click avatar" },
-      ],
-      notes: [
-        "the component is self-contained and can be dropped into a nav bar or app shell as-is.",
-        "future menu actions can be added by extending the menu list without changing the shortcut wiring shape.",
-      ],
-      code: `import { useState } from "react"
-import { useShortcut } from "@remcostoeten/use-shortcut"
-import { LogIn, UserCircle2 } from "lucide-react"
-
-export function AvatarAuthMenu() {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [status, setStatus] = useState("idle")
-  const $ = useShortcut()
-
-  function triggerAction(action: "login" | "logout") {
-    setMenuOpen(true)
-    setStatus(\`\${action} triggered\`)
-  }
-
-  $.shift.key("l").on(() => triggerAction("login"), { preventDefault: true })
-  $.shift.key("d").on(() => triggerAction("logout"), { preventDefault: true })
-
-  return (
-    <div className="relative">
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-expanded={menuOpen}
-          aria-label="Open profile actions"
-          onClick={() => setMenuOpen((open) => !open)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-white"
-        >
-          <UserCircle2 className="h-6 w-6" />
-        </button>
-        <span className="inline-flex min-h-8 items-center border border-orange-500/30 bg-orange-500/10 px-2 text-[10px] uppercase tracking-[0.14em] text-orange-300">
-          open menu
-        </span>
-      </div>
-
-      {menuOpen ? (
-        <div className="absolute right-0 top-[calc(100%+8px)] min-w-[220px] border border-neutral-800 bg-neutral-950 p-3 text-white shadow-2xl">
-          <p className="text-xs text-neutral-400">status: {status}</p>
-          <button
-            type="button"
-            onClick={() => triggerAction("login")}
-            className="mt-3 inline-flex min-h-11 w-full items-center justify-between gap-3 border border-orange-500/40 bg-orange-500/10 px-3 text-sm text-orange-300"
-          >
-            <span className="inline-flex items-center gap-2">
-              <LogIn className="h-4 w-4" />
-              login
-            </span>
-            <kbd className="ml-1 border border-neutral-700 px-1.5 py-0.5 text-[10px] uppercase text-neutral-300">
-              shift+l
-            </kbd>
-          </button>
-          <button
-            type="button"
-            onClick={() => triggerAction("logout")}
-            className="mt-2 inline-flex min-h-11 w-full items-center justify-between gap-3 border border-neutral-800 bg-neutral-900 px-3 text-sm text-neutral-100"
-          >
-            <span>logout</span>
-            <kbd className="ml-1 border border-neutral-700 px-1.5 py-0.5 text-[10px] uppercase text-neutral-300">
-              shift+d
-            </kbd>
-          </button>
-        </div>
-      ) : null}
-    </div>
-  )
-}`,
     },
   ],
 

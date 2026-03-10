@@ -2,19 +2,54 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+function normalizeUrl(raw, fallback = "https://use-shortcut.vercel.app") {
+  const resolved = raw || fallback;
+  const withProtocol = resolved.startsWith("http://") || resolved.startsWith("https://")
+    ? resolved
+    : `https://${resolved}`;
+
+  return withProtocol.replace(/\/+$/, "");
+}
+
 function resolveSiteUrl() {
-  const raw =
+  return normalizeUrl(
     process.env.SITE_URL
     || process.env.VITE_SITE_URL
     || process.env.VERCEL_PROJECT_PRODUCTION_URL
-    || process.env.VERCEL_URL
-    || "use-shortcut.vercel.app";
+    || process.env.VERCEL_URL,
+  );
+}
 
-  const withProtocol = raw.startsWith("http://") || raw.startsWith("https://")
-    ? raw
-    : `https://${raw}`;
+function resolveRegistrySiteUrl(siteUrl) {
+  return normalizeUrl(
+    process.env.VITE_REGISTRY_SITE_URL || process.env.REGISTRY_SITE_URL,
+    siteUrl,
+  );
+}
 
-  return withProtocol.replace(/\/+$/, "");
+function resolveDocsMode() {
+  return process.env.VITE_DOCS_MODE === "package" ? "package" : "registry";
+}
+
+function resolvePrimaryPackageSlug() {
+  return process.env.VITE_PRIMARY_PACKAGE_SLUG || "use-shortcut";
+}
+
+function getPackageDocsUrl(slug, { docsMode, primaryPackageSlug, siteUrl, registrySiteUrl }) {
+  const envUrlMap = {
+    analytics: process.env.VITE_ANALYTICS_DOCS_URL,
+    "use-shortcut": process.env.VITE_USE_SHORTCUT_DOCS_URL,
+  };
+
+  if (envUrlMap[slug]) {
+    return normalizeUrl(envUrlMap[slug]);
+  }
+
+  if (docsMode === "package" && slug === primaryPackageSlug) {
+    return siteUrl;
+  }
+
+  return `${registrySiteUrl}/${slug}`;
 }
 
 async function readPackageSlugs(packagesDir) {
@@ -39,13 +74,30 @@ async function main() {
   const packagesDir = path.join(projectRoot, "src", "config", "packages");
 
   const siteUrl = resolveSiteUrl();
+  const registrySiteUrl = resolveRegistrySiteUrl(siteUrl);
+  const docsMode = resolveDocsMode();
+  const primaryPackageSlug = resolvePrimaryPackageSlug();
   const slugs = await readPackageSlugs(packagesDir);
-  const routes = slugs.map((slug) => `/${slug}`);
+  const routes = docsMode === "package"
+    ? ["/"]
+    : ["/", ...slugs
+      .map((slug) => getPackageDocsUrl(slug, {
+        docsMode,
+        primaryPackageSlug,
+        siteUrl,
+        registrySiteUrl,
+      }))
+      .filter((url) => new URL(url).origin === new URL(siteUrl).origin)
+      .map((url) => {
+        const pathname = new URL(url).pathname.replace(/\/+$/, "");
+        return pathname || "/";
+      })
+      .filter((route, index, list) => list.indexOf(route) === index)];
 
   const urlNodes = routes
     .map((route) => {
-      const priority = route === "/use-shortcut" ? "1.0" : "0.8";
-      const changefreq = route === "/use-shortcut" ? "weekly" : "monthly";
+      const priority = route === "/" ? "1.0" : "0.8";
+      const changefreq = route === "/" ? "weekly" : "monthly";
       return `  <url>
     <loc>${siteUrl}${route}</loc>
     <changefreq>${changefreq}</changefreq>
