@@ -4,7 +4,6 @@ import type {
   ApiProp,
   ApiPropGuidance,
   CodeExample,
-  ComponentRecipe,
   PackageConfig,
   UiUseCase,
 } from "@/config/types";
@@ -16,7 +15,6 @@ export type DocsKnowledgeKind =
   | "method"
   | "option"
   | "example"
-  | "component"
   | "use-case";
 
 export interface DocsKnowledgeEntry {
@@ -60,13 +58,13 @@ const SYNONYMS: Record<string, string[]> = {
   conflict: ["collision", "overlap", "warning"],
   docs: ["documentation", "guide", "reference"],
   hotkey: ["shortcut", "binding", "keybind", "combo"],
-  install: ["setup", "getting-started", "npm", "pnpm", "bun", "yarn"],
+  install: ["setup", "getting-started", "npm", "pnpm", "bun", "yarn", "marketplace", "extension", "code"],
   keybind: ["shortcut", "hotkey", "binding", "combo"],
   parse: ["parser", "normalize"],
   prop: ["option", "config", "parameter"],
   scope: ["context", "section", "mode"],
   sequence: ["chain", "step", "combo"],
-  setup: ["install", "quickstart", "start"],
+  setup: ["install", "quickstart", "start", "marketplace", "extension"],
   shortcut: ["hotkey", "binding", "keybind", "combo"],
   use: ["when", "why", "should"],
 };
@@ -76,7 +74,6 @@ const KIND_PRIORITY: Record<DocsKnowledgeKind, number> = {
   prop: 64,
   capability: 60,
   example: 56,
-  component: 54,
   "use-case": 52,
   method: 48,
   option: 46,
@@ -205,29 +202,6 @@ function buildExampleEntry(item: CodeExample): DocsKnowledgeEntry {
   };
 }
 
-function buildComponentRecipeEntry(item: ComponentRecipe): DocsKnowledgeEntry {
-  return {
-    id: `component:${item.id}`,
-    title: item.title,
-    kind: "component",
-    sectionId: "components",
-    sectionLabel: "component recipes",
-    summary: item.summary,
-    description: item.description ?? item.notes?.join(" "),
-    example: item.code,
-    exampleLanguage: item.language,
-    keywords: withKeywords(
-      item.title,
-      item.summary,
-      item.description,
-      item.shortcuts?.map((shortcut) => `${shortcut.label} ${shortcut.combo}`).join(" "),
-      item.notes?.join(" "),
-      item.code,
-      "component recipe copy paste login avatar",
-    ),
-  };
-}
-
 function buildUseCaseEntry(item: UiUseCase): DocsKnowledgeEntry {
   return {
     id: `use-case:${item.id}`,
@@ -251,6 +225,24 @@ function buildUseCaseEntry(item: UiUseCase): DocsKnowledgeEntry {
 
 export function buildDocsKnowledge(config: PackageConfig): DocsKnowledgeEntry[] {
   const entries: DocsKnowledgeEntry[] = [];
+  const packageKind = config.kind ?? "package";
+  const installMethods = config.install?.methods ?? [
+    { command: `npm i ${config.installName}`, label: "npm" },
+    { command: `pnpm add ${config.installName}`, label: "pnpm" },
+    { command: `bun add ${config.installName}`, label: "bun" },
+    { command: `yarn add ${config.installName}`, label: "yarn" },
+  ];
+  const installCommands = installMethods.map((method) => method.command).join("\n");
+  const installKeywords = installMethods
+    .map((method) => `${method.label} ${method.command}`)
+    .join(" ");
+  const installSummary = packageKind === "extension"
+    ? `Install ${config.installName} from the VS Code marketplace or run it locally in the extension host.`
+    : `Install ${config.installName} with npm, bun, pnpm, or yarn.`;
+  const installDescription = config.install?.description
+    ?? (packageKind === "extension"
+      ? "Start with the install command, then trigger commands from the explorer context menu or the command palette."
+      : "Start with the install command, then create a useShortcut instance and register bindings from your component.");
   const guidanceByProp = new Map(
     (config.apiPropGuidance ?? []).map((item) => [item.prop, item]),
   );
@@ -278,14 +270,17 @@ export function buildDocsKnowledge(config: PackageConfig): DocsKnowledgeEntry[] 
     kind: "guide",
     sectionId: "install",
     sectionLabel: "install",
-    summary: `Install ${config.installName} with npm, bun, pnpm, or yarn.`,
-    description: "Start with the install command, then create a useShortcut instance and register bindings from your component.",
-    example: `npm i ${config.installName}`,
+    summary: installSummary,
+    description: installDescription,
+    example: installCommands,
     exampleLanguage: "bash",
     keywords: withKeywords(
       config.installName,
       config.packageName,
-      "install setup getting started npm pnpm bun yarn quickstart",
+      installKeywords,
+      packageKind === "extension"
+        ? "install setup getting started marketplace vscode extension code command palette"
+        : "install setup getting started npm pnpm bun yarn quickstart",
     ),
   });
 
@@ -311,10 +306,6 @@ export function buildDocsKnowledge(config: PackageConfig): DocsKnowledgeEntry[] 
 
   for (const example of config.codeExamples ?? []) {
     entries.push(buildExampleEntry(example));
-  }
-
-  for (const recipe of config.componentRecipes ?? []) {
-    entries.push(buildComponentRecipeEntry(recipe));
   }
 
   for (const item of config.uiUseCases ?? []) {

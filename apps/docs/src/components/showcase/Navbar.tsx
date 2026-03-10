@@ -3,6 +3,7 @@ import { ArrowLeft, Menu, X } from "lucide-react";
 import type { NavLink as ShowcaseNavLink } from "@/config/types";
 import { Link, useLocation } from "react-router-dom";
 import { packages } from "@/config/registry";
+import { DOCS_MODE, getPackageDocsUrl, getPackagePath, getRegistryUrl, isAbsoluteUrl, isCurrentSiteUrl } from "@/config/site";
 import { trackDocsEvent } from "@/lib/analytics";
 import { scrollToDocsSection } from "@/lib/docs-navigation";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,7 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick, className 
     [navLinks],
   );
   const primaryDesktopLinks = useMemo(() => {
-    const preferredOrder = ["setup", "example", "components", "options"];
+    const preferredOrder = ["setup", "example", "recipes", "options"];
     const picked = preferredOrder
       .map((label) => anchorLinks.find((link) => link.label === label))
       .filter((link): link is ShowcaseNavLink => Boolean(link));
@@ -37,12 +38,24 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick, className 
     return picked.length > 0 ? picked : anchorLinks.slice(0, 4);
   }, [anchorLinks]);
   const packageLinks = useMemo(
-    () => packages.map((pkg) => ({ slug: pkg.slug, label: pkg.packageName, href: `/${pkg.slug}` })),
+    () =>
+      packages.map((pkg) => {
+        const docsUrl = getPackageDocsUrl(pkg.slug);
+        return {
+          slug: pkg.slug,
+          label: pkg.packageName,
+          href: isCurrentSiteUrl(docsUrl) ? getPackagePath(pkg.slug) : docsUrl,
+          external: !isCurrentSiteUrl(docsUrl),
+        };
+      }),
     [],
   );
-  const isRegistryPage = location.pathname === "/";
+  const isRegistryPage = DOCS_MODE === "registry" && location.pathname === "/";
   const resolvedSlug = currentSlug ?? location.pathname.replace(/^\//, "");
   const showCompactBackLink = isCompact && !isRegistryPage;
+  const registryHref = getRegistryUrl();
+  const registryIsExternal =
+    DOCS_MODE === "package" || (isAbsoluteUrl(registryHref) && !isCurrentSiteUrl(registryHref));
   const currentPackage = useMemo(
     () => packages.find((pkg) => pkg.slug === resolvedSlug),
     [resolvedSlug],
@@ -165,6 +178,22 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick, className 
                     "registry"
                   )}
                 </button>
+              ) : registryIsExternal ? (
+                <a
+                  href={registryHref}
+                  className={registryControlClassName}
+                  aria-current={isRegistryPage ? "page" : undefined}
+                  aria-label={showCompactBackLink ? "Back to registry" : undefined}
+                >
+                  {showCompactBackLink ? (
+                    <>
+                      <ArrowLeft className="size-3.5 shrink-0" aria-hidden="true" />
+                      <span>back</span>
+                    </>
+                  ) : (
+                    "registry"
+                  )}
+                </a>
               ) : (
                 <Link
                   to="/"
@@ -310,20 +339,37 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick, className 
                 </button>
               )}
               {packageLinks.map((pkg) => (
-                <Link
-                  key={pkg.slug}
-                  to={pkg.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={[
-                    "inline-flex min-h-11 items-center border px-3 font-mono text-xs lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    currentSlug === pkg.slug
-                      ? "border-primary/25 bg-primary/8 text-primary"
-                      : "border-border text-muted-foreground hover:bg-card/30 hover:text-foreground",
-                  ].join(" ")}
-                  aria-current={currentSlug === pkg.slug ? "page" : undefined}
-                >
-                  {pkg.label}
-                </Link>
+                pkg.external ? (
+                  <a
+                    key={pkg.slug}
+                    href={pkg.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={[
+                      "inline-flex min-h-11 items-center border px-3 font-mono text-xs lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      currentSlug === pkg.slug
+                        ? "border-primary/25 bg-primary/8 text-primary"
+                        : "border-border text-muted-foreground hover:bg-card/30 hover:text-foreground",
+                    ].join(" ")}
+                    aria-current={currentSlug === pkg.slug ? "page" : undefined}
+                  >
+                    {pkg.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={pkg.slug}
+                    to={pkg.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={[
+                      "inline-flex min-h-11 items-center border px-3 font-mono text-xs lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      currentSlug === pkg.slug
+                        ? "border-primary/25 bg-primary/8 text-primary"
+                        : "border-border text-muted-foreground hover:bg-card/30 hover:text-foreground",
+                    ].join(" ")}
+                    aria-current={currentSlug === pkg.slug ? "page" : undefined}
+                  >
+                    {pkg.label}
+                  </Link>
+                )
               ))}
             </div>
             <div className="grid gap-1">

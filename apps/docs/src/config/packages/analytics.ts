@@ -1,7 +1,6 @@
 import type { PackageConfig } from '@/config/types';
 import { analyticsApi } from '@/domains/analytics/api';
-import { analyticsExamples } from '@/domains/analytics/examples';
-import { analyticsRecipes } from '@/domains/analytics/recipes';
+import { getPackageDocsUrl } from '@/config/site';
 
 export const analyticsConfig: PackageConfig = {
   slug: 'analytics',
@@ -9,7 +8,8 @@ export const analyticsConfig: PackageConfig = {
   installName: '@remcostoeten/analytics',
   heroTitle: '@remcostoeten/analytics',
   tagline: 'privacy-focused',
-  description: 'Privacy focused, cookie free analytics SDK for React apps. It sends pageviews and custom events to your own ingestion endpoint.',
+  description: 'a lightweight analytics sdk for react that tracks pageviews and custom events without cookies, third-party dashboards, or bloated setup.',
+  heroSubcopy: 'send clean product signals to your own endpoint, keep the data flow simple, and stay in control of storage, privacy, and reporting.',
   bundleSizeKb: 4.2,
   author: {
     name: 'Remco Stoeten',
@@ -19,6 +19,7 @@ export const analyticsConfig: PackageConfig = {
   links: {
     npm: 'https://www.npmjs.com/package/@remcostoeten/analytics',
     github: 'https://github.com/remcostoeten/analytics',
+    docs: getPackageDocsUrl('analytics'),
   },
   ctas: [
     {
@@ -36,7 +37,6 @@ export const analyticsConfig: PackageConfig = {
     { label: 'installation', url: '#installation' },
     { label: 'quickstart', url: '#quickstart' },
     { label: 'api-reference', url: '#api-reference' },
-    { label: 'examples', url: '#examples' },
   ],
   apiMethodGroups: [
     {
@@ -66,6 +66,4 @@ export const analyticsConfig: PackageConfig = {
       description: 'enable debug logging',
     },
   ],
-  codeExamples: analyticsExamples,
-  componentRecipes: analyticsRecipes,
 };

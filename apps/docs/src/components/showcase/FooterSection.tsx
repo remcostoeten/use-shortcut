@@ -1,7 +1,8 @@
 interface FooterSectionProps {
   author?: string;
   authorUrl?: string;
-  npmUrl?: string;
+  primaryLinkLabel?: string;
+  primaryLinkUrl?: string;
   githubUrl?: string;
   ctas?: Array<{
     label: string;
@@ -13,7 +14,8 @@ interface FooterSectionProps {
 export function FooterSection({
   author = "author",
   authorUrl = "#",
-  npmUrl = "#",
+  primaryLinkLabel = "npm",
+  primaryLinkUrl = "#",
   githubUrl = "#",
   ctas = [],
 }: FooterSectionProps) {
@@ -30,8 +32,8 @@ export function FooterSection({
         </p>
 
         <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] lowercase text-muted-foreground">
-          <a href={npmUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
-            npm
+          <a href={primaryLinkUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">
+            {primaryLinkLabel}
           </a>
           <span className="text-border">/</span>
           <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">

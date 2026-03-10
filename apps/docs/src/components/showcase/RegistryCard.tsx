@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Boxes, Package2, TerminalSquare } from "lucide-react";
 import type { RegistryItem } from "@/config/types";
+import { isAbsoluteUrl } from "@/config/site";
 import { cn } from "@/lib/utils";
 import { useNpmMeta } from "@/hooks/use-npm-stats";
 import { useGitHubRepoUpdatedAt } from "@/hooks/use-github-repo-updated";
@@ -32,11 +33,12 @@ function RegistryGlyph({ kind }: { kind: RegistryItem["kind"] }) {
 }
 
 export function RegistryCard({ item }: RegistryCardProps) {
-  const { version, lastPublishedAt, isLoading: isNpmLoading } = useNpmMeta(item.npmPackageName ?? "");
+  const { version, isLoading: isNpmLoading } = useNpmMeta(item.npmPackageName ?? "");
   const { updatedAt: repoUpdatedAt, isLoading: isRepoLoading } = useGitHubRepoUpdatedAt(item.githubUrl);
-  const updatedLabel = repoUpdatedAt ?? lastPublishedAt;
-  const isUpdatedLoading = item.status === "live" && Boolean(item.githubUrl || item.npmPackageName) && !updatedLabel && (isRepoLoading || isNpmLoading);
+  const updatedLabel = repoUpdatedAt;
+  const isUpdatedLoading = item.status === "live" && Boolean(item.githubUrl) && !updatedLabel && isRepoLoading;
   const isClickable = Boolean(item.href);
+  const isExternal = item.href ? isAbsoluteUrl(item.href) : false;
 
   const body = (
     <>
@@ -116,6 +118,14 @@ export function RegistryCard({ item }: RegistryCardProps) {
   );
 
   if (isClickable && item.href) {
+    if (isExternal) {
+      return (
+        <a href={item.href} className={className}>
+          {body}
+        </a>
+      );
+    }
+
     return (
       <Link to={item.href} className={className}>
         {body}
