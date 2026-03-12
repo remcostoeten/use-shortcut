@@ -55,11 +55,11 @@ const useShortcutConfig: PackageConfig = {
     { value: "ts", label: "perfect typescript", description: "intellisense at every step of the chain." },
     { value: "seq", label: "sequences & chords", description: "multi-step bindings like $.key('g').then('d')" },
     { value: "scope", label: "named scopes", description: "activate/deactivate shortcut contexts." },
-    { value: "⌘/ctrl", label: "cross-platform", description: "mod = ⌘ on mac, ctrl on windows/linux." },
+    { value: "debug", label: "structured debug", description: "global key streams, per-attempt status, and token verdicts." },
   ],
 
   apiProps: [
-    { name: "debug", type: "boolean", default: "false", description: "log shortcut evaluation details to console." },
+    { name: "debug", type: "boolean | ShortcutDebugOptions", default: "false", description: "console logging or structured debug configuration." },
     { name: "delay", type: "number", default: "0", description: "global delay for all handlers in ms." },
     { name: "ignoreInputs", type: "boolean", default: "true", description: "ignore shortcuts in input/textarea/select by default." },
     { name: "target", type: "HTMLElement | Window | null", default: "window", description: "listener target for keyboard events." },
@@ -75,9 +75,16 @@ const useShortcutConfig: PackageConfig = {
   apiPropGuidance: [
     {
       prop: "debug",
-      guidance: "turn this on while building or debugging shortcut chains.",
-      whenToUse: "you want to inspect matching, except checks, or scope decisions in the console.",
-      example: `const $ = useShortcut({ debug: true })`,
+      guidance: "use a debug object when you need console metadata or a global key stream for custom overlays and toasts.",
+      whenToUse: "you want key-by-key inspection, per-attempt status, or visual debugging for sequences and mismatches.",
+      example: `const $ = useShortcut({
+  debug: {
+    console: true,
+    includeCode: true,
+    includeLocation: true,
+    includeKeyCode: true,
+  },
+})`,
       exampleLanguage: "ts",
     },
     {
@@ -275,6 +282,7 @@ $.key("g").then("d").on(goToDashboard)`,
         { name: "disableScope", signature: "$.disableScope(scope)", description: "Disables one scope name." },
         { name: "getScopes", signature: "$.getScopes()", description: "Returns the currently active scopes." },
         { name: "isScopeActive", signature: "$.isScopeActive(scope)", description: "Checks whether a scope is active." },
+        { name: "onDebug", signature: "$.onDebug(callback)", description: "Subscribes to every evaluated keypress with structured attempt details." },
         { name: "record", signature: "$.record(options?)", description: "Records the next non-modifier shortcut combo." },
       ],
     },
@@ -309,7 +317,7 @@ $.key("g").then("d").on(goToDashboard)`,
         { name: "isEnabled", signature: "result.isEnabled", description: "Current enabled state flag." },
         { name: "enable", signature: "result.enable()", description: "Enables this shortcut." },
         { name: "disable", signature: "result.disable()", description: "Disables this shortcut." },
-        { name: "onAttempt", signature: "result.onAttempt?.(callback)", description: "Subscribes to attempt events and matched state." },
+        { name: "onAttempt", signature: "result.onAttempt?.((matched, event, details) => ...)", description: "Subscribes to attempt events with matched state plus structured debug details." },
       ],
     },
     {
@@ -331,7 +339,7 @@ $.key("g").then("d").on(goToDashboard)`,
       title: "UseShortcutOptions",
       description: "Hook-level runtime options passed to useShortcut(options).",
       options: [
-        { name: "debug", type: "boolean", default: "false", description: "Enable debug logging to console." },
+        { name: "debug", type: "boolean | ShortcutDebugOptions", default: "false", description: "Enable console logging or configure structured debug metadata." },
         { name: "delay", type: "number", default: "0", description: "Global delay in ms before handlers execute." },
         { name: "ignoreInputs", type: "boolean", default: "true", description: "Skip shortcuts in input/textarea/select contexts." },
         { name: "target", type: "HTMLElement | Window | null", default: "window", description: "DOM target to attach keyboard listeners to." },
@@ -346,7 +354,12 @@ $.key("g").then("d").on(goToDashboard)`,
       usageExample: `import { useShortcut } from "@remcostoeten/use-shortcut"
 
 const $ = useShortcut({
-  debug: false,
+  debug: {
+    console: false,
+    includeCode: true,
+    includeLocation: true,
+    includeKeyCode: true,
+  },
   ignoreInputs: true,
   eventType: "keydown",
   activeScopes: ["editor", "global"],
@@ -414,6 +427,46 @@ function App() {
   $.key("escape").on(() => closePanel())
 
   return <div>press Shift+S or Esc</div>
+}`,
+      language: "tsx",
+    },
+    {
+      title: "debug stream and toast wiring",
+      description: "Use this when you want generic keystroke telemetry plus per-shortcut visual feedback for matches, mismatches, and wrong order.",
+      code: `import { useEffect } from "react"
+import { useShortcut } from "@remcostoeten/use-shortcut"
+
+function ShortcutDebugger() {
+  const $ = useShortcut({
+    debug: {
+      console: false,
+      includeCode: true,
+      includeLocation: true,
+      includeKeyCode: true,
+    },
+  })
+
+  useEffect(() => {
+    const result = $.shift.key("e").then("e").on(runProbe, {
+      description: "debug probe",
+    })
+
+    const unsubscribeDebug = $.onDebug((event) => {
+      showNeutralToast(event.input.combo, event.input.code)
+    })
+
+    const unsubscribeAttempt = result.onAttempt?.((matched, _event, details) => {
+      showStatusToast(matched ? "green" : details?.status ?? "red")
+    })
+
+    return () => {
+      unsubscribeDebug()
+      unsubscribeAttempt?.()
+      result.unbind()
+    }
+  }, [$])
+
+  return null
 }`,
       language: "tsx",
     },

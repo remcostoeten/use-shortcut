@@ -44,6 +44,8 @@ npm install @remcostoeten/use-shortcut
 - Prefer React + TypeScript examples.
 - Default to \`ignoreInputs: true\` unless the product clearly wants shortcuts inside editable fields.
 - Add \`preventDefault: true\` for browser-conflicting combos like \`mod+k\` and \`mod+s\`.
+- Use \`debug: { includeCode, includeLocation, includeKeyCode }\` when the user wants richer key debugging output.
+- Use \`$.onDebug(...)\` for global keystroke telemetry and \`result.onAttempt(...)\` for per-shortcut match details.
 - Represent help as \`shift+slash\`, not \`?\`.
 - Use \`.except("typing")\` for global shortcuts that should not fire while the user is typing.
 - Use scopes like \`.in(...)\` for context-specific bindings.
@@ -69,6 +71,7 @@ function App() {
 - Use \`.then(...)\` for sequences
 - Use \`.on(handler, options?)\` to register
 - Use \`.except(...)\` and \`.in(...)\` to scope behavior
+- Use \`$.onDebug()\` for global debug flows and \`result.onAttempt()\` for binding-level debug UI
 - Use \`$.record()\` to capture shortcuts from users`;
 
 const assetContent: Record<string, string> = {

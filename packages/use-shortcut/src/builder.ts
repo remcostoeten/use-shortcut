@@ -3,6 +3,7 @@ import type {
     ActionKey,
     HandlerOptions,
     ShortcutBuilder as IShortcutBuilder,
+    ShortcutDebugEvent,
     ShortcutScope,
     UseShortcutOptions,
     ExceptPreset,
@@ -30,6 +31,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
         options,
         activeScopes: new Set(_normalizeScopes(options.activeScopes)),
         nextId: 1,
+        debugListeners: new Set(),
         listener: null,
         listenerTarget: null,
         listenerEventType: options.eventType ?? "keydown",
@@ -96,6 +98,13 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
 
                 if (prop === "isScopeActive") {
                     return (scope: string) => registry.activeScopes.has(scope)
+                }
+
+                if (prop === "onDebug") {
+                    return (callback: (event: ShortcutDebugEvent) => void) => {
+                        registry.debugListeners.add(callback)
+                        return () => registry.debugListeners.delete(callback)
+                    }
                 }
 
                 if (prop === "record") {

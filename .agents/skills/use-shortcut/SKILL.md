@@ -116,7 +116,12 @@ $.mod.key("k").except(["input", "modal"]).on(() => openPalette())
 ### Hook Options (useShortcut)
 ```tsx
 const $ = useShortcut({
-  debug: true,              // Log matching to console
+  debug: {
+    console: true,
+    includeCode: true,
+    includeLocation: true,
+    includeKeyCode: true,
+  },                        // Rich debug output
   ignoreInputs: true,       // Skip shortcuts in input/textarea/select
   target: containerRef,     // Attach to specific element
   eventType: "keydown",     // "keydown" or "keyup"
@@ -124,6 +129,19 @@ const $ = useShortcut({
   activeScopes: ["editor"], // Initial active scopes
   sequenceTimeout: 800,    // Max ms for sequence completion
   conflictWarnings: true,  // Warn on shortcut conflicts
+})
+```
+
+### Debug Hooks
+```tsx
+const removeDebug = $.onDebug((event) => {
+  console.log(event.input.combo, event.input.code, event.attempts)
+})
+
+const result = $.shift.key("e").then("e").on(runProbe)
+
+const removeAttempt = result.onAttempt?.((matched, _event, details) => {
+  console.log(matched ? "matched" : details?.status, details?.steps)
 })
 ```
 

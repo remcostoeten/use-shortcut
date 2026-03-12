@@ -30,6 +30,10 @@ Source of truth: `src/index.ts`.
 ### React hooks and registration helpers
 
 - `useShortcut(options?)`
+- `useShortcutMap(shortcutMap, options?)`
+- `registerShortcutMap(builder, shortcutMap)`
+- `createShortcutGroup()`
+- `useShortcutGroup()`
 
 ### Exported types (TypeScript API)
 
@@ -55,13 +59,25 @@ Source of truth: `src/index.ts`.
 - `ExceptPredicate`
 - `ShortcutScope`
 - `ShortcutConflict`
+- `ShortcutAttemptStatus`
+- `ShortcutDebugTokenStatus`
+- `ShortcutDebugToken`
+- `ShortcutDebugStep`
+- `ShortcutDebugInput`
+- `ShortcutAttemptDebugEvent`
+- `ShortcutDebugEvent`
+- `ShortcutDebugOptions`
 - `ShortcutRecordingOptions`
+- `ShortcutMapEntry`
+- `ShortcutMap`
+- `ShortcutMapResult`
+- `ShortcutGroup`
 
 ## Package Export Capabilities
 
 ### `useShortcut(options?)`
 
-Possible to do: register keyboard shortcuts with a chainable API, scopes, exceptions, sequences, and recording.
+Possible to do: register keyboard shortcuts with a chainable API, scopes, exceptions, sequences, recording, and structured debug streams via `$.onDebug()`.
 
 ### `formatShortcut(shortcut, platform?)`
 
@@ -161,7 +177,7 @@ Possible to do: type the object returned by `useShortcut` for chain construction
 
 ### `ShortcutResult`
 
-Possible to do: type and control a registered shortcut (`unbind`, `enable`, `disable`, `trigger`, display metadata).
+Possible to do: type and control a registered shortcut (`unbind`, `enable`, `disable`, `trigger`, display metadata, and `onAttempt()` debug details).
 
 ### `ShortcutHandler`
 
@@ -173,7 +189,15 @@ Possible to do: configure per-shortcut behavior (`preventDefault`, `scopes`, `ex
 
 ### `UseShortcutOptions`
 
-Possible to do: configure runtime-level hook behavior (`target`, `eventType`, `activeScopes`, `disabled`, etc.).
+Possible to do: configure runtime-level hook behavior (`target`, `eventType`, `activeScopes`, `disabled`, `debug`, etc.).
+
+### `ShortcutDebugEvent`
+
+Possible to do: inspect every evaluated keypress with the normalized input combo plus attempt details for all tracked shortcuts.
+
+### `ShortcutAttemptDebugEvent`
+
+Possible to do: inspect per-shortcut `matched`, `partial`, `wrong-order`, and `mismatch` states with token-level verdicts for custom UI.
 
 ### `ModifierChain`
 

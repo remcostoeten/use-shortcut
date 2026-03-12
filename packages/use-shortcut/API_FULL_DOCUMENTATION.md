@@ -104,7 +104,7 @@ export function FullChainExample() {
 ## 3. Hook Options (`UseShortcutOptions`)
 
 All available options:
-- `debug?: boolean`
+- `debug?: boolean | ShortcutDebugOptions`
 - `delay?: number`
 - `ignoreInputs?: boolean`
 - `target?: HTMLElement | Window | null`
@@ -118,7 +118,12 @@ All available options:
 
 ```tsx
 const $ = useShortcut({
-  debug: false,
+  debug: {
+    console: true,
+    includeCode: true,
+    includeLocation: true,
+    includeKeyCode: false,
+  },
   delay: 0,
   ignoreInputs: true,
   target: window,
@@ -131,6 +136,12 @@ const $ = useShortcut({
   eventFilter: (event) => !event.repeat,
 })
 ```
+
+`ShortcutDebugOptions` supports:
+- `console?: boolean`
+- `includeCode?: boolean`
+- `includeLocation?: boolean`
+- `includeKeyCode?: boolean`
 
 ## 4. Handler Options (`HandlerOptions`)
 
@@ -173,6 +184,9 @@ Returned by `.on(...)` / `.handle(...)`:
 - `disable()`
 - `onAttempt?(callback)`
 
+`useShortcut()` also exposes:
+- `onDebug(callback)`
+
 ```tsx
 const result = $.mod.key("s").on(() => console.log("save"))
 
@@ -183,10 +197,15 @@ result.disable()
 result.enable()
 result.trigger()
 
-const unsubscribe = result.onAttempt?.((matched) => {
-  console.log("attempt", matched)
+const removeDebug = $.onDebug((event) => {
+  console.log("input", event.input.combo, event.attempts)
 })
 
+const unsubscribe = result.onAttempt?.((matched, _event, details) => {
+  console.log("attempt", matched, details?.status, details?.steps)
+})
+
+removeDebug()
 unsubscribe?.()
 result.unbind()
 ```
@@ -333,4 +352,3 @@ console.log(label, symbols, order)
 This document targets all currently exported package symbols from `src/index.ts`:
 - functions/hooks/utilities/constants and all exported TS types.
 - map/group APIs are intentionally removed from public exports on this branch.
-

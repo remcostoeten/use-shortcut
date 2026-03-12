@@ -18,6 +18,8 @@ WIP keyboard shortcut library for React with a chainable API.
   - Runtime controls: `setScopes`, `enableScope`, `disableScope`, `getScopes`, `isScopeActive`
 - Exception predicates/presets with `.except(...)`
 - Recording mode: `$.record({ timeoutMs })`
+- Structured debug stream: `$.onDebug(...)` for every keypress
+- Per-shortcut attempt inspection: `result.onAttempt((matched, event, details) => ...)`
 - Conflict detection (`exact`, `sequence-prefix`)
 - Priority ordering and `stopOnMatch`
 - Global guard/filter support via `eventFilter`
@@ -67,6 +69,31 @@ function App() {
 ```
 
 If you already have a builder from `useShortcut()`, you can bulk register with `registerShortcutMap($, shortcutMap)` and unbind the returned handles on cleanup.
+
+## Debug Example
+
+```tsx
+const $ = useShortcut({
+  debug: {
+    console: true,
+    includeCode: true,
+    includeLocation: true,
+    includeKeyCode: true,
+  },
+})
+
+const unsubscribeDebug = $.onDebug((event) => {
+  console.log("key", event.input.combo, event.attempts)
+})
+
+const result = $.shift.key("e").then("e").on(runProbe, {
+  description: "sequence probe",
+})
+
+const unsubscribeAttempt = result.onAttempt?.((matched, _event, details) => {
+  console.log(matched ? "matched" : details?.status, details?.steps)
+})
+```
 
 ## Architecture Notes
 

@@ -93,6 +93,65 @@ export type ShortcutConflict = {
     reason: "exact" | "sequence-prefix"
 }
 
+export type ShortcutAttemptStatus = "matched" | "partial" | "wrong-order" | "mismatch"
+
+export type ShortcutDebugTokenStatus = "match" | "wrong-order" | "mismatch"
+
+export type ShortcutDebugToken = {
+    token: string
+    kind: "modifier" | "key"
+    status: ShortcutDebugTokenStatus
+}
+
+export type ShortcutDebugStep = {
+    index: number
+    expected: string
+    actual?: string
+    status: "match" | "partial" | "pending" | "wrong-order" | "mismatch"
+    tokens: ShortcutDebugToken[]
+}
+
+export type ShortcutDebugInput = {
+    key: string
+    code: string
+    location: number
+    repeat: boolean
+    keyCode?: number
+    which?: number
+    combo: string
+    modifiers: ModifierState
+}
+
+export type ShortcutAttemptDebugEvent = {
+    combo: string
+    display: string
+    description?: string
+    status: ShortcutAttemptStatus
+    matched: boolean
+    progress: number
+    expectedSteps: string[]
+    actualSteps: string[]
+    stepIndex: number
+    input: ShortcutDebugInput
+    steps: ShortcutDebugStep[]
+}
+
+export type ShortcutDebugEvent = {
+    input: ShortcutDebugInput
+    attempts: ShortcutAttemptDebugEvent[]
+}
+
+export type ShortcutDebugOptions = {
+    /** Log shortcut attempts to the console (default: true) */
+    console?: boolean
+    /** Include `KeyboardEvent.code` in console output */
+    includeCode?: boolean
+    /** Include `KeyboardEvent.location` in console output */
+    includeLocation?: boolean
+    /** Include deprecated numeric key metadata in console output when available */
+    includeKeyCode?: boolean
+}
+
 /**
  * Options for shortcut handler registration
  */
@@ -139,7 +198,7 @@ export type ShortcutResult = {
     /** Temporarily disable the shortcut */
     disable: () => void
     /** Subscribe to shortcut attempt events (useful for visual feedback) */
-    onAttempt?: (callback: (matched: boolean, event: KeyboardEvent) => void) => () => void
+    onAttempt?: (callback: (matched: boolean, event: KeyboardEvent, details?: ShortcutAttemptDebugEvent) => void) => () => void
 }
 
 /**
@@ -210,6 +269,8 @@ export type ShortcutBuilder = ModifierChain<EmptyModifiers> & {
     getScopes: () => string[]
     /** Check if a scope is active */
     isScopeActive: (scope: string) => boolean
+    /** Subscribe to every keyboard input evaluated by this shortcut registry */
+    onDebug: (callback: (event: ShortcutDebugEvent) => void) => () => void
     /** Record the next key combo */
     record: (options?: ShortcutRecordingOptions) => Promise<string>
 }
@@ -218,8 +279,8 @@ export type ShortcutBuilder = ModifierChain<EmptyModifiers> & {
  * Options for the `useShortcut` hook
  */
 export type UseShortcutOptions = {
-    /** Enable debug logging to console */
-    debug?: boolean
+    /** Enable debug logging to console or configure structured debug output */
+    debug?: boolean | ShortcutDebugOptions
     /** Global delay for all handlers in milliseconds */
     delay?: number
     /** Skip shortcuts when focused on input elements (default: `true`) */

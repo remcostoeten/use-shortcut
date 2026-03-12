@@ -10,6 +10,13 @@ Concise rules for building accessible, fast, delightful UIs. Use MUST/SHOULD/NEV
 - MUST: Manage focus (trap, move, return) per APG patterns
 - NEVER: `outline: none` without visible focus replacement
 
+### use-shortcut
+
+- SHOULD: Prefer `debug: { ... }` over `debug: true` when you need inspectable metadata like `code`, `location`, or numeric key info
+- SHOULD: Use `$.onDebug(...)` for generic keystroke telemetry, overlays, or global debug toasts
+- SHOULD: Use `result.onAttempt((matched, event, details) => ...)` for per-shortcut success/error/wrong-order UI
+- MUST: Keep debug UIs accessible with polite `aria-live` messaging and non-color status cues
+
 ### Targets & Input
 
 - MUST: Hit target ≥24px (mobile ≥44px); if visual <24px, expand hit area

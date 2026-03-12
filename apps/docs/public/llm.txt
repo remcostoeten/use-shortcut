@@ -21,6 +21,8 @@ If you are an LLM implementing this package:
 - Prefer React + TypeScript examples.
 - Default to `ignoreInputs: true` unless the product clearly wants shortcuts inside editable fields.
 - Add `preventDefault: true` for browser-conflicting combos like `mod+k` and `mod+s`.
+- Use `debug: { includeCode, includeLocation, includeKeyCode }` when the user wants rich key debugging output.
+- Use `$.onDebug(...)` for every keypress stream and `result.onAttempt(...)` for per-shortcut match/mismatch details.
 - Represent help as `shift+slash`, not `?`.
 - Use `.except("typing")` for global shortcuts that should not fire while the user is typing.
 - Use scopes like `.in(...)` for context-specific bindings.
@@ -47,4 +49,5 @@ Mental model:
 - Use `.then(...)` for multi-step sequences.
 - Use `.on(handler, options?)` to register.
 - Use `.except(...)` and `.in(...)` to scope behavior.
+- Use `$.onDebug()` for global debug pipelines and `result.onAttempt()` for function-level debugging.
 - Use `$.record()` to capture shortcuts from user input.

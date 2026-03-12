@@ -1,5 +1,5 @@
 import { parseShortcut } from "../parser"
-import type { HandlerOptions, ShortcutHandler, ShortcutResult } from "../types"
+import type { HandlerOptions, ShortcutAttemptDebugEvent, ShortcutHandler, ShortcutResult } from "../types"
 
 import { _debugLog } from "./debug"
 import { _detectConflict, _emitConflict } from "./conflicts"
@@ -41,7 +41,8 @@ export function _createBinding(
     const delay = handlerOptions.delay ?? options.delay ?? 0
     const sequenceTimeout = handlerOptions.sequenceTimeout ?? options.sequenceTimeout ?? 800
     const requiredScopes = new Set(_normalizeScopes(state.scopes ?? handlerOptions.scopes))
-    const attemptCallbacks = new Set<(matched: boolean, event: KeyboardEvent) => void>()
+    const expectedSteps = parsedSteps.map(_canonicalizeParsed)
+    const attemptCallbacks = new Set<(matched: boolean, event: KeyboardEvent, details?: ShortcutAttemptDebugEvent) => void>()
 
     _debugLog(debug, "Registering:", combo, "→", display, {
         parsedSteps,
@@ -53,11 +54,17 @@ export function _createBinding(
         id: registry.nextId++,
         userHandler: handler,
         isEnabled,
+        combo,
+        display,
+        description: handlerOptions.description,
         attemptCallbacks,
         parsedSteps,
+        expectedSteps,
         scopes: requiredScopes,
         progress: 0,
         lastMatchedAt: 0,
+        debugHistory: [],
+        lastDebugAt: 0,
         except,
         delay,
         sequenceTimeout,
@@ -133,4 +140,3 @@ export function _createBinding(
         },
     }
 }
-

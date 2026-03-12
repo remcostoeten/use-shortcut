@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { ShortcutAttemptDebugEvent, ShortcutDebugEvent } from "@remcostoeten/use-shortcut";
 import { useShortcut, formatShortcut } from "@remcostoeten/use-shortcut";
 import { Save, CircleHelp, X } from "lucide-react";
 import { SyntaxHighlight } from "@/components/showcase/SyntaxHighlight";
@@ -18,7 +19,24 @@ interface DemoShortcut {
   label: string;
 }
 
+interface DebugToast {
+  id: number;
+  kind: "neutral" | "success" | "warning" | "error";
+  title: string;
+  message: string;
+}
+
+type ToastPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
 const MAX_EVENTS = 12;
+const MAX_DEBUG_TOASTS = 4;
+const PROBE_COMBO = "shift+e then e";
+const TOAST_POSITION_LABELS: Record<ToastPosition, string> = {
+  "top-left": "top left",
+  "top-right": "top right",
+  "bottom-left": "bottom left",
+  "bottom-right": "bottom right",
+};
 
 const DEMO_SHORTCUTS: DemoShortcut[] = [
   { code: '$.cmd.key("s").on(() => save())', combo: "cmd+s", display: "", label: "save" },
@@ -36,11 +54,16 @@ export function UseShortcutDemo() {
   const [activeCombo, setActiveCombo] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [debugPosition, setDebugPosition] = useState<ToastPosition>("bottom-right");
+  const [debugToasts, setDebugToasts] = useState<DebugToast[]>([]);
+  const [lastInput, setLastInput] = useState<ShortcutDebugEvent["input"] | null>(null);
+  const [probeAttempt, setProbeAttempt] = useState<ShortcutAttemptDebugEvent | null>(null);
   const idRef = useRef(0);
   const helpOpenRef = useRef(false);
   const toastRef = useRef<string | null>(null);
   const flashTimeoutRef = useRef<number | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
+  const debugToastTimeoutsRef = useRef<number[]>([]);
 
   useEffect(() => {
     helpOpenRef.current = helpOpen;
@@ -58,6 +81,9 @@ export function UseShortcutDemo() {
       if (toastTimeoutRef.current) {
         window.clearTimeout(toastTimeoutRef.current);
       }
+      debugToastTimeoutsRef.current.forEach((timeoutId) => {
+        window.clearTimeout(timeoutId);
+      });
     };
   }, []);
 
@@ -85,6 +111,47 @@ export function UseShortcutDemo() {
     const id = ++idRef.current;
     setEvents((prev) => [{ id, combo, display, label, timestamp: Date.now() }, ...prev].slice(0, MAX_EVENTS));
     flashCombo(combo);
+  };
+
+  const pushDebugToast = (kind: DebugToast["kind"], title: string, message: string) => {
+    const id = ++idRef.current;
+    setDebugToasts((prev) => [{ id, kind, title, message }, ...prev].slice(0, MAX_DEBUG_TOASTS));
+    const timeoutId = window.setTimeout(() => {
+      setDebugToasts((prev) => prev.filter((toastItem) => toastItem.id !== id));
+      debugToastTimeoutsRef.current = debugToastTimeoutsRef.current.filter((current) => current !== timeoutId);
+    }, 1800);
+    debugToastTimeoutsRef.current.push(timeoutId);
+  };
+
+  const describeInput = (input: ShortcutDebugEvent["input"]) => {
+    const details = [`key ${input.key}`];
+    if (input.code) {
+      details.push(`code ${input.code}`);
+    }
+    details.push(`location ${input.location}`);
+    if (typeof input.keyCode === "number") {
+      details.push(`keyCode ${input.keyCode}`);
+    }
+    return details.join(" · ");
+  };
+
+  const announceProbeAttempt = (details: ShortcutAttemptDebugEvent) => {
+    if (details.status === "matched") {
+      pushDebugToast("success", details.display, "matched in order");
+      return;
+    }
+
+    if (details.status === "wrong-order") {
+      pushDebugToast("warning", details.display, "right keys, wrong order");
+      return;
+    }
+
+    if (details.status === "mismatch") {
+      pushDebugToast("error", details.display, "wrong key or modifier");
+      return;
+    }
+
+    pushDebugToast("neutral", details.display, "sequence in progress");
   };
 
   const saveDraft = () => {
@@ -144,7 +211,11 @@ export function UseShortcutDemo() {
     pushEvent("escape", "Esc", "dismiss");
   };
 
-  const $ = useShortcut({ disabled: !isActive, ignoreInputs: true });
+  const $ = useShortcut({
+    disabled: !isActive,
+    ignoreInputs: true,
+    debug: { console: false, includeCode: true, includeLocation: true, includeKeyCode: true },
+  });
   useEffect(() => {
     const registrations = [
       $.cmd.key("s").on(saveDraft, { preventDefault: true }),
@@ -155,9 +226,27 @@ export function UseShortcutDemo() {
       $.shift.key("slash").except("typing").on(toggleHelp, { preventDefault: true }),
       $.key("escape").on(dismissSurface),
     ];
+    const probe = $.shift.key("e").then("e").on(
+      () => {
+        pushEvent("shift+e then e", `${formatShortcut("shift+e")} then E`, "debug probe");
+      },
+      { description: "debug probe" },
+    );
+    const unsubscribeProbe = probe.onAttempt?.((_, __, details) => {
+      if (!details) return;
+      setProbeAttempt(details);
+      announceProbeAttempt(details);
+    });
+    const unsubscribeDebug = $.onDebug((event) => {
+      setLastInput(event.input);
+      pushDebugToast("neutral", event.input.combo, describeInput(event.input));
+    });
 
     return () => {
       registrations.forEach((registration) => registration.unbind());
+      probe.unbind();
+      unsubscribeProbe?.();
+      unsubscribeDebug();
     };
   }, [$]);
 
@@ -172,9 +261,10 @@ export function UseShortcutDemo() {
   }));
 
   const sourceLines = [
-    "const $ = useShortcut()",
+    "const $ = useShortcut({ debug: { console: false } })",
     "",
     ...shortcuts.map((shortcut) => shortcut.code),
+    '$.shift.key("e").then("e").on(() => debugProbe())',
   ];
 
   const runShortcut = (combo: string) => {
@@ -205,8 +295,25 @@ export function UseShortcutDemo() {
     }
   };
 
+  const debugViewportClass =
+    debugPosition === "top-left" ? "left-3 top-3"
+    : debugPosition === "top-right" ? "right-3 top-3"
+    : debugPosition === "bottom-left" ? "left-3 bottom-3"
+    : "right-3 bottom-3";
+
+  const probeTone =
+    probeAttempt?.status === "matched" ? "border-emerald-500/40 bg-emerald-500/8"
+    : probeAttempt?.status === "wrong-order" ? "border-amber-500/40 bg-amber-500/8"
+    : probeAttempt?.status === "mismatch" ? "border-rose-500/40 bg-rose-500/8"
+    : "border-border bg-card/40";
+
+  const tokenTone = (status: ShortcutAttemptDebugEvent["steps"][number]["tokens"][number]["status"]) =>
+    status === "match" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+    : status === "wrong-order" ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+    : "border-rose-500/30 bg-rose-500/10 text-rose-300";
+
   return (
-    <div className="flex w-full flex-col gap-5">
+    <div className="relative flex w-full flex-col gap-5">
       <span className="sr-only" aria-live="polite">
         {toast ?? ""}
       </span>
@@ -250,7 +357,7 @@ export function UseShortcutDemo() {
             {sourceLines.map((line, index) => {
               const isHighlighted = activeCombo && shortcuts.some(
                 (shortcut) => shortcut.combo === activeCombo && line.includes(shortcut.label),
-              );
+              ) || (activeCombo === "shift+e then e" && line.includes("debugProbe"));
 
               return (
                 <div
@@ -384,6 +491,98 @@ export function UseShortcutDemo() {
           </div>
         </div>
 
+        <div className={`overflow-hidden border px-4 py-4 transition-colors ${probeTone}`}>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-current/20 pb-3">
+            <div className="space-y-1">
+              <p className="font-mono text-[10px] lowercase text-muted-foreground">debug probe</p>
+              <p className="font-mono text-xs text-foreground">{PROBE_COMBO}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {Object.entries(TOAST_POSITION_LABELS).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setDebugPosition(value as ToastPosition)}
+                  className={`min-h-9 border px-2.5 py-1 font-mono text-[10px] transition-colors ${
+                    debugPosition === value
+                      ? "border-primary/45 bg-primary/8 text-primary"
+                      : "border-border bg-background text-muted-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-4 pt-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="space-y-3">
+              <div className="grid gap-2">
+                {(probeAttempt?.steps ?? [
+                  { index: 0, expected: "shift+e", tokens: [], status: "pending" as const },
+                  { index: 1, expected: "e", tokens: [], status: "pending" as const },
+                ]).map((step) => (
+                  <div
+                    key={step.index}
+                    className={`border px-3 py-3 transition-colors ${
+                      step.status === "match" || step.status === "partial"
+                        ? "border-emerald-500/25 bg-emerald-500/5"
+                        : step.status === "wrong-order"
+                          ? "border-amber-500/25 bg-amber-500/5"
+                          : step.status === "mismatch"
+                            ? "border-rose-500/25 bg-rose-500/5"
+                            : "border-border/60 bg-background/50"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-mono text-[10px] lowercase text-muted-foreground">step {step.index + 1}</span>
+                      <kbd className="font-mono text-[11px] text-foreground">{formatShortcut(step.expected)}</kbd>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {step.tokens.length > 0 ? (
+                        step.tokens.map((token, index) => (
+                          <span
+                            key={`${step.index}-${token.token}-${index}`}
+                            className={`inline-flex min-h-7 items-center border px-2 font-mono text-[10px] lowercase ${tokenTone(token.status)}`}
+                          >
+                            {token.token}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="font-mono text-[10px] lowercase text-muted-foreground/50">waiting…</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border border-dashed border-border px-3 py-3">
+                <p className="text-xs lowercase leading-relaxed text-muted-foreground">
+                  every keypress creates a neutral debug toast with `key`, `code`, `location`, and `keyCode`.
+                  the probe adds success, warning, or error toasts based on the typed sequence.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3 border border-border/60 bg-background/50 px-3 py-3">
+              <div>
+                <p className="font-mono text-[10px] lowercase text-muted-foreground">latest input</p>
+                <p className="mt-1 font-mono text-xs text-foreground">{lastInput?.combo ?? "waiting…"}</p>
+              </div>
+              <div className="space-y-1 text-xs lowercase text-muted-foreground">
+                <p>{lastInput ? `key ${lastInput.key}` : "press any key"}</p>
+                <p>{lastInput?.code ? `code ${lastInput.code}` : "code pending"}</p>
+                <p>{lastInput ? `location ${lastInput.location}` : "location pending"}</p>
+                <p>{typeof lastInput?.keyCode === "number" ? `keyCode ${lastInput.keyCode}` : "keyCode pending"}</p>
+              </div>
+              <div className="border-t border-border/50 pt-3">
+                <p className="font-mono text-[10px] lowercase text-muted-foreground">probe status</p>
+                <p className="mt-1 text-xs lowercase text-foreground">{probeAttempt?.status ?? "idle"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {toast ? (
           <div className="flex items-center gap-2 border border-border bg-card/70 px-4 py-3">
             <Save className="h-4 w-4 text-primary" aria-hidden="true" />
@@ -393,17 +592,45 @@ export function UseShortcutDemo() {
           <div className="overflow-hidden border border-border">
             <div className="border border-dashed border-border px-4 py-3">
               <p className="text-xs lowercase leading-relaxed text-muted-foreground">
-                try `cmd+s`, `mod+k`, `/`, `?`, `mod+c`, `mod+z`, or `esc`.
+                try `cmd+s`, `mod+k`, `/`, `?`, `mod+c`, `mod+z`, `esc`, or the debug probe `shift+e` then `e`.
               </p>
             </div>
           </div>
         )}
       </div>
 
+      <div
+        className={`pointer-events-none absolute z-20 flex w-[min(280px,calc(100%-24px))] flex-col gap-2 ${debugViewportClass}`}
+        aria-live="polite"
+      >
+        {debugToasts.map((toastItem) => (
+          <div
+            key={toastItem.id}
+            className={`border px-3 py-2 shadow-lg backdrop-blur-sm ${
+              toastItem.kind === "success"
+                ? "border-emerald-500/35 bg-emerald-950/85 text-emerald-100"
+                : toastItem.kind === "warning"
+                  ? "border-amber-500/35 bg-amber-950/85 text-amber-100"
+                  : toastItem.kind === "error"
+                    ? "border-rose-500/35 bg-rose-950/85 text-rose-100"
+                    : "border-border bg-background/95 text-foreground"
+            }`}
+            style={{ animation: "demoToastIn 180ms ease-out" }}
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] opacity-70">{toastItem.title}</p>
+            <p className="mt-1 text-xs lowercase">{toastItem.message}</p>
+          </div>
+        ))}
+      </div>
+
       <style>{`
         @keyframes demoSlideIn {
           from { opacity: 0; transform: translateY(-6px); }
           to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes demoToastIn {
+          from { opacity: 0; transform: translate3d(0, 8px, 0); }
+          to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
       `}</style>
     </div>

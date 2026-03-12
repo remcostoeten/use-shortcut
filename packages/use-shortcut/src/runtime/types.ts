@@ -6,6 +6,8 @@ import type {
     ExceptPredicate,
     ShortcutScope,
     ParsedShortcut,
+    ShortcutDebugEvent,
+    ShortcutAttemptDebugEvent,
 } from "../types"
 
 export type BuilderState = {
@@ -20,11 +22,17 @@ export type RegistryEntry = {
     id: number
     userHandler: ShortcutHandler
     isEnabled: boolean
-    attemptCallbacks: Set<(matched: boolean, event: KeyboardEvent) => void>
+    combo: string
+    display: string
+    description?: string
+    attemptCallbacks: Set<(matched: boolean, event: KeyboardEvent, details?: ShortcutAttemptDebugEvent) => void>
     parsedSteps: ParsedShortcut[]
+    expectedSteps: string[]
     scopes: Set<string>
     progress: number
     lastMatchedAt: number
+    debugHistory: string[]
+    lastDebugAt: number
     except?: ExceptPreset | ExceptPreset[] | ExceptPredicate
     delay: number
     sequenceTimeout: number
@@ -41,8 +49,8 @@ export type ShortcutRegistry = {
     options: UseShortcutOptions
     activeScopes: Set<string>
     nextId: number
+    debugListeners: Set<(event: ShortcutDebugEvent) => void>
     listener: ((event: KeyboardEvent) => void) | null
     listenerTarget: (HTMLElement | Window) | null
     listenerEventType: "keydown" | "keyup"
 }
-

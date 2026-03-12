@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { _createShortcutBuilder } from "../builder"
 import { registerShortcutMap, createShortcutGroup } from "../hook"
-import type { ShortcutBuilder, UseShortcutOptions } from "../types"
+import type { ShortcutAttemptDebugEvent, ShortcutBuilder, UseShortcutOptions } from "../types"
 
 function dispatchKey(key: string, options: KeyboardEventInit = {}) {
     window.dispatchEvent(
@@ -160,5 +160,48 @@ describe("advanced shortcut features", () => {
 
         dispatchKey("s", { ctrlKey: true })
         expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it("emits per-shortcut debug attempt details with token verdicts", () => {
+        const $ = createTestShortcut({ ignoreInputs: false })
+        const handler = vi.fn()
+        const attempts: ShortcutAttemptDebugEvent[] = []
+
+        const result = $.shift.key("e").then("e").on(handler)
+        result.onAttempt?.((_, __, details) => {
+            if (details) {
+                attempts.push(details as never)
+            }
+        })
+
+        dispatchKey("e", { ctrlKey: true })
+        dispatchKey("e")
+
+        expect(attempts).toHaveLength(2)
+        expect(attempts[0].status).toBe("mismatch")
+        expect(attempts[0].steps[0].tokens).toEqual([
+            { token: "ctrl", kind: "modifier", status: "mismatch" },
+            { token: "e", kind: "key", status: "match" },
+        ])
+        expect(attempts[1].steps[1].status).toBe("partial")
+    })
+
+    it("emits global debug events for every keypress", () => {
+        const $ = createTestShortcut({ ignoreInputs: false })
+        const handler = vi.fn()
+        const debugListener = vi.fn()
+
+        $.mod.key("k").on(handler)
+        const unsubscribe = $.onDebug(debugListener)
+
+        dispatchKey("x")
+        dispatchKey("k", { ctrlKey: true })
+
+        expect(debugListener).toHaveBeenCalledTimes(2)
+        expect(debugListener.mock.calls[0][0].input.combo).toBe("x")
+        expect(debugListener.mock.calls[0][0].attempts[0].status).toBe("mismatch")
+        expect(debugListener.mock.calls[1][0].attempts[0].status).toBe("matched")
+
+        unsubscribe()
     })
 })
