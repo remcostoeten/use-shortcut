@@ -56,10 +56,7 @@
     },
     "packages/use-shortcut": {
       "name": "@remcostoeten/use-shortcut",
-      "version": "2.0.0",
-      "bin": {
-        "use-shortcut": "dist/cli/index.mjs",
-      },
+      "version": "2.2.0",
       "devDependencies": {
         "@types/react": "^19.2.9",
         "jsdom": "^26.1.0",

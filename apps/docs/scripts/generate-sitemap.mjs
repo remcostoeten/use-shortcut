@@ -2,13 +2,20 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-function normalizeUrl(raw, fallback = "https://use-shortcut.vercel.app") {
+function normalizeUrl(raw, fallback = "https://registry.remcostoeten.nl") {
   const resolved = raw || fallback;
   const withProtocol = resolved.startsWith("http://") || resolved.startsWith("https://")
     ? resolved
     : `https://${resolved}`;
 
   return withProtocol.replace(/\/+$/, "");
+}
+
+function toEnvSegment(value) {
+  return value
+    .replace(/[^a-z0-9]+/gi, "_")
+    .replace(/^_+|_+$/g, "")
+    .toUpperCase();
 }
 
 function resolveSiteUrl() {
@@ -36,13 +43,10 @@ function resolvePrimaryPackageSlug() {
 }
 
 function getPackageDocsUrl(slug, { docsMode, primaryPackageSlug, siteUrl, registrySiteUrl }) {
-  const envUrlMap = {
-    analytics: process.env.VITE_ANALYTICS_DOCS_URL,
-    "use-shortcut": process.env.VITE_USE_SHORTCUT_DOCS_URL,
-  };
+  const envUrl = process.env[`VITE_${toEnvSegment(slug)}_DOCS_URL`];
 
-  if (envUrlMap[slug]) {
-    return normalizeUrl(envUrlMap[slug]);
+  if (envUrl) {
+    return normalizeUrl(envUrl);
   }
 
   if (docsMode === "package" && slug === primaryPackageSlug) {

@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-03-04T18:13:25.884Z",
+  "generatedAt": "2026-03-14T23:54:52.245Z",
   "package": "@remcostoeten/use-shortcut",
   "sourceEntry": "src/index.ts",
-  "count": 36,
+  "count": 52,
   "items": [
     {
       "name": "ActionKey",
@@ -33,6 +33,22 @@
       "params": [],
       "returns": null,
       "examples": []
+    },
+    {
+      "name": "createShortcutGroup",
+      "kind": "function",
+      "source": {
+        "file": "src/hook.ts",
+        "line": 286,
+        "column": 1
+      },
+      "summary": "Creates an imperative group controller for many shortcut registrations.",
+      "signature": "(): ShortcutGroup",
+      "params": [],
+      "returns": "A `ShortcutGroup` that can add and unbind multiple shortcuts together",
+      "examples": [
+        "```ts\nconst group = createShortcutGroup()\ngroup.add($.mod.key(\"s\").on(onSave))\ngroup.add($.key(\"escape\").on(onClose))\ngroup.unbindAll()\n```"
+      ]
     },
     {
       "name": "detectPlatform",
@@ -125,7 +141,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 99,
+        "line": 166,
         "column": 1
       },
       "summary": "Options for shortcut handler registration",
@@ -139,7 +155,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 162,
+        "line": 229,
         "column": 1
       },
       "summary": "Chain state after calling `.key()` - ready to attach a handler",
@@ -213,7 +229,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 149,
+        "line": 216,
         "column": 1
       },
       "summary": "Chainable modifier builder with type-safe exhaustion\nEach modifier can only be used once in a chain",
@@ -403,11 +419,64 @@
       "examples": []
     },
     {
+      "name": "registerShortcutMap",
+      "kind": "function",
+      "source": {
+        "file": "src/hook.ts",
+        "line": 146,
+        "column": 1
+      },
+      "summary": "Registers an object-based shortcut map in one call and returns per-action handles.",
+      "signature": "<T extends ShortcutMap>(builder: ShortcutBuilder, shortcutMap: T): ShortcutMapResult<T>",
+      "params": [
+        {
+          "name": "builder",
+          "description": "- Builder returned by `useShortcut()`"
+        },
+        {
+          "name": "shortcutMap",
+          "description": "- Record of action ids to key bindings, handlers, and options"
+        }
+      ],
+      "returns": "A result map with one `ShortcutResult` per shortcut id",
+      "examples": [
+        "```ts\nconst $ = useShortcut()\nconst results = registerShortcutMap($, {\n  save: { keys: \"mod+s\", handler: onSave },\n  nav: { keys: [\"g\", \"d\"], handler: onGoDashboard },\n})\n```"
+      ]
+    },
+    {
+      "name": "ShortcutAttemptDebugEvent",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 131,
+        "column": 1
+      },
+      "summary": "Per-shortcut debug payload describing how one registered shortcut was evaluated.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutAttemptStatus",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 97,
+        "column": 1
+      },
+      "summary": "High-level match status for one shortcut attempt against the current keyboard input.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
       "name": "ShortcutBuilder",
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 194,
+        "line": 261,
         "column": 1
       },
       "summary": "The main shortcut builder interface returned by `useShortcut()`",
@@ -425,6 +494,104 @@
         "column": 1
       },
       "summary": "Conflict metadata emitted when two registered shortcuts overlap.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutDebugEvent",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 146,
+        "column": 1
+      },
+      "summary": "Global debug payload emitted for every processed keyboard event.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutDebugInput",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 119,
+        "column": 1
+      },
+      "summary": "Normalized view of the keyboard input that triggered debug processing.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutDebugOptions",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 152,
+        "column": 1
+      },
+      "summary": "Runtime debug configuration for console/debug-stream metadata.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutDebugStep",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 110,
+        "column": 1
+      },
+      "summary": "Debug metadata for one step in a combo or multi-step shortcut sequence.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutDebugToken",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 103,
+        "column": 1
+      },
+      "summary": "Debug metadata for one expected token in a shortcut step.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutDebugTokenStatus",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 100,
+        "column": 1
+      },
+      "summary": "Token-level verdict for modifiers and keys inside debug attempt payloads.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutGroup",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 330,
+        "column": 1
+      },
+      "summary": "Imperative grouping controller for binding/unbinding many shortcut registrations together.",
       "signature": null,
       "params": [],
       "returns": null,
@@ -450,11 +617,53 @@
       "examples": []
     },
     {
+      "name": "ShortcutMap",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 322,
+        "column": 1
+      },
+      "summary": "Bulk registration shape mapping action ids to key+handler definitions.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutMapEntry",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 315,
+        "column": 1
+      },
+      "summary": "Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutMapResult",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 325,
+        "column": 1
+      },
+      "summary": "Return type for map registrations, keyed by the same ids as the source map.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
       "name": "ShortcutRecordingOptions",
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 185,
+        "line": 252,
         "column": 1
       },
       "summary": "Options for `ShortcutBuilder.record()` and low-level recording flows.",
@@ -468,7 +677,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 126,
+        "line": 193,
         "column": 1
       },
       "summary": "Result object returned when registering a shortcut\nProvides control over the shortcut and display information",
@@ -555,11 +764,52 @@
       ]
     },
     {
+      "name": "useShortcutGroup",
+      "kind": "function",
+      "source": {
+        "file": "src/hook.ts",
+        "line": 324,
+        "column": 1
+      },
+      "summary": "React hook that returns a stable `ShortcutGroup` instance.",
+      "signature": "(): ShortcutGroup",
+      "params": [],
+      "returns": "A memoized `ShortcutGroup` tied to the component lifecycle",
+      "examples": [
+        "```ts\nconst group = useShortcutGroup()\n```"
+      ]
+    },
+    {
+      "name": "useShortcutMap",
+      "kind": "function",
+      "source": {
+        "file": "src/hook.ts",
+        "line": 239,
+        "column": 1
+      },
+      "summary": "React hook that registers a shortcut map and automatically unbinds on cleanup.",
+      "signature": "<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>",
+      "params": [
+        {
+          "name": "shortcutMap",
+          "description": "- Record of action ids to key bindings, handlers, and options"
+        },
+        {
+          "name": "options",
+          "description": "- Same options as `useShortcut()`"
+        }
+      ],
+      "returns": "A map of `ShortcutResult` keyed by your shortcut ids",
+      "examples": [
+        "```ts\nconst mapResults = useShortcutMap({\n  save: { keys: \"mod+s\", handler: onSave },\n  close: { keys: \"escape\", handler: onClose },\n})\n```"
+      ]
+    },
+    {
       "name": "UseShortcutOptions",
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 220,
+        "line": 289,
         "column": 1
       },
       "summary": "Options for the `useShortcut` hook",

@@ -5,12 +5,13 @@ import { PixelHeading } from "@/components/ui/pixel-heading";
 import { Navbar } from "@/components/showcase/Navbar";
 import { RegistryCard } from "@/components/showcase/RegistryCard";
 import { packages, registryItems } from "@/config/registry";
+import { REGISTRY_DESCRIPTION, REGISTRY_OWNER, REGISTRY_TITLE } from "@/config/site";
 
 export default function Index() {
   useEffect(() => {
     applySeoMeta({
-      title: "use-shortcut-registry",
-      description: "registry-landing-page-for-remco-stoeten-packages.",
+      title: REGISTRY_TITLE,
+      description: REGISTRY_DESCRIPTION,
       path: "/",
     });
   }, []);
@@ -22,18 +23,18 @@ export default function Index() {
 
   if (registryItems.length === 0) {
     return (
-      <main
-        id="main-content"
-        className="min-h-screen bg-background border-x border-border max-w-2xl mx-auto flex flex-col items-center justify-center p-8"
-      >
-        <Package className="h-12 w-12 text-muted-foreground/50 mb-4" />
-        <h2 className="text-xl font-bold tracking-tight mb-2">
-          no-tools-published-yet
-        </h2>
-        <p className="text-muted-foreground text-sm text-center max-w-[250px]">
-          there-are-currently-no-tools-available-in-the-registry.
-        </p>
-      </main>
+        <main
+          id="main-content"
+          className="min-h-screen bg-background border-x border-border max-w-2xl mx-auto flex flex-col items-center justify-center p-8"
+        >
+          <Package className="h-12 w-12 text-muted-foreground/50 mb-4" />
+          <h2 className="text-xl font-bold tracking-tight mb-2">
+          No tools published yet
+          </h2>
+          <p className="text-muted-foreground text-sm text-center max-w-[250px]">
+          There are currently no tools available in the registry.
+          </p>
+        </main>
     );
   }
 
@@ -69,13 +70,13 @@ export default function Index() {
                     [package registry]
                   </p>
                   <span className="font-mono text-tiny uppercase tracking-[0.24em] text-muted-foreground/55">
-                    @remcostoeten
+                    {REGISTRY_OWNER}
                   </span>
                   <span className="font-mono text-tiny uppercase tracking-[0.24em] text-muted-foreground/55">
-                    react packages
+                    packages, clis, extensions
                   </span>
                   <span className="font-mono text-tiny uppercase tracking-[0.24em] text-muted-foreground/45">
-                    {packages.length}-packages
+                    {packages.length} entries
                   </span>
                 </div>
                 <PixelHeading
@@ -87,15 +88,14 @@ export default function Index() {
                   initialFont="square"
                   className="mt-4 text-3xl font-bold lowercase tracking-tight text-foreground sm:text-4xl leading-[1.02]"
                 >
-                  @remcostoeten
+                  {REGISTRY_TITLE}
                 </PixelHeading>
                 <p className="mt-4 max-w-xl text-sm lowercase leading-relaxed text-muted-foreground">
-                  a curated set of react packages with real-world docs,
-                  examples, and copyable patterns.
+                  {REGISTRY_DESCRIPTION}
                 </p>
                 <p className="mt-2 max-w-xl text-xs lowercase leading-relaxed text-muted-foreground/80">
-                  pick a package to get install steps, api reference, and
-                  practical recipes.
+                  pick a tool to get install steps, docs, examples, helper
+                  files, and the right destination domain.
                 </p>
               </div>
             </div>
@@ -106,7 +106,7 @@ export default function Index() {
               <div className="flex items-end justify-between gap-4 border-b border-dashed border-border/70 pb-3">
                 <div />
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">
-                  docs-ready
+                  live entries
                 </p>
               </div>
               <div className="grid gap-4">
@@ -126,11 +126,11 @@ export default function Index() {
                     id="coming-next"
                     className="mt-1 text-sm font-medium lowercase text-foreground"
                   >
-                    reserved for the next tooling wave
+                    reserved for upcoming tools and products
                   </h2>
                 </div>
                 <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground/60">
-                  roadmap-visible
+                  roadmap
                 </p>
               </div>
               <div className="grid gap-4">

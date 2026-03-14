@@ -20,7 +20,7 @@ const useShortcutConfig: PackageConfig = {
   description: "a tiny react hook for keyboard shortcuts that feels fluent, stays fully typed, and scales from one save shortcut to full command palettes, sequences, and scoped app navigation.",
   heroSubcopy: "built for real product flows: save actions, editor shortcuts, layered scopes, and fast keyboard-first navigation.",
   heroTitle: "use-shortcut",
-  bundleSizeKb: 3,
+  bundleSizeKb: 5.4,
 
   author: {
     name: "Remco Stoeten",
@@ -45,12 +45,12 @@ const useShortcutConfig: PackageConfig = {
 
   why: {
     paragraphs: [
-      "chainable api, sequences, scopes, and conflict checks in ~3kb with zero dependencies.",
+      "chainable api, sequences, scopes, and conflict checks in about 5.4kb gzipped for a browser bundle importing `useShortcut`, with zero dependencies beyond react.",
     ],
   },
 
   features: [
-    { value: "~3kb", label: "zero dependencies", description: "only react as peer dep. tiny bundle." },
+    { value: "~5.4kb", label: "gzipped runtime", description: "measured browser bundle importing `useShortcut`; only react is a peer dep." },
     { value: "chain", label: "chainable api", description: "$.cmd.shift.key('s').on(() => save())" },
     { value: "ts", label: "perfect typescript", description: "intellisense at every step of the chain." },
     { value: "seq", label: "sequences & chords", description: "multi-step bindings like $.key('g').then('d')" },
@@ -541,19 +541,12 @@ $.key(savedShortcut).except("typing").on(() => toggleHelp())`,
       language: "tsx",
     },
     {
-      title: "install (cli)",
-      description: "Use these commands intentionally: install adds runtime only, init copies starter wiring, scaffold generates a fuller typed shortcut architecture.",
+      title: "install",
+      description: "The published package is runtime-only: install the hook and wire shortcuts directly in your app.",
       code: `npm install @remcostoeten/use-shortcut
 
-# installs the runtime package only (no files generated)
-
-# copy-paste starter (shadcn-style)
-npx @remcostoeten/use-shortcut init
-# adds starter files/config so you can register shortcuts quickly
-
-# scaffold full architecture
-npx @remcostoeten/use-shortcut scaffold
-# generates a larger typed setup (scopes/registry/modules)`,
+# installs the runtime package only
+# no cli binary or generated files are shipped`,
       language: "bash",
     },
   ],

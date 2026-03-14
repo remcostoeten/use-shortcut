@@ -93,7 +93,7 @@ export type ShortcutContextValue = {
     meta: ShortcutMeta
 }
 `,
-        "runtime.ts": `import type { ShortcutMap } from "@remcostoeten/use-shortcut"
+        "runtime.ts": `import type { HandlerOptions, ShortcutMap } from "@remcostoeten/use-shortcut"
 import { shortcutRegistry, type ShortcutActionId, type ShortcutBindings } from "./registry"
 import type { ShortcutHandlers } from "./types"
 
@@ -131,11 +131,15 @@ export function buildShortcutMap(bindings: ShortcutBindings, handlers: ShortcutH
             continue
         }
 
+        const definitionOptions: Partial<HandlerOptions> = ("options" in definition && definition.options)
+            ? definition.options
+            : {}
+
         map[actionId] = {
             keys: bindings[actionId],
             handler,
             options: {
-                ...definition.options,
+                ...definitionOptions,
                 scopes: definition.scopes,
                 description: definition.description,
             },
@@ -445,6 +449,16 @@ It follows a scalable architecture with a strict split between:
 2. Implement its handler in your app and pass it via \`handlers\` to \`<ShortcutProvider>\`.
 3. Optionally expose a user-configurable key in your settings UI through \`useShortcutManager().actions.setBinding\`.
 4. Activate scopes from feature boundaries (for example editor route enters \`editor\` scope).
+
+## Wiring A React App
+
+Scaffold the shortcut files into a React app shell:
+
+\`\`\`bash
+npx @remcostoeten/use-shortcut scaffold --framework react --target apps/shortcut-playground/src
+\`\`\`
+
+Then wire those generated files into your app root by wrapping your app in \`<ShortcutProvider handlers={...} />\`.
 
 ${_integrationSection}
 ## Rules For Scale

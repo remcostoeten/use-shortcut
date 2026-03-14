@@ -17,6 +17,16 @@ It follows a scalable architecture with a strict split between:
 3. Optionally expose a user-configurable key in your settings UI through `useShortcutManager().actions.setBinding`.
 4. Activate scopes from feature boundaries (for example editor route enters `editor` scope).
 
+## Wiring A React App
+
+Scaffold the shortcut files into a React app shell:
+
+```bash
+npx @remcostoeten/use-shortcut scaffold --framework react --target apps/shortcut-playground/src
+```
+
+Then wire those generated files into your app root by wrapping your app in `<ShortcutProvider handlers={...} />`.
+
 ## Next.js Integration
 
 1. Create a client provider wrapper at `app/shortcut-provider.tsx` and render `<ShortcutProvider />` there.

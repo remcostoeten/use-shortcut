@@ -1,36 +1,32 @@
-import type { PackageConfig, RegistryItem } from "./types";
-import useShortcutConfig from "./packages/use-shortcut";
-import { analyticsConfig } from "./packages/analytics";
-import vscodeCodeRefineryConfig from "./packages/vscode-code-refinery";
-import {
-  getPackageDocsUrl,
-  getPackagePath,
-  isCurrentSiteUrl,
-} from "./site";
+import type {
+  PackageConfig,
+  RegistryBuildOptions,
+  RegistryItem,
+} from "../types";
 
-export const packages: PackageConfig[] = [
-  useShortcutConfig,
-  analyticsConfig,
-  vscodeCodeRefineryConfig,
-];
+function getRegistryLabel(pkg: PackageConfig) {
+  if (pkg.kind === "extension") return "editor-extension";
+  if (pkg.kind === "cli") return "command-line-tooling";
+  return "react-package";
+}
 
-export const registryItems: RegistryItem[] = [
-  ...packages.map((pkg) => {
-    const docsUrl = getPackageDocsUrl(pkg.slug);
+export function createRegistryItems(
+  packages: PackageConfig[],
+  options: RegistryBuildOptions,
+): RegistryItem[] {
+  return packages.map((pkg) => {
+    const docsUrl = options.getPackageDocsUrl(pkg.slug);
 
     return {
       id: pkg.slug,
       title: pkg.installName || pkg.packageName,
       description: pkg.description,
       kind: pkg.kind ?? "package",
-      status: "live" as const,
-      label:
-        pkg.kind === "extension"
-          ? "editor-extension"
-          : pkg.kind === "cli"
-            ? "command-line-tooling"
-            : "react-package",
-      href: isCurrentSiteUrl(docsUrl) ? getPackagePath(pkg.slug) : docsUrl,
+      status: "live",
+      label: getRegistryLabel(pkg),
+      href: options.isCurrentSiteUrl(docsUrl)
+        ? options.getPackagePath(pkg.slug)
+        : docsUrl,
       docsUrl,
       githubUrl: pkg.links.github,
       npmPackageName:
@@ -39,7 +35,10 @@ export const registryItems: RegistryItem[] = [
           : undefined,
       tagline: pkg.tagline,
     };
-  }),
+  });
+}
+
+export const upcomingRegistryItems: RegistryItem[] = [
   {
     id: "tooling-clis",
     title: "tooling-clis",
@@ -63,7 +62,3 @@ export const registryItems: RegistryItem[] = [
     tagline: "upcoming",
   },
 ];
-
-export function getPackageBySlug(slug: string): PackageConfig | undefined {
-  return packages.find((entry) => entry.slug === slug);
-}

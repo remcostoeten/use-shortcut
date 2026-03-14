@@ -1,12 +1,16 @@
-# use-shortcut docs
+# registry docs app
 
-Docs site for [`@remcostoeten/use-shortcut`](https://www.npmjs.com/package/@remcostoeten/use-shortcut).
+Registry shell for Remco Stoeten tools. It powers:
 
-Live docs:
-- https://use-shortcut.vercel.app/use-shortcut
+- the base registry landing page
+- per-entry docs routes inside the registry
+- package-mode deployments on their own domains
 
-Repository:
-- https://github.com/remcostoeten/use-shortcut
+Examples:
+- `registry.remcostoeten.nl`
+- `use-shortcut.vercel.app`
+- `use-shortcut.remcostoeten.nl`
+- `analytics.remcostoeten.nl`
 
 ## Local development
 
@@ -27,26 +31,46 @@ bun run test
 
 ## What is in this repo
 
-- marketing and docs site for `use-shortcut`
+- registry landing page for packages, CLIs, and extensions
+- reusable package/tool showcase route powered by config files
+- transitional root-level `registry/` layer for entries and shared types
 - copy-ready API examples and component recipes
 - grounded docs assistant powered by local docs content
-- machine-readable helper files like `llm.txt` and `skill.sh`
+- machine-readable helper files like `llm.txt`, `agents.md`, and `skill.sh`
 
-## Skills and helper files
+## How routing works
 
-- `public/skill.sh` exposes the `skills.sh` install command
-- `public/llm.txt` gives LLMs package-specific implementation guidance
-- `skills/use-shortcut/SKILL.md` contains the local agent skill
+- `VITE_DOCS_MODE=registry` renders `/` as the registry and `/:slug` as entry pages.
+- `VITE_DOCS_MODE=package` renders a single entry at `/` and redirects stray slugs.
+- Per-entry external docs domains are configured through env vars named like `VITE_USE_SHORTCUT_DOCS_URL`.
 
-## Site URL
+## Current architecture
 
-The docs site URL defaults to `https://use-shortcut.vercel.app`.
+- `registry/entries/*` is the new neutral layer for package and tool entries.
+- `apps/docs/src/config/registry.ts` consumes that layer and builds site-aware links.
+- `apps/docs/src/config/types.ts` re-exports the shared registry types for compatibility while the UI is still being migrated.
 
-If you deploy this elsewhere, set:
+## Environment
 
 ```bash
-VITE_SITE_URL=https://your-domain.example
-SITE_URL=https://your-domain.example
+VITE_DOCS_MODE=registry
+VITE_SITE_URL=https://registry.remcostoeten.nl
+VITE_REGISTRY_SITE_URL=https://registry.remcostoeten.nl
+VITE_REGISTRY_TITLE=@remcostoeten-registry
+VITE_REGISTRY_OWNER=@remcostoeten
+
+VITE_USE_SHORTCUT_DOCS_URL=https://use-shortcut.remcostoeten.nl
+VITE_ANALYTICS_DOCS_URL=https://analytics.remcostoeten.nl
+VITE_VSCODE_CODE_REFINERY_DOCS_URL=https://vscode-code-refinery.remcostoeten.nl
+```
+
+The slug-to-domain mapping follows `VITE_<SLUG>_DOCS_URL`, so adding a new entry does not require editing `site.ts`.
+If you need package-mode for a dedicated domain, also set:
+
+```bash
+VITE_DOCS_MODE=package
+VITE_PRIMARY_PACKAGE_SLUG=use-shortcut
+VITE_SITE_URL=https://use-shortcut.remcostoeten.nl
 ```
 
 `VITE_SITE_URL` is used by the app runtime. `SITE_URL` is also read by the sitemap generation script.

@@ -1,4 +1,4 @@
-import type { ShortcutMap } from "@remcostoeten/use-shortcut"
+import type { HandlerOptions, ShortcutMap } from "@remcostoeten/use-shortcut"
 import { shortcutRegistry, type ShortcutActionId, type ShortcutBindings } from "./registry"
 import type { ShortcutHandlers } from "./types"
 
@@ -36,11 +36,15 @@ export function buildShortcutMap(bindings: ShortcutBindings, handlers: ShortcutH
             continue
         }
 
+        const definitionOptions: Partial<HandlerOptions> = ("options" in definition && definition.options)
+            ? definition.options
+            : {}
+
         map[actionId] = {
             keys: bindings[actionId],
             handler,
             options: {
-                ...definition.options,
+                ...definitionOptions,
                 scopes: definition.scopes,
                 description: definition.description,
             },

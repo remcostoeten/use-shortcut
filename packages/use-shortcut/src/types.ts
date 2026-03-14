@@ -93,16 +93,20 @@ export type ShortcutConflict = {
     reason: "exact" | "sequence-prefix"
 }
 
+/** High-level match status for one shortcut attempt against the current keyboard input. */
 export type ShortcutAttemptStatus = "matched" | "partial" | "wrong-order" | "mismatch"
 
+/** Token-level verdict for modifiers and keys inside debug attempt payloads. */
 export type ShortcutDebugTokenStatus = "match" | "wrong-order" | "mismatch"
 
+/** Debug metadata for one expected token in a shortcut step. */
 export type ShortcutDebugToken = {
     token: string
     kind: "modifier" | "key"
     status: ShortcutDebugTokenStatus
 }
 
+/** Debug metadata for one step in a combo or multi-step shortcut sequence. */
 export type ShortcutDebugStep = {
     index: number
     expected: string
@@ -111,6 +115,7 @@ export type ShortcutDebugStep = {
     tokens: ShortcutDebugToken[]
 }
 
+/** Normalized view of the keyboard input that triggered debug processing. */
 export type ShortcutDebugInput = {
     key: string
     code: string
@@ -122,6 +127,7 @@ export type ShortcutDebugInput = {
     modifiers: ModifierState
 }
 
+/** Per-shortcut debug payload describing how one registered shortcut was evaluated. */
 export type ShortcutAttemptDebugEvent = {
     combo: string
     display: string
@@ -136,11 +142,13 @@ export type ShortcutAttemptDebugEvent = {
     steps: ShortcutDebugStep[]
 }
 
+/** Global debug payload emitted for every processed keyboard event. */
 export type ShortcutDebugEvent = {
     input: ShortcutDebugInput
     attempts: ShortcutAttemptDebugEvent[]
 }
 
+/** Runtime debug configuration for console/debug-stream metadata. */
 export type ShortcutDebugOptions = {
     /** Log shortcut attempts to the console (default: true) */
     console?: boolean

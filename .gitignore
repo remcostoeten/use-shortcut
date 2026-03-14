@@ -2,6 +2,9 @@ node_modules/
 dist/
 package-lock.json
 .turbo/
+.codex-tmp/
+/packages/use-shortcut/cli/src/shortcuts/*.js
+/src/shortcuts/
 
 .vercel
 .env*.local

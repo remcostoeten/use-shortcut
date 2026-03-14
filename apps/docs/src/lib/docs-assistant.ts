@@ -380,6 +380,13 @@ function scoreEntry(entry: DocsKnowledgeEntry, query: string) {
     score += 18;
   }
 
+  if (
+    entry.id === "guide:install"
+    && tokens.some((token) => token === "install" || token === "setup" || token === "start")
+  ) {
+    score += 40;
+  }
+
   if (entry.kind === "prop" && tokens.some((token) => token === "prop" || token === "option")) {
     score += 12;
   }

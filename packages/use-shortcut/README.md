@@ -1,48 +1,78 @@
 # @remcostoeten/use-shortcut
 
-WIP keyboard shortcut library for React with a chainable API.
+Tiny, chainable keyboard shortcuts for React and Next.js.
 
-## Status
+The package keeps the fluent `useShortcut()` API, but it is now documented as explicit entrypoints so consumers can choose the narrowest surface that fits their use case.
 
-- Focus right now: runtime architecture and DX refinement
-- Documentation scope: feature/status overview only (full API docs will be expanded later)
+## Entrypoints
 
-## Implemented Features
+- `@remcostoeten/use-shortcut`
+  Full compatibility barrel.
+- `@remcostoeten/use-shortcut/react`
+  Recommended React entrypoint.
+- `@remcostoeten/use-shortcut/parser`
+  Parser and matcher utilities.
+- `@remcostoeten/use-shortcut/formatter`
+  Display formatting utilities such as `formatShortcut()` and `getModifierSymbols()`.
+- `@remcostoeten/use-shortcut/constants`
+  Platform and normalization constants.
+
+This package is for React and Next.js apps. If you are building on that stack, prefer `@remcostoeten/use-shortcut/react`.
+
+## Size
+
+Measured in this package on March 12, 2026:
+
+- root published ESM build: about `16.5 kB` minified
+- app bundle for `useShortcut` only: about `13.8 kB` minified
+- gzip for the React hook path: about `5.3 kB`
+
+That means the runtime is already small in practice. The entrypoint split mainly prevents accidental convenience-barrel imports and makes the architecture explicit.
+
+## React API
+
+The public runtime API is React-only. Parser, formatter, and constants exports are supporting utilities inside the same React/Next.js package, not a separate framework-agnostic runtime.
+
+```tsx
+import { useShortcut } from "@remcostoeten/use-shortcut/react"
+
+function App() {
+  const $ = useShortcut()
+
+  $.mod.key("k").on(() => openPalette(), { preventDefault: true })
+  $.key("escape").on(() => closePalette())
+
+  return <div>Press Cmd/Ctrl+K</div>
+}
+```
+
+Main React exports:
+
+- `useShortcut(options?)`
+- `useShortcutMap(shortcutMap, options?)`
+- `registerShortcutMap(builder, shortcutMap)`
+- `createShortcutGroup()`
+- `useShortcutGroup()`
+
+## Features
 
 - Chainable shortcut builder: `$.mod.key("k").on(handler)`
 - Bulk shortcut maps: `useShortcutMap()` and `registerShortcutMap()`
 - Modifier support: `ctrl`, `shift`, `alt`, `cmd`, `mod`
 - Sequence support: `$.key("g").then("d")`
-- Scope-aware shortcuts:
-  - Register with `.in("editor")`
-  - Runtime controls: `setScopes`, `enableScope`, `disableScope`, `getScopes`, `isScopeActive`
-- Exception predicates/presets with `.except(...)`
-- Recording mode: `$.record({ timeoutMs })`
-- Structured debug stream: `$.onDebug(...)` for every keypress
-- Per-shortcut attempt inspection: `result.onAttempt((matched, event, details) => ...)`
-- Conflict detection (`exact`, `sequence-prefix`)
+- Scope-aware shortcuts with `.in(...)`, `setScopes`, `enableScope`, `disableScope`
+- Exception predicates and presets with `.except(...)`
+- Recording mode with `$.record({ timeoutMs })`
+- Structured debug stream with `$.onDebug(...)`
+- Per-shortcut attempt inspection with `result.onAttempt(...)`
+- Conflict detection for exact and sequence-prefix overlaps
 - Priority ordering and `stopOnMatch`
 - Global guard/filter support via `eventFilter`
-- React entry point:
-  - `useShortcut`
-  - `useShortcutMap`
-  - `useShortcutGroup`
-
-## API Intention (Consumer-Facing)
-
-- `useShortcut(options?)`
-  - Main React hook. Use this for the chainable API (`$.mod.key("s").on(...)`).
-- `useShortcutMap(shortcutMap, options?)`
-  - React-safe bulk registration for render paths where a declarative object is cleaner than multiple `.on()` calls.
-- `registerShortcutMap(builder, shortcutMap)`
-  - Imperative bulk registration helper when you already have a `useShortcut()` builder.
-
-Internal helpers follow underscore naming (for example `_createShortcutBuilder`, `_canonicalizeParsed`) and are not re-exported from `src/index.ts`.
 
 ## Shortcut Map Example
 
 ```tsx
-import { useShortcutMap } from "@remcostoeten/use-shortcut"
+import { useShortcutMap } from "@remcostoeten/use-shortcut/react"
 
 function App() {
   useShortcutMap(
@@ -68,11 +98,11 @@ function App() {
 }
 ```
 
-If you already have a builder from `useShortcut()`, you can bulk register with `registerShortcutMap($, shortcutMap)` and unbind the returned handles on cleanup.
-
 ## Debug Example
 
 ```tsx
+import { useShortcut } from "@remcostoeten/use-shortcut/react"
+
 const $ = useShortcut({
   debug: {
     console: true,
@@ -82,7 +112,7 @@ const $ = useShortcut({
   },
 })
 
-const unsubscribeDebug = $.onDebug((event) => {
+const removeDebug = $.onDebug((event) => {
   console.log("key", event.input.combo, event.attempts)
 })
 
@@ -90,18 +120,27 @@ const result = $.shift.key("e").then("e").on(runProbe, {
   description: "sequence probe",
 })
 
-const unsubscribeAttempt = result.onAttempt?.((matched, _event, details) => {
+const removeAttempt = result.onAttempt?.((matched, _event, details) => {
   console.log(matched ? "matched" : details?.status, details?.steps)
 })
 ```
 
-## Architecture Notes
+## Architecture
 
-- Core runtime lives in `src/builder.ts`
-- Parsing/formatting are isolated in `src/parser.ts` and `src/formatter.ts`
-- React bindings and map helpers live in `src/hook.ts`
-- Type contracts live in `src/types.ts`
-- CLI scaffold/copy commands live under `cli/`
+- `src/builder.ts`
+  Chainable builder runtime and registration plumbing.
+- `src/runtime/*`
+  Listener attachment, matching, conflicts, guards, recording, and debug internals.
+- `src/hook.ts`
+  React integration and bulk registration helpers.
+- `src/react.ts`
+  Narrow React entrypoint for hook consumers.
+- `src/parser.ts`, `src/formatter.ts`, `src/constants.ts`
+  Standalone utility entrypoints.
+- `src/index.ts`
+  Full compatibility barrel.
+
+The API design keeps the fluent React path front-and-center while still exposing low-level parser and formatter utilities when needed.
 
 ## Development
 

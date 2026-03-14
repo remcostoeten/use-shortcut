@@ -5,12 +5,13 @@ description: React hook for typed keyboard shortcuts - use when adding keyboard 
 
 # use-shortcut
 
-A chainable, type-safe keyboard shortcuts hook for React (~3kb, zero dependencies).
+A chainable, type-safe keyboard shortcuts hook for React and Next.js (~5.4kb gzipped runtime for `useShortcut`, zero dependencies beyond React).
 
 ## When to Use
 
 Use this skill when the user wants to:
 - Add keyboard shortcuts to a React application
+- Add keyboard shortcuts to a Next.js application
 - Create keyboard-driven interfaces (command palettes, keyboard navigation)
 - Build accessible apps with keyboard support
 - Handle complex shortcut combinations (chords, sequences)
@@ -21,16 +22,10 @@ Use this skill when the user wants to:
 npm install @remcostoeten/use-shortcut
 ```
 
-Optional CLI tools:
-```bash
-npx @remcostoeten/use-shortcut init   # Copy starter files
-npx @remcostoeten/use-shortcut scaffold  # Generate full typed architecture
-```
-
 ## Quick Start
 
 ```tsx
-import { useShortcut } from "@remcostoeten/use-shortcut"
+import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 function App() {
   const $ = useShortcut()
@@ -41,6 +36,8 @@ function App() {
   return <div>Press Cmd+S or Esc</div>
 }
 ```
+
+The public runtime API is React-only. Treat parser/formatter/constants as supporting utilities within the same React/Next.js package, not a separate framework-agnostic runtime.
 
 ## Chainable API
 

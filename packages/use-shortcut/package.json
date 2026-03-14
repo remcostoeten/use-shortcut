@@ -1,7 +1,7 @@
 {
     "name": "@remcostoeten/use-shortcut",
-    "version": "2.1.0",
-    "description": "Beautiful, intuitive, chainable syntax for executing keyboard shortcuts in React and Next.js with perfect TypeScript IntelliSense.",
+    "version": "2.2.0",
+    "description": "Tiny, chainable React keyboard shortcuts with sequences, scopes, and typed debug hooks.",
     "author": "Remco Stoeten",
     "license": "MIT",
     "homepage": "https://github.com/remcostoeten/use-shortcut#readme",
@@ -23,9 +23,6 @@
         "chainable"
     ],
     "sideEffects": false,
-    "bin": {
-        "use-shortcut": "dist/cli/index.mjs"
-    },
     "main": "./dist/index.js",
     "module": "./dist/index.mjs",
     "types": "./dist/index.d.ts",
@@ -38,6 +35,46 @@
             "require": {
                 "types": "./dist/index.d.ts",
                 "default": "./dist/index.js"
+            }
+        },
+        "./react": {
+            "import": {
+                "types": "./dist/react.d.ts",
+                "default": "./dist/react.mjs"
+            },
+            "require": {
+                "types": "./dist/react.d.ts",
+                "default": "./dist/react.js"
+            }
+        },
+        "./parser": {
+            "import": {
+                "types": "./dist/parser.d.ts",
+                "default": "./dist/parser.mjs"
+            },
+            "require": {
+                "types": "./dist/parser.d.ts",
+                "default": "./dist/parser.js"
+            }
+        },
+        "./formatter": {
+            "import": {
+                "types": "./dist/formatter.d.ts",
+                "default": "./dist/formatter.mjs"
+            },
+            "require": {
+                "types": "./dist/formatter.d.ts",
+                "default": "./dist/formatter.js"
+            }
+        },
+        "./constants": {
+            "import": {
+                "types": "./dist/constants.d.ts",
+                "default": "./dist/constants.mjs"
+            },
+            "require": {
+                "types": "./dist/constants.d.ts",
+                "default": "./dist/constants.js"
             }
         }
     },
@@ -56,9 +93,13 @@
         "build": "tsup && node scripts/prune-dist.mjs",
         "dev": "tsup --watch",
         "test": "vitest run --environment jsdom",
+        "test:watch": "vitest --environment jsdom",
+        "test:entrypoints": "vitest run --environment jsdom src/__tests__/entrypoints.test.ts",
+        "test:features": "vitest run --environment jsdom src/__tests__/features.test.ts",
         "typecheck": "tsc --noEmit",
         "docs:api": "node scripts/generate-api-reference.mjs",
         "docs:check": "bun run docs:api && node scripts/docs-check.mjs",
+        "verify": "bun run typecheck && bun run test && bun run build && bun run docs:check",
         "clean": "rm -rf dist",
         "prepublishOnly": "npm run build"
     },

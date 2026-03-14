@@ -1,15 +1,24 @@
-# use-shortcut
+# use-shortcut + registry workspace
 
 [![npm version](https://badge.fury.io/js/%40remcostoeten%2Fuse-shortcut.svg)](https://badge.fury.io/js/%40remcostoeten%2Fuse-shortcut)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)](https://reactjs.org/)
 
-Typed React keyboard shortcuts with combos, sequences, scopes, parser utilities, and shortcut recording.
+Typed React keyboard shortcuts with combos, sequences, scopes, parser utilities, and shortcut recording, plus a registry/docs app for publishing tools on shared or dedicated domains.
 
 **Live Demo**: [use-shortcut.vercel.app](https://use-shortcut.vercel.app)
 
 **Documentation**: [use-shortcut.vercel.app/use-shortcut](https://use-shortcut.vercel.app/use-shortcut)
+
+## Registry Direction
+
+This repository is evolving into a personal tool registry:
+
+- a base registry site for all public tools
+- a reusable registry framework driven by per-entry config
+- optional dedicated domains per tool such as `use-shortcut.remcostoeten.nl`
+- entry pages that can showcase npm packages, CLIs, VS Code extensions, and helper files such as `skills.sh` or `agents.md`
 
 ## Features
 
@@ -62,8 +71,9 @@ Visit [use-shortcut.vercel.app](https://use-shortcut.vercel.app) for:
 
 Monorepo structure for development:
 
+- `registry`: neutral registry entry layer and shared registry types
 - `packages/use-shortcut`: Core library source, tests, and package metadata
-- `apps/docs`: Documentation, demos, examples, and marketing site
+- `apps/docs`: Registry shell plus entry-specific docs, demos, and marketing pages
 - `skills/use-shortcut`: Local agent skill for this repository
 
 ## Development

@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://use-shortcut.vercel.app/</loc>
+    <loc>https://registry.remcostoeten.nl/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://use-shortcut.vercel.app/analytics</loc>
+    <loc>https://registry.remcostoeten.nl/analytics</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://use-shortcut.vercel.app/use-shortcut</loc>
+    <loc>https://registry.remcostoeten.nl/use-shortcut</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://use-shortcut.vercel.app/vscode-code-refinery</loc>
+    <loc>https://registry.remcostoeten.nl/vscode-code-refinery</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

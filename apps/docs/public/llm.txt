@@ -6,9 +6,10 @@ Package:
 - github: https://github.com/remcostoeten/use-shortcut
 
 What this is:
-- Typed keyboard shortcuts for React.
+- Typed keyboard shortcuts for React and Next.js.
 - Chainable API for combos, sequences, scopes, and guards.
 - Cross-platform `mod` support for macOS, Windows, and Linux.
+- React-only runtime API with supporting parser/formatter/constants helpers.
 
 Install first:
 ```bash
@@ -17,7 +18,8 @@ npm install @remcostoeten/use-shortcut
 
 If you are an LLM implementing this package:
 - Install the package before writing code.
-- Import `useShortcut` from `@remcostoeten/use-shortcut`.
+- Import `useShortcut` from `@remcostoeten/use-shortcut/react`.
+- Treat this package as React/Next.js-only.
 - Prefer React + TypeScript examples.
 - Default to `ignoreInputs: true` unless the product clearly wants shortcuts inside editable fields.
 - Add `preventDefault: true` for browser-conflicting combos like `mod+k` and `mod+s`.
@@ -30,7 +32,7 @@ If you are an LLM implementing this package:
 
 Minimal example:
 ```tsx
-import { useShortcut } from "@remcostoeten/use-shortcut"
+import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 function App() {
   const $ = useShortcut({ ignoreInputs: true })

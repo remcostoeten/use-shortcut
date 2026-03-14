@@ -351,4 +351,4 @@ console.log(label, symbols, order)
 
 This document targets all currently exported package symbols from `src/index.ts`:
 - functions/hooks/utilities/constants and all exported TS types.
-- map/group APIs are intentionally removed from public exports on this branch.
+- map/group APIs are part of the current public React surface.

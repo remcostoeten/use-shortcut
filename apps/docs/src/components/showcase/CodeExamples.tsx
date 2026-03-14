@@ -290,75 +290,6 @@ function SequenceTester() {
   );
 }
 
-function CliShowcase() {
-  const items = [
-    {
-      command: "npm install @remcostoeten/use-shortcut",
-      label: "runtime only",
-      summary: "adds the package to dependencies. no app files generated.",
-      output: [
-        "package.json updated",
-        "lockfile updated",
-        "you wire shortcuts yourself",
-      ],
-    },
-    {
-      command: "npx @remcostoeten/use-shortcut init",
-      label: "starter wiring",
-      summary: "drops in the first layer of files so you can register shortcuts quickly.",
-      output: [
-        "shortcut config file",
-        "starter registry/hooks",
-        "minimal app-shell wiring",
-      ],
-    },
-    {
-      command: "npx @remcostoeten/use-shortcut scaffold",
-      label: "full setup",
-      summary: "generates a larger typed structure for scopes, modules, and app-wide bindings.",
-      output: [
-        "scopes + registry structure",
-        "feature/module examples",
-        "kitchen-sink style architecture",
-      ],
-    },
-  ];
-
-  return (
-    <div className="mt-3 border border-dashed border-border bg-card/30 p-3">
-      <div className="mb-3">
-        <p className="font-mono text-[11px] lowercase text-primary">what you get</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          the cli commands do different amounts of setup. this is the practical difference.
-        </p>
-      </div>
-
-      <div className="grid gap-3">
-        {items.map((item) => (
-          <div key={item.command} className="border border-border bg-background p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <code className="font-mono text-[11px] text-foreground">{item.command}</code>
-              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">
-                {item.label}
-              </span>
-            </div>
-            <p className="mt-2 text-xs lowercase leading-relaxed text-muted-foreground">
-              {item.summary}
-            </p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-3">
-              {item.output.map((line) => (
-                <div key={`${item.command}-${line}`} className="border border-dashed border-border px-2.5 py-2">
-                  <p className="text-xs lowercase text-foreground">{line}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function ExampleDetails({
   id,
   summary,
@@ -443,7 +374,6 @@ export function CodeExamples({ examples = defaultExamples, uiUseCases = [] }: Co
                   </ExampleDetails>
                 ) : null}
                 {normalize(ex.title) === "sequences & chords" ? <SequenceTester /> : null}
-                {normalize(ex.title) === "install (cli)" ? <CliShowcase /> : null}
               </>
             );
           })()}

@@ -1,4 +1,4 @@
-import { PACKAGE_OG_IMAGE_URL, toCanonicalUrl } from "@/config/site";
+import { PACKAGE_OG_IMAGE_URL, REGISTRY_TITLE, toCanonicalUrl } from "@/config/site";
 
 type SeoMeta = {
   title: string;
@@ -9,7 +9,7 @@ type SeoMeta = {
   noIndex?: boolean;
 };
 
-const DEFAULT_TITLE = "use-shortcut docs";
+const DEFAULT_TITLE = REGISTRY_TITLE;
 const DEFAULT_IMAGE = PACKAGE_OG_IMAGE_URL;
 
 function sanitizeTitle(rawTitle: string) {

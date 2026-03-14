@@ -1,14 +1,15 @@
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { applySeoMeta } from "@/lib/seo";
+import { REGISTRY_TITLE } from "@/config/site";
 
 const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
     applySeoMeta({
-      title: "404 | use-shortcut-docs",
-      description: "the-page-you-requested-could-not-be-found.",
+      title: `404 | ${REGISTRY_TITLE}`,
+      description: "The page you requested could not be found.",
       path: location.pathname,
       noIndex: true,
     });
@@ -19,9 +20,9 @@ const NotFound = () => {
     <main id="main-content" className="flex min-h-screen items-center justify-center bg-muted">
       <div className="text-center">
         <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">oops-page-not-found</p>
+        <p className="mb-4 text-xl text-muted-foreground">Page not found.</p>
         <Link to="/" className="text-primary underline hover:text-primary/90">
-          return-to-home
+          Back to registry
         </Link>
       </div>
     </main>
