@@ -13,6 +13,7 @@ import type {
 export type BuilderState = {
     modifiers: Partial<ModifierFlags>
     steps: string[]
+    boundCombos?: string[]
     options: UseShortcutOptions
     except?: ExceptPreset | ExceptPreset[] | ExceptPredicate
     scopes?: ShortcutScope

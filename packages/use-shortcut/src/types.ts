@@ -231,6 +231,8 @@ export type KeyChain<Key extends string> = {
     on: (handler: ShortcutHandler, options?: HandlerOptions) => ShortcutResult
     /** Attach a handler with inline options */
     handle: (options: HandlerOptions & { handler: ShortcutHandler }) => ShortcutResult
+    /** Bind a combo string mid-chain */
+    bind: (combo: string | string[]) => KeyChain<any>
     /** Add exception conditions before attaching handler */
     except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => KeyChainWithExcept<Key>
     /** Add required named scopes */
@@ -244,6 +246,8 @@ export type KeyChain<Key extends string> = {
  */
 export type KeyChainWithExcept<Key extends string> = {
     on: (handler: ShortcutHandler, options?: Omit<HandlerOptions, "except">) => ShortcutResult
+    /** Bind a combo string mid-chain */
+    bind: (combo: string | string[]) => KeyChainWithExcept<Key>
     in: (scopes: ShortcutScope) => KeyChainWithExcept<Key>
     then: <K extends ActionKey | string>(key: K) => KeyChainWithExcept<`${Key} ${K}`>
 }
@@ -265,6 +269,8 @@ export type ShortcutBuilder = ModifierChain<EmptyModifiers> & {
     cmd: ModifierChain<{ cmd: true }>
     mod: ModifierChain<{ cmd: true }>
     key: <K extends ActionKey>(key: K) => KeyChain<K>
+    /** Bind a pre-defined combo string */
+    bind: (combo: string | string[]) => KeyChain<any>
     /** Set required scopes for upcoming chain calls */
     in: (scopes: ShortcutScope) => ShortcutBuilder
     /** Update active scopes at runtime */

@@ -306,7 +306,7 @@ High-level match status for one shortcut attempt against the current keyboard in
 ## ShortcutBuilder
 
 - Kind: `type`
-- Source: `src/types.ts:261:1`
+- Source: `src/types.ts:265:1`
 
 The main shortcut builder interface returned by `useShortcut()`
 
@@ -362,7 +362,7 @@ Token-level verdict for modifiers and keys inside debug attempt payloads.
 ## ShortcutGroup
 
 - Kind: `type`
-- Source: `src/types.ts:330:1`
+- Source: `src/types.ts:336:1`
 
 Imperative grouping controller for binding/unbinding many shortcut registrations together.
 
@@ -379,28 +379,28 @@ Parameters:
 ## ShortcutMap
 
 - Kind: `type`
-- Source: `src/types.ts:322:1`
+- Source: `src/types.ts:328:1`
 
 Bulk registration shape mapping action ids to key+handler definitions.
 
 ## ShortcutMapEntry
 
 - Kind: `type`
-- Source: `src/types.ts:315:1`
+- Source: `src/types.ts:321:1`
 
 Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.
 
 ## ShortcutMapResult
 
 - Kind: `type`
-- Source: `src/types.ts:325:1`
+- Source: `src/types.ts:331:1`
 
 Return type for map registrations, keyed by the same ids as the source map.
 
 ## ShortcutRecordingOptions
 
 - Kind: `type`
-- Source: `src/types.ts:252:1`
+- Source: `src/types.ts:256:1`
 
 Options for `ShortcutBuilder.record()` and low-level recording flows.
 
@@ -508,7 +508,7 @@ const mapResults = useShortcutMap({
 ## UseShortcutOptions
 
 - Kind: `type`
-- Source: `src/types.ts:289:1`
+- Source: `src/types.ts:295:1`
 
 Options for the `useShortcut` hook
 

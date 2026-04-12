@@ -40,6 +40,7 @@ function App() {
   const $ = useShortcut()
 
   $.mod.key("k").on(() => openPalette(), { preventDefault: true })
+  $.bind("mod+p").on(() => openProjects())
   $.key("escape").on(() => closePalette())
 
   return <div>Press Cmd/Ctrl+K</div>
@@ -54,9 +55,49 @@ Main React exports:
 - `createShortcutGroup()`
 - `useShortcutGroup()`
 
+## Bound combo example
+
+Use `.bind()` when your shortcuts already exist as strings in config or user
+settings.
+
+```tsx
+import { useShortcut } from "@remcostoeten/use-shortcut/react"
+
+const appShortcuts = {
+  openCommandPalette: {
+    combo: "mod+k",
+    description: "Open command palette",
+  },
+  closeDialog: {
+    combo: ["escape", "mod+d"],
+    description: "Close dialog",
+  },
+}
+
+function App() {
+  const $ = useShortcut()
+
+  $.bind(appShortcuts.openCommandPalette.combo).on(() => {
+    openPalette()
+  }, {
+    description: appShortcuts.openCommandPalette.description,
+    preventDefault: true,
+  })
+
+  $.bind(appShortcuts.closeDialog.combo).on(() => {
+    closeDialog()
+  }, {
+    description: appShortcuts.closeDialog.description,
+  })
+
+  return <div>Shortcuts ready</div>
+}
+```
+
 ## Features
 
 - Chainable shortcut builder: `$.mod.key("k").on(handler)`
+- Pre-bound combos with `$.bind("mod+k").on(handler)`
 - Bulk shortcut maps: `useShortcutMap()` and `registerShortcutMap()`
 - Modifier support: `ctrl`, `shift`, `alt`, `cmd`, `mod`
 - Sequence support: `$.key("g").then("d")`

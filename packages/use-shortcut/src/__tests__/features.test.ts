@@ -115,6 +115,29 @@ describe("advanced shortcut features", () => {
         expect(handler).toHaveBeenCalledTimes(1)
     })
 
+    it("bind: works with single combo string", () => {
+        const $ = createTestShortcut({ ignoreInputs: false })
+        const handler = vi.fn()
+
+        $.bind("mod+k").on(handler)
+
+        dispatchKey("k", { ctrlKey: true })
+
+        expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it("bind: works with array of combos", () => {
+        const $ = createTestShortcut({ ignoreInputs: false })
+        const handler = vi.fn()
+
+        $.bind(["mod+k", "mod+p"]).on(handler)
+
+        dispatchKey("k", { ctrlKey: true })
+        dispatchKey("p", { ctrlKey: true })
+
+        expect(handler).toHaveBeenCalledTimes(2)
+    })
+
     it("respects priority and stopOnMatch for overlapping combos", () => {
         const $ = createTestShortcut({ ignoreInputs: false })
         const primary = vi.fn()

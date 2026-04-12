@@ -8,10 +8,10 @@ import { _normalizeScopes } from "./guards"
 import { _attachRegistryListener, _detachRegistryListener } from "./listener"
 import type { BuilderState, RegistryEntry, ShortcutRegistry } from "./types"
 
-export function _createBinding(
+function _registerBinding(
     state: BuilderState,
     handler: ShortcutHandler,
-    handlerOptions: HandlerOptions = {},
+    handlerOptions: HandlerOptions,
     registry: ShortcutRegistry,
 ): ShortcutResult {
     const { options, except: stateExcept } = state
@@ -137,6 +137,68 @@ export function _createBinding(
         onAttempt: (callback) => {
             entry.attemptCallbacks.add(callback)
             return () => entry.attemptCallbacks.delete(callback)
+        },
+    }
+}
+
+export function _createBinding(
+    state: BuilderState,
+    handler: ShortcutHandler,
+    handlerOptions: HandlerOptions = {},
+    registry: ShortcutRegistry,
+): ShortcutResult {
+    const boundCombos = state.boundCombos?.filter((combo) => combo.trim())
+
+    if (!boundCombos || boundCombos.length <= 1) {
+        return _registerBinding(state, handler, handlerOptions, registry)
+    }
+
+    const results = boundCombos.map((combo) => {
+        const boundState: BuilderState = {
+            ...state,
+            boundCombos: [combo],
+            steps: [combo],
+        }
+
+        return _registerBinding(boundState, handler, handlerOptions, registry)
+    })
+
+    return {
+        unbind: () => {
+            for (const result of results) {
+                result.unbind()
+            }
+        },
+        display: results.map((result) => result.display).join(" / "),
+        combo: results.map((result) => result.combo).join(" | "),
+        trigger: () => {
+            for (const result of results) {
+                result.trigger()
+            }
+        },
+        get isEnabled() {
+            return results.some((result) => result.isEnabled)
+        },
+        enable: () => {
+            for (const result of results) {
+                result.enable()
+            }
+        },
+        disable: () => {
+            for (const result of results) {
+                result.disable()
+            }
+        },
+        onAttempt: (callback) => {
+            const removers = results
+                .map((result) => result.onAttempt?.(callback))
+                .filter((remove): remove is () => void => Boolean(remove))
+
+            return () => {
+                for (const remove of removers) {
+                    remove()
+                }
+            }
         },
     }
 }

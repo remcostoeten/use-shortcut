@@ -1,6 +1,6 @@
 {
     "name": "@remcostoeten/use-shortcut",
-    "version": "2.2.0",
+    "version": "2.3.0",
     "description": "Tiny, chainable React keyboard shortcuts with sequences, scopes, and typed debug hooks.",
     "author": "Remco Stoeten",
     "license": "MIT",

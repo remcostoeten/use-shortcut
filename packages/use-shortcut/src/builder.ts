@@ -117,10 +117,27 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
                         const newState: BuilderState = {
                             ...currentState,
                             modifiers: {},
+                            boundCombos: undefined,
                             steps: [...currentState.steps, nextStep],
                         }
 
                         _debugLog(currentState.options.debug, `Chain: .key("${key}")`)
+
+                        return _createProxy(newState)
+                    }
+                }
+
+                if (prop === "bind") {
+                    return (combo: string | string[]) => {
+                        const combos = Array.isArray(combo) ? combo : [combo]
+                        const newState: BuilderState = {
+                            ...currentState,
+                            modifiers: {},
+                            boundCombos: combos,
+                            steps: combos,
+                        }
+
+                        _debugLog(currentState.options.debug, `Chain: .bind("${combos.join('", "')}")`)
 
                         return _createProxy(newState)
                     }
@@ -135,6 +152,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
 
                         const newState: BuilderState = {
                             ...currentState,
+                            boundCombos: undefined,
                             steps: [...currentState.steps, nextStep],
                         }
 
