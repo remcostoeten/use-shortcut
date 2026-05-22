@@ -14,6 +14,7 @@ import type {
 import { _createBinding } from "./runtime/binding"
 import { _debugLog } from "./runtime/debug"
 import { _normalizeScopes } from "./runtime/guards"
+import { _attachRegistryListener } from "./runtime/listener"
 import { _buildComboString } from "./runtime/keys"
 import { _createRecorder } from "./runtime/recording"
 import type { BuilderState, ShortcutRegistry } from "./runtime/types"
@@ -24,17 +25,30 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
     builder: IShortcutBuilder
     registry: ShortcutRegistry
 } {
+    let registryOptions = options
     const registry: ShortcutRegistry = {
         listeners: new Map(),
         firstStepIndex: new Map(),
         activeSequenceCombos: new Set(),
-        options,
+        get options() {
+            return registryOptions
+        },
+        set options(nextOptions) {
+            registryOptions = nextOptions
+            if (registry.listener && registry.listeners.size > 0) {
+                _attachRegistryListener(registry)
+            }
+        },
         activeScopes: new Set(_normalizeScopes(options.activeScopes)),
         nextId: 1,
         debugListeners: new Set(),
         listener: null,
         listenerTarget: null,
         listenerEventType: options.eventType ?? "keydown",
+        collectingRenderBindings: false,
+        renderCycle: 0,
+        nextRenderSlot: 0,
+        renderSlots: new Map(),
     }
 
     _debugLog(options.debug, "Builder created with options:", options)

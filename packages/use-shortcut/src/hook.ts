@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useMemo } from "react"
 import { _createShortcutBuilder } from "./builder"
+import { _removeRegistryEntry } from "./runtime/binding"
+import { _attachRegistryListener } from "./runtime/listener"
 import type {
     ShortcutBuilder,
     UseShortcutOptions,
@@ -79,6 +81,20 @@ function _normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
     }
 
     return [trimmed]
+}
+
+function _createPendingShortcutResult(keys: ShortcutMapEntry["keys"]): ShortcutResult {
+    const combo = Array.isArray(keys) ? keys.join(" | ") : keys
+    return {
+        unbind: () => {},
+        display: combo,
+        combo,
+        trigger: () => {},
+        isEnabled: false,
+        enable: () => {},
+        disable: () => {},
+        onAttempt: () => () => {},
+    }
 }
 
 function _applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequenceChain {
@@ -192,6 +208,11 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
         return _createShortcutBuilder(optionsRef.current)
     }, [])
 
+    registry.reconcileRenderBindings = true
+    registry.collectingRenderBindings = true
+    registry.renderCycle += 1
+    registry.nextRenderSlot = 0
+
     useEffect(() => {
         registry.options = optionsRef.current
 
@@ -202,6 +223,18 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
 
             registry.activeScopes = new Set(scopes.map((scope) => scope.trim()).filter(Boolean))
         }
+
+        for (const entry of [...registry.renderSlots.values()]) {
+            if (entry.lastSeenRenderCycle !== registry.renderCycle) {
+                _removeRegistryEntry(registry, entry)
+            }
+        }
+
+        if (registry.listeners.size > 0) {
+            _attachRegistryListener(registry)
+        }
+
+        registry.collectingRenderBindings = false
     }, [registry, options])
 
     useEffect(() => {
@@ -248,10 +281,22 @@ export function useShortcutMap<T extends ShortcutMap>(
 
     const stableShortcutMap = stableShortcutMapRef.current
     const resultsRef = useRef<ShortcutMapResult<T>>({} as ShortcutMapResult<T>)
+    const results = resultsRef.current
+
+    for (const id of Object.keys(stableShortcutMap) as Array<keyof T>) {
+        if (!results[id]) {
+            results[id] = _createPendingShortcutResult(stableShortcutMap[id].keys) as ShortcutMapResult<T>[keyof T]
+        }
+    }
+
+    for (const id of Object.keys(results) as Array<keyof T>) {
+        if (!stableShortcutMap[id]) {
+            delete (results as Record<string, unknown>)[String(id)]
+        }
+    }
 
     useEffect(() => {
         const registrations = registerShortcutMap($, stableShortcutMap)
-        const results = resultsRef.current
         for (const key of Object.keys(results)) {
             delete (results as Record<string, unknown>)[key]
         }

@@ -1,8 +1,45 @@
 import { ModifierAliases, SpecialKeyMap, detectPlatform, Platform } from "./constants"
+import type { PlatformType } from "./constants"
 import type { ModifierState, ParsedShortcut } from "./types"
 
 function _normalizeKeyToken(key: string): string {
     return key === " " ? "space" : key.toLowerCase()
+}
+
+function _tokenizeShortcut(shortcut: string): string[] {
+    const normalized = shortcut.toLowerCase().trim()
+
+    if (!normalized) return []
+
+    if (!normalized.includes("+")) {
+        const whitespaceTokens = normalized.split(/\s+/).filter(Boolean)
+
+        if (whitespaceTokens.length === 1 && whitespaceTokens[0].includes("-")) {
+            const hyphenTokens = whitespaceTokens[0].split("-").filter(Boolean)
+            const hasModifierPrefix = hyphenTokens
+                .slice(0, -1)
+                .every((token) => Boolean(ModifierAliases[token]))
+
+            if (hyphenTokens.length > 1 && hasModifierPrefix) {
+                return hyphenTokens
+            }
+        }
+
+        return whitespaceTokens
+    }
+
+    const tokens = normalized
+        .split("+")
+        .map((token) => token.trim())
+
+    if (normalized.endsWith("+")) {
+        while (tokens[tokens.length - 1] === "") {
+            tokens.pop()
+        }
+        tokens.push("plus")
+    }
+
+    return tokens.filter(Boolean)
 }
 
 /**
@@ -17,10 +54,8 @@ function _normalizeKeyToken(key: string): string {
  * // { modifiers: { meta: true, ... }, key: "s", original: "cmd+s" }
  * ```
  */
-export function parseShortcut(shortcut: string): ParsedShortcut {
-    const platform = detectPlatform()
-    const normalized = shortcut.toLowerCase().trim()
-    const parts = normalized.split(/[\s+-]+/).filter(Boolean)
+export function parseShortcut(shortcut: string, platform: PlatformType = detectPlatform()): ParsedShortcut {
+    const parts = _tokenizeShortcut(shortcut)
 
     if (parts.length === 0) {
         throw new Error(`Invalid shortcut: "${shortcut}"`)
@@ -68,9 +103,9 @@ export function parseShortcut(shortcut: string): ParsedShortcut {
  * @param shortcuts - Single shortcut or array of shortcuts
  * @returns Array of parsed shortcuts
  */
-export function parseShortcuts(shortcuts: string | string[]): ParsedShortcut[] {
+export function parseShortcuts(shortcuts: string | string[], platform?: PlatformType): ParsedShortcut[] {
     const shortcutArray = Array.isArray(shortcuts) ? shortcuts : [shortcuts]
-    return shortcutArray.map(parseShortcut)
+    return shortcutArray.map((shortcut) => parseShortcut(shortcut, platform))
 }
 
 /**

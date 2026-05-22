@@ -8,6 +8,117 @@ import { _normalizeScopes } from "./guards"
 import { _attachRegistryListener, _detachRegistryListener } from "./listener"
 import type { BuilderState, RegistryEntry, ShortcutRegistry } from "./types"
 
+function _clearEntryTimeouts(entry: RegistryEntry) {
+    for (const timeoutId of entry.timeoutIds) {
+        clearTimeout(timeoutId)
+    }
+    entry.timeoutIds.clear()
+}
+
+export function _removeRegistryEntry(registry: ShortcutRegistry, entry: RegistryEntry) {
+    const currentEntries = registry.listeners.get(entry.combo)
+    if (!currentEntries) return
+
+    _clearEntryTimeouts(entry)
+
+    const nextEntries = currentEntries.filter((item) => item.id !== entry.id)
+
+    if (nextEntries.length === 0) {
+        registry.listeners.delete(entry.combo)
+        registry.activeSequenceCombos.delete(entry.combo)
+
+        const firstStep = _canonicalizeParsed(entry.parsedSteps[0])
+        const indexedCombos = registry.firstStepIndex.get(firstStep)
+        if (indexedCombos) {
+            indexedCombos.delete(entry.combo)
+            if (indexedCombos.size === 0) {
+                registry.firstStepIndex.delete(firstStep)
+            }
+        }
+    } else {
+        registry.listeners.set(entry.combo, nextEntries)
+    }
+
+    if (entry.renderSlot !== undefined && registry.renderSlots.get(entry.renderSlot)?.id === entry.id) {
+        registry.renderSlots.delete(entry.renderSlot)
+    }
+
+    if (registry.listeners.size === 0) {
+        _detachRegistryListener(registry)
+    }
+}
+
+function _addRegistryEntry(registry: ShortcutRegistry, entry: RegistryEntry) {
+    const comboEntries = registry.listeners.get(entry.combo)
+    if (comboEntries) {
+        comboEntries.push(entry)
+        return
+    }
+
+    registry.listeners.set(entry.combo, [entry])
+
+    const firstStep = _canonicalizeParsed(entry.parsedSteps[0])
+    const indexedCombos = registry.firstStepIndex.get(firstStep)
+    if (indexedCombos) {
+        indexedCombos.add(entry.combo)
+    } else {
+        registry.firstStepIndex.set(firstStep, new Set([entry.combo]))
+    }
+}
+
+function _updateRegistryEntry(
+    entry: RegistryEntry,
+    next: Omit<RegistryEntry, "id" | "attemptCallbacks" | "timeoutIds" | "renderSlot" | "lastSeenRenderCycle">,
+) {
+    _clearEntryTimeouts(entry)
+    entry.userHandler = next.userHandler
+    entry.isEnabled = next.isEnabled
+    entry.combo = next.combo
+    entry.display = next.display
+    entry.description = next.description
+    entry.parsedSteps = next.parsedSteps
+    entry.expectedSteps = next.expectedSteps
+    entry.scopes = next.scopes
+    entry.progress = next.progress
+    entry.lastMatchedAt = next.lastMatchedAt
+    entry.debugHistory = next.debugHistory
+    entry.lastDebugAt = next.lastDebugAt
+    entry.except = next.except
+    entry.delay = next.delay
+    entry.sequenceTimeout = next.sequenceTimeout
+    entry.preventDefault = next.preventDefault
+    entry.stopPropagation = next.stopPropagation
+    entry.stopOnMatch = next.stopOnMatch
+    entry.priority = next.priority
+}
+
+function _createResult(entry: RegistryEntry, registry: ShortcutRegistry): ShortcutResult {
+    return {
+        unbind: () => _removeRegistryEntry(registry, entry),
+        get display() {
+            return entry.display
+        },
+        get combo() {
+            return entry.combo
+        },
+        trigger: () => entry.userHandler(new KeyboardEvent(registry.options.eventType ?? "keydown")),
+        get isEnabled() {
+            return entry.isEnabled
+        },
+        enable: () => {
+            entry.isEnabled = true
+        },
+        disable: () => {
+            entry.isEnabled = false
+            _clearEntryTimeouts(entry)
+        },
+        onAttempt: (callback) => {
+            entry.attemptCallbacks.add(callback)
+            return () => entry.attemptCallbacks.delete(callback)
+        },
+    }
+}
+
 function _registerBinding(
     state: BuilderState,
     handler: ShortcutHandler,
@@ -28,9 +139,18 @@ function _registerBinding(
     const debug = options.debug ?? false
     const except = stateExcept ?? handlerOptions.except
 
+    const renderSlot = registry.reconcileRenderBindings ? registry.nextRenderSlot++ : undefined
+    const existingRenderEntry = renderSlot === undefined ? undefined : registry.renderSlots.get(renderSlot)
+
+    if (existingRenderEntry && existingRenderEntry.combo !== combo) {
+        _removeRegistryEntry(registry, existingRenderEntry)
+    }
+
+    const ignoredConflictId = existingRenderEntry?.combo === combo ? existingRenderEntry.id : undefined
+
     for (const [existingCombo, entries] of registry.listeners.entries()) {
         for (const existing of entries) {
-            if (existingCombo === combo) continue
+            if (existing.id === ignoredConflictId) continue
             const reason = _detectConflict(parsedSteps, existing.parsedSteps)
             if (!reason) continue
             _emitConflict(registry, { combo, existingCombo, reason })
@@ -72,73 +192,28 @@ function _registerBinding(
         stopPropagation: handlerOptions.stopPropagation ?? false,
         stopOnMatch: handlerOptions.stopOnMatch ?? false,
         priority: handlerOptions.priority ?? 0,
+        timeoutIds: existingRenderEntry?.combo === combo ? existingRenderEntry.timeoutIds : new Set(),
+        renderSlot,
+        lastSeenRenderCycle: registry.reconcileRenderBindings ? registry.renderCycle : undefined,
     }
 
-    const comboEntries = registry.listeners.get(combo)
-    if (comboEntries) {
-        comboEntries.push(entry)
-    } else {
-        registry.listeners.set(combo, [entry])
-
-        const firstStep = _canonicalizeParsed(parsedSteps[0])
-        const indexedCombos = registry.firstStepIndex.get(firstStep)
-        if (indexedCombos) {
-            indexedCombos.add(combo)
-        } else {
-            registry.firstStepIndex.set(firstStep, new Set([combo]))
-        }
+    if (existingRenderEntry && existingRenderEntry.combo === combo) {
+        _updateRegistryEntry(existingRenderEntry, entry)
+        existingRenderEntry.lastSeenRenderCycle = registry.renderCycle
+        return _createResult(existingRenderEntry, registry)
     }
 
-    _attachRegistryListener(registry)
+    _addRegistryEntry(registry, entry)
 
-    const unbindEntry = () => {
-        const currentEntries = registry.listeners.get(combo)
-        if (!currentEntries) return
-
-        const nextEntries = currentEntries.filter((item) => item.id !== entry.id)
-
-        if (nextEntries.length === 0) {
-            registry.listeners.delete(combo)
-            registry.activeSequenceCombos.delete(combo)
-
-            const firstStep = _canonicalizeParsed(parsedSteps[0])
-            const indexedCombos = registry.firstStepIndex.get(firstStep)
-            if (indexedCombos) {
-                indexedCombos.delete(combo)
-                if (indexedCombos.size === 0) {
-                    registry.firstStepIndex.delete(firstStep)
-                }
-            }
-
-            _debugLog(debug, "Unregistered:", combo)
-        } else {
-            registry.listeners.set(combo, nextEntries)
-        }
-
-        if (registry.listeners.size === 0) {
-            _detachRegistryListener(registry)
-        }
+    if (renderSlot !== undefined) {
+        registry.renderSlots.set(renderSlot, entry)
     }
 
-    return {
-        unbind: unbindEntry,
-        display,
-        combo,
-        trigger: () => handler(new KeyboardEvent(registry.options.eventType ?? "keydown")),
-        get isEnabled() {
-            return entry.isEnabled
-        },
-        enable: () => {
-            entry.isEnabled = true
-        },
-        disable: () => {
-            entry.isEnabled = false
-        },
-        onAttempt: (callback) => {
-            entry.attemptCallbacks.add(callback)
-            return () => entry.attemptCallbacks.delete(callback)
-        },
+    if (!registry.reconcileRenderBindings || !registry.collectingRenderBindings) {
+        _attachRegistryListener(registry)
     }
+
+    return _createResult(entry, registry)
 }
 
 export function _createBinding(
