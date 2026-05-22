@@ -1,116 +1,82 @@
 ---
 name: use-shortcut
-description: React hook for typed keyboard shortcuts - use when adding keyboard shortcuts to a React app
+description: Build, review, document, or debug React and Next.js keyboard shortcuts with @remcostoeten/use-shortcut. Use when adding shortcut handlers, command palettes, shortcut maps, scoped shortcuts, multi-key sequences, shortcut recording, formatter/parser utilities, accessible debug or attempt UIs, or package/docs/tests for the use-shortcut repository.
 ---
 
 # use-shortcut
 
-A chainable, type-safe keyboard shortcuts hook for React and Next.js (~5.4kb gzipped runtime for `useShortcut`, zero dependencies beyond React).
-
-## When to Use
-
-Use this skill when the user wants to:
-- Add keyboard shortcuts to a React application
-- Add keyboard shortcuts to a Next.js application
-- Create keyboard-driven interfaces (command palettes, keyboard navigation)
-- Build accessible apps with keyboard support
-- Handle complex shortcut combinations (chords, sequences)
-
-## Installation
-
-```bash
-npm install @remcostoeten/use-shortcut
-```
-
-## Quick Start
+Use this skill for React keyboard shortcut work with `@remcostoeten/use-shortcut`. Prefer the narrow React entrypoint for app code:
 
 ```tsx
 import { useShortcut } from "@remcostoeten/use-shortcut/react"
-
-function App() {
-  const $ = useShortcut()
-
-  $.mod.key("s").on(() => save(), { preventDefault: true })
-  $.key("escape").on(() => close())
-
-  return <div>Press Cmd+S or Esc</div>
-}
 ```
 
-The public runtime API is React-only. Treat parser/formatter/constants as supporting utilities within the same React/Next.js package, not a separate framework-agnostic runtime.
+## Workflow
 
-## Chainable API
+1. Inspect the consumer context before adding shortcuts: target element, active modal/dialog state, focused inputs, required scopes, and expected browser/native shortcut collisions.
+2. Choose the smallest API that fits:
+   - Use `useShortcut()` for fluent one-off bindings.
+   - Use `useShortcutMap()` or `registerShortcutMap()` for config-driven command sets.
+   - Use `.bind(...)` when combos already exist as strings from settings or config.
+   - Use parser/formatter entrypoints only for shortcut UI, persistence, validation, or custom matching.
+3. Keep shortcuts accessible:
+   - Do not steal typing from inputs unless explicitly intended; default `ignoreInputs` is `true`.
+   - Pair invisible or icon-only shortcut affordances with accessible names and visible focus states.
+   - For debug overlays, toasts, or validation, use polite `aria-live` text and non-color status cues.
+   - Preserve browser zoom, paste, screen-reader navigation, and native form behavior.
+4. Register cleanup-safe handlers:
+   - In React components, create fluent `.on(...)` registrations inside `useEffect()` and return cleanup that calls `unbind()`.
+   - Keep effect dependencies honest; stabilize handlers with `useCallback()` or shortcut maps with `useMemo()` when needed.
+   - Store returned `ShortcutResult`s when enabling, disabling, triggering, or unbinding is needed.
+   - Group many imperative registrations with `createShortcutGroup()` or `useShortcutGroup()`.
+   - Prefer scopes over conditional handler branches when shortcuts belong to app modes.
+5. Validate behavior with realistic keyboard events and the repo commands relevant to the change.
 
-The hook returns a chainable builder (`$`) for building shortcuts:
+## Common Patterns
 
-### Modifiers
-- `$.cmd` - Command key (mac)
-- `$.ctrl` - Control key
-- `$.mod` - Platform-aware: Cmd on mac, Ctrl on Windows/Linux
-- `$.shift` - Shift key
-- `$.alt` - Alt/Option key
-
-### Keys
-- `$.key("a")` - Letter keys
-- `$.key("1")` - Number keys
-- `$.key("escape")` - Special keys (escape, enter, tab, space, etc.)
-- `$.key("/")` - Symbol keys
-- `$.key("arrowup")` - Navigation keys
-
-### Combining Modifiers + Keys
-```tsx
-$.mod.key("k").on(() => openPalette())      // Cmd+K / Ctrl+K
-$.mod.shift.key("p").on(() => openPrefs())  // Cmd+Shift+P
-$.ctrl.alt.key("d").on(() => toggleDebug()) // Ctrl+Alt+D
-```
-
-## Sequences & Chords
-
-Multi-step shortcuts like GitHub's "g then d" for dashboard:
+Add a fluent shortcut:
 
 ```tsx
-// Press g, then d
-$.key("g").then("d").on(() => goToDashboard())
+const $ = useShortcut()
 
-// Steps can include modifiers
-$.key("g").then("shift+d").on(() => openDebug())
+useEffect(() => {
+  const shortcut = $.mod.key("k").on(openCommandPalette, {
+    description: "Open command palette",
+    preventDefault: true,
+  })
+
+  return () => shortcut.unbind()
+}, [$, openCommandPalette])
 ```
 
-## Named Scopes
+Use a sequence:
 
-Different shortcuts for different UI contexts (editor vs navigation):
+```tsx
+useEffect(() => {
+  const shortcut = $.key("g").then("d").on(goToDashboard, {
+    description: "Go to dashboard",
+    sequenceTimeout: 1000,
+  })
+
+  return () => shortcut.unbind()
+}, [$, goToDashboard])
+```
+
+Use scopes:
 
 ```tsx
 const $ = useShortcut({ activeScopes: "navigation" })
 
-// Only active in "navigation" scope
-$.in("navigation").key("j").on(() => nextItem())
-$.in("navigation").key("k").on(() => prevItem())
+useEffect(() => {
+  const shortcut = $.in("editor").mod.key("s").on(saveFile)
+  $.setScopes("editor")
 
-// Only active in "editor" scope
-$.in("editor").mod.key("s").on(() => saveFile())
-
-// Switch scopes at runtime
-$.setScopes("editor")
-$.enableScope("navigation")
-$.disableScope("editor")
+  return () => shortcut.unbind()
+}, [$, saveFile])
 ```
 
-## Except Conditions
+Use structured debug metadata:
 
-Skip shortcuts in specific contexts:
-
-```tsx
-// Don't trigger / when typing in inputs
-$.key("/").except("typing").on(() => focusSearch())
-
-// Common presets: "input", "editable", "typing", "modal", "disabled"
-$.mod.key("k").except(["input", "modal"]).on(() => openPalette())
-```
-
-## Options
-
-### Hook Options (useShortcut)
 ```tsx
 const $ = useShortcut({
   debug: {
@@ -118,133 +84,49 @@ const $ = useShortcut({
     includeCode: true,
     includeLocation: true,
     includeKeyCode: true,
-  },                        // Rich debug output
-  ignoreInputs: true,       // Skip shortcuts in input/textarea/select
-  target: containerRef,     // Attach to specific element
-  eventType: "keydown",     // "keydown" or "keyup"
-  disabled: false,          // Disable all shortcuts
-  activeScopes: ["editor"], // Initial active scopes
-  sequenceTimeout: 800,    // Max ms for sequence completion
-  conflictWarnings: true,  // Warn on shortcut conflicts
+  },
+})
+
+const unsubscribe = $.onDebug((event) => {
+  showShortcutTelemetry(event.input.combo, event.attempts)
 })
 ```
 
-### Debug Hooks
+Use per-shortcut attempt feedback:
+
 ```tsx
-const removeDebug = $.onDebug((event) => {
-  console.log(event.input.combo, event.input.code, event.attempts)
-})
+useEffect(() => {
+  const result = $.shift.key("e").then("e").on(runProbe)
 
-const result = $.shift.key("e").then("e").on(runProbe)
+  const removeAttempt = result.onAttempt?.((matched, event, details) => {
+    updateAttemptStatus({ matched, key: event.key, status: details?.status })
+  })
 
-const removeAttempt = result.onAttempt?.((matched, _event, details) => {
-  console.log(matched ? "matched" : details?.status, details?.steps)
-})
-```
-
-### Handler Options (.on)
-```tsx
-$.mod.key("s").on(handler, {
-  preventDefault: true,
-  stopPropagation: false,
-  delay: 0,
-  description: "save document",
-  disabled: false,
-  except: "typing",
-  scopes: ["editor"],
-  priority: 10,
-})
-```
-
-## Utility Functions
-
-### formatShortcut
-Format shortcuts for UI display (platform-aware):
-```tsx
-import { formatShortcut } from "@remcostoeten/use-shortcut"
-
-formatShortcut("mod+s") // "⌘S" on mac, "Ctrl+S" on Windows
-```
-
-### parseShortcut / parseShortcuts
-Parse shortcut strings for custom matching:
-```tsx
-import { parseShortcut, parseShortcuts } from "@remcostoeten/use-shortcut"
-
-parseShortcut("mod+shift+p")
-// { modifiers: { meta: true, shift: true }, key: "p" }
-
-parseShortcuts(["mod+s", "escape"])
-```
-
-### matchesShortcut / matchesAnyShortcut
-Match keyboard events against parsed shortcuts:
-```tsx
-import { matchesAnyShortcut, parseShortcuts } from "@remcostoeten/use-shortcut"
-
-const shortcuts = parseShortcuts(["mod+k", "escape"])
-
-window.addEventListener("keydown", (event) => {
-  if (matchesAnyShortcut(event, shortcuts)) {
-    // Handle shortcut
+  return () => {
+    removeAttempt?.()
+    result.unbind()
   }
-})
+}, [$, runProbe, updateAttemptStatus])
 ```
 
-## Recording Shortcuts
+## API Reference
 
-Capture user keyboard input for settings pages:
-```tsx
-async function recordShortcut() {
-  const combo = await $.record({ timeoutMs: 5000 })
-  // combo = "shift+slash"
-  saveUserShortcut(combo)
-}
+Read [references/api.md](references/api.md) when you need exact entrypoints, option names, result shapes, parser/formatter utilities, or testing guidance.
+
+## Repository Commands
+
+Use the package scripts from the workspace root:
+
+```bash
+bun run package:typecheck
+bun run package:test
+bun run package:build
 ```
 
-## Return Value
+For docs changes, use:
 
-The `.on()` method returns a `ShortcutResult` handle:
-```tsx
-const saveResult = $.mod.key("s").on(save)
-
-saveResult.display   // "⌘S" (human-readable)
-saveResult.combo     // "mod+s" (normalized)
-saveResult.unbind()  // Remove the shortcut
-saveResult.disable() // Temporarily disable
-saveResult.enable()  // Re-enable
-saveResult.trigger() // Programmatically trigger
+```bash
+bun run docs:lint
+bun run docs:test
+bun run docs:build
 ```
-
-## Common Patterns
-
-### Command Palette
-```tsx
-$.mod.key("k").on(() => setOpen(true), { preventDefault: true })
-$.key("escape").except("typing").on(() => setOpen(false))
-```
-
-### Save Shortcut
-```tsx
-$.mod.key("s").on(save, { preventDefault: true, scopes: ["editor"] })
-```
-
-### Escape Hatch
-```tsx
-$.key("escape").on(closeModal)
-$.key("escape").except("typing").on(clearSelection)
-```
-
-### Global Help
-```tsx
-$.key("shift+/").except("typing").on(() => toggleHelp())
-```
-
-## TypeScript
-
-The package provides full type inference. Types are available for advanced usage:
-- `ShortcutBuilder` - The chain builder type
-- `ShortcutResult` - Return value from `.on()`
-- `UseShortcutOptions` - Hook options
-- `HandlerOptions` - Handler options
-- `ParsedShortcut` - Parser output shape
