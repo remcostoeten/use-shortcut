@@ -32,16 +32,24 @@ That means the runtime is already small in practice. The entrypoint split mainly
 ## React API
 
 The public runtime API is React-only. Parser, formatter, and constants exports are supporting utilities inside the same React/Next.js package, not a separate framework-agnostic runtime.
+Register fluent shortcuts from an effect so React renders stay side-effect free; memoize shortcut maps before passing them to `useShortcutMap()`.
 
 ```tsx
+import { useEffect } from "react"
 import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 function App() {
   const $ = useShortcut()
 
-  $.mod.key("k").on(() => openPalette(), { preventDefault: true })
-  $.bind("mod+p").on(() => openProjects())
-  $.key("escape").on(() => closePalette())
+  useEffect(() => {
+    const shortcuts = [
+      $.mod.key("k").on(() => openPalette(), { preventDefault: true }),
+      $.bind("mod+p").on(() => openProjects()),
+      $.key("escape").on(() => closePalette()),
+    ]
+
+    return () => shortcuts.forEach((shortcut) => shortcut.unbind())
+  }, [$, openPalette, openProjects, closePalette])
 
   return <div>Press Cmd/Ctrl+K</div>
 }
@@ -61,6 +69,7 @@ Use `.bind()` when your shortcuts already exist as strings in config or user
 settings.
 
 ```tsx
+import { useEffect } from "react"
 import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 const appShortcuts = {
@@ -77,18 +86,25 @@ const appShortcuts = {
 function App() {
   const $ = useShortcut()
 
-  $.bind(appShortcuts.openCommandPalette.combo).on(() => {
-    openPalette()
-  }, {
-    description: appShortcuts.openCommandPalette.description,
-    preventDefault: true,
-  })
+  useEffect(() => {
+    const open = $.bind(appShortcuts.openCommandPalette.combo).on(() => {
+      openPalette()
+    }, {
+      description: appShortcuts.openCommandPalette.description,
+      preventDefault: true,
+    })
 
-  $.bind(appShortcuts.closeDialog.combo).on(() => {
-    closeDialog()
-  }, {
-    description: appShortcuts.closeDialog.description,
-  })
+    const close = $.bind(appShortcuts.closeDialog.combo).on(() => {
+      closeDialog()
+    }, {
+      description: appShortcuts.closeDialog.description,
+    })
+
+    return () => {
+      open.unbind()
+      close.unbind()
+    }
+  }, [$, openPalette, closeDialog])
 
   return <div>Shortcuts ready</div>
 }
@@ -113,11 +129,12 @@ function App() {
 ## Shortcut Map Example
 
 ```tsx
+import { useMemo } from "react"
 import { useShortcutMap } from "@remcostoeten/use-shortcut/react"
 
 function App() {
-  useShortcutMap(
-    {
+  const shortcuts = useMemo(
+    () => ({
       openPalette: {
         keys: "mod+k",
         handler: () => openPalette(),
@@ -131,7 +148,12 @@ function App() {
         keys: "g then s",
         handler: () => toggleSidebar(),
       },
-    },
+    }),
+    [openPalette, closePalette, toggleSidebar],
+  )
+
+  useShortcutMap(
+    shortcuts,
     { ignoreInputs: false },
   )
 
@@ -142,28 +164,41 @@ function App() {
 ## Debug Example
 
 ```tsx
+import { useEffect } from "react"
 import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
-const $ = useShortcut({
-  debug: {
-    console: true,
-    includeCode: true,
-    includeLocation: true,
-    includeKeyCode: true,
-  },
-})
+function DebugProbe() {
+  const $ = useShortcut({
+    debug: {
+      console: true,
+      includeCode: true,
+      includeLocation: true,
+      includeKeyCode: true,
+    },
+  })
 
-const removeDebug = $.onDebug((event) => {
-  console.log("key", event.input.combo, event.attempts)
-})
+  useEffect(() => {
+    const removeDebug = $.onDebug((event) => {
+      console.log("key", event.input.combo, event.attempts)
+    })
 
-const result = $.shift.key("e").then("e").on(runProbe, {
-  description: "sequence probe",
-})
+    const result = $.shift.key("e").then("e").on(runProbe, {
+      description: "sequence probe",
+    })
 
-const removeAttempt = result.onAttempt?.((matched, _event, details) => {
-  console.log(matched ? "matched" : details?.status, details?.steps)
-})
+    const removeAttempt = result.onAttempt?.((matched, _event, details) => {
+      console.log(matched ? "matched" : details?.status, details?.steps)
+    })
+
+    return () => {
+      removeDebug()
+      removeAttempt?.()
+      result.unbind()
+    }
+  }, [$, runProbe])
+
+  return null
+}
 ```
 
 ## Architecture

@@ -78,6 +78,8 @@ Exports:
 
 - `formatShortcut(shortcut, platform?)`
 
+`getModifierSymbols(platform?)` is available from `@remcostoeten/use-shortcut/formatter`.
+
 ### React hooks and registration helpers
 
 - `useShortcut(options?)`

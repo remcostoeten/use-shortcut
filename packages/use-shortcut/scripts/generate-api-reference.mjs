@@ -59,6 +59,17 @@ function _extractTags(tags) {
     return out
 }
 
+function _renderExample(example) {
+    const trimmed = example.trim()
+    if (!trimmed) return []
+
+    if (trimmed.startsWith("```")) {
+        return trimmed.split("\n")
+    }
+
+    return ["```ts", trimmed, "```"]
+}
+
 function _parsePublicExports(program, checker) {
     const entryFile = program.getSourceFile(_ENTRY)
     if (!entryFile) {
@@ -154,9 +165,7 @@ function _toMarkdown(items) {
         if (item.examples.length > 0) {
             lines.push("Examples:")
             for (const example of item.examples) {
-                lines.push("```ts")
-                lines.push(example.trim())
-                lines.push("```")
+                lines.push(..._renderExample(example))
             }
             lines.push("")
         }

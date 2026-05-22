@@ -20,6 +20,8 @@ if (!fs.existsSync(_PUBLIC_API_MD)) {
 
 const api = JSON.parse(fs.readFileSync(_API_JSON, "utf8"))
 const publicMd = fs.readFileSync(_PUBLIC_API_MD, "utf8")
+const generatedApiMdPath = path.join(_ROOT, "docs-input", "api-reference.md")
+const generatedApiMd = fs.existsSync(generatedApiMdPath) ? fs.readFileSync(generatedApiMdPath, "utf8") : ""
 
 const publicNames = new Set(
     [...publicMd.matchAll(/- `([^`]+)`/g)].map((m) => m[1].replace(/\(.*\)$/, "").trim())
@@ -33,6 +35,10 @@ if (missingSummary.length > 0) {
 const missingInInventory = api.items.filter((item) => !publicNames.has(item.name))
 if (missingInInventory.length > 0) {
     _fail(`PUBLIC_API.md missing: ${missingInInventory.map((x) => x.name).join(", ")}`)
+}
+
+if (/```[^\n]*\n```/.test(generatedApiMd)) {
+    _fail("docs-input/api-reference.md contains nested or empty fenced code blocks")
 }
 
 console.log("docs:check passed")

@@ -153,10 +153,17 @@ function _applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequenc
  * @example
  * ```ts
  * const $ = useShortcut()
- * const results = registerShortcutMap($, {
- *   save: { keys: "mod+s", handler: onSave },
- *   nav: { keys: ["g", "d"], handler: onGoDashboard },
- * })
+ * const group = useShortcutGroup()
+ *
+ * useEffect(() => {
+ *   const results = registerShortcutMap($, {
+ *     save: { keys: "mod+s", handler: onSave },
+ *     nav: { keys: ["g", "d"], handler: onGoDashboard },
+ *   })
+ *   group.addMany(results)
+ *
+ *   return () => group.unbindAll()
+ * }, [$, group, onSave, onGoDashboard])
  * ```
  */
 export function registerShortcutMap<T extends ShortcutMap>(
@@ -194,10 +201,15 @@ export function registerShortcutMap<T extends ShortcutMap>(
  * @example
  * ```ts
  * const $ = useShortcut({ activeScopes: ["editor"] })
- * $.mod.key("s").on((event) => {
- *   event.preventDefault()
- *   saveDocument()
- * })
+ *
+ * useEffect(() => {
+ *   const saveShortcut = $.mod.key("s").on((event) => {
+ *     event.preventDefault()
+ *     saveDocument()
+ *   })
+ *
+ *   return () => saveShortcut.unbind()
+ * }, [$, saveDocument])
  * ```
  */
 export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
@@ -263,10 +275,12 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
  *
  * @example
  * ```ts
- * const mapResults = useShortcutMap({
+ * const shortcuts = useMemo(() => ({
  *   save: { keys: "mod+s", handler: onSave },
  *   close: { keys: "escape", handler: onClose },
- * })
+ * }), [onSave, onClose])
+ *
+ * const mapResults = useShortcutMap(shortcuts)
  * ```
  */
 export function useShortcutMap<T extends ShortcutMap>(
