@@ -87,6 +87,26 @@ describe("advanced shortcut features", () => {
         expect(undo).toHaveBeenCalledTimes(1)
     })
 
+    it("registers literal symbol shortcuts in bulk", () => {
+        const zoomIn = vi.fn()
+        const zoomOut = vi.fn()
+        const $ = createTestShortcut({ ignoreInputs: false })
+
+        registerShortcutMap(
+            $,
+            {
+                zoomIn: { keys: "ctrl++", handler: zoomIn },
+                zoomOut: { keys: "ctrl+-", handler: zoomOut },
+            },
+        )
+
+        dispatchKey("+", { ctrlKey: true })
+        dispatchKey("-", { ctrlKey: true })
+
+        expect(zoomIn).toHaveBeenCalledTimes(1)
+        expect(zoomOut).toHaveBeenCalledTimes(1)
+    })
+
     it("records the next key combo", async () => {
         const $ = createTestShortcut()
 

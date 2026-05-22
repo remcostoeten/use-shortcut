@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T12:47:25.029Z",
+  "generatedAt": "2026-05-22T13:01:02.224Z",
   "package": "@remcostoeten/use-shortcut",
   "sourceEntry": "src/index.ts",
   "count": 54,
@@ -39,7 +39,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 472,
+        "line": 445,
         "column": 1
       },
       "summary": "Creates an imperative group controller for many shortcut registrations.",
@@ -423,7 +423,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 218,
+        "line": 191,
         "column": 1
       },
       "summary": "Registers an object-based shortcut map in one call and returns per-action handles.",
@@ -761,7 +761,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 264,
+        "line": 237,
         "column": 1
       },
       "summary": "React hook for registering chainable keyboard shortcuts",
@@ -782,7 +782,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 335,
+        "line": 308,
         "column": 1
       },
       "summary": "React hook for one cleanup-safe shortcut binding.",
@@ -824,7 +824,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 510,
+        "line": 483,
         "column": 1
       },
       "summary": "React hook that returns a stable `ShortcutGroup` instance.",
@@ -840,7 +840,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 413,
+        "line": 386,
         "column": 1
       },
       "summary": "React hook that registers a shortcut map and automatically unbinds on cleanup.",
