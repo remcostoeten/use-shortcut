@@ -136,13 +136,20 @@ function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent
                 event.stopPropagation()
             }
 
-            const executeHandler = () => item.userHandler(event)
+            const executeHandler = () => {
+                item.timeoutIds.delete(timeoutId)
+                if (!item.isEnabled) return
+                if (!registry.listeners.get(item.combo)?.some((entry) => entry.id === item.id)) return
+                item.userHandler(event)
+            }
+            let timeoutId: ReturnType<typeof setTimeout>
 
             if (item.delay > 0) {
                 _debugLog(runtimeOptions.debug, "Delaying execution by", item.delay, "ms")
-                setTimeout(executeHandler, item.delay)
+                timeoutId = setTimeout(executeHandler, item.delay)
+                item.timeoutIds.add(timeoutId)
             } else {
-                executeHandler()
+                item.userHandler(event)
             }
 
             if (item.stopOnMatch) {
@@ -172,12 +179,15 @@ function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent
 }
 
 export function _attachRegistryListener(registry: ShortcutRegistry) {
-    if (registry.listener) return
-
     const target = registry.options.target ?? (typeof window !== "undefined" ? window : null)
     if (!target) return
 
     const eventType = registry.options.eventType ?? "keydown"
+    if (registry.listener) {
+        if (registry.listenerTarget === target && registry.listenerEventType === eventType) return
+        _detachRegistryListener(registry)
+    }
+
     const listener = (event: KeyboardEvent) => _dispatchRegistryEvent(registry, event)
     target.addEventListener(eventType, listener as EventListener)
 

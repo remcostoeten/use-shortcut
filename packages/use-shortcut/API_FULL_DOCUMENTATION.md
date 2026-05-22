@@ -8,33 +8,63 @@ This document covers the full current public package API (from `src/index.ts`) a
 Creates a chainable shortcut builder.
 
 ```tsx
+import { useEffect } from "react"
 import { useShortcut } from "@remcostoeten/use-shortcut"
 
 export function Example() {
   const $ = useShortcut({ activeScopes: ["editor"] })
 
-  // single combo
-  $.mod.key("s").on((event) => {
-    event.preventDefault()
-    console.log("save")
-  })
+  useEffect(() => {
+    const shortcuts = [
+      $.mod.key("s").on((event) => {
+        event.preventDefault()
+        console.log("save")
+      }),
+      $.key("g").then("d").on(() => {
+        console.log("go dashboard")
+      }),
+      $.mod.key("k")
+        .in("global")
+        .except(["input", "modal"])
+        .on(() => {
+          console.log("open palette")
+        }),
+    ]
 
-  // sequence
-  $.key("g").then("d").on(() => {
-    console.log("go dashboard")
-  })
-
-  // scoped + exceptions
-  $.mod.key("k")
-    .in("global")
-    .except(["input", "modal"])
-    .on(() => {
-      console.log("open palette")
-    })
+    return () => shortcuts.forEach((shortcut) => shortcut.unbind())
+  }, [$])
 
   return null
 }
 ```
+
+### `useShortcutBinding(keys, handler, options?, shortcutOptions?)`
+Registers one shortcut declaratively and cleans it up automatically.
+
+```tsx
+import { useShortcutBinding } from "@remcostoeten/use-shortcut"
+
+export function SaveShortcut() {
+  const saveResult = useShortcutBinding("mod+s", saveDocument, {
+    description: "Save document",
+    preventDefault: true,
+  })
+
+  return <kbd>{saveResult.display}</kbd>
+}
+```
+
+Object form:
+
+```tsx
+useShortcutBinding({
+  keys: ["escape", "mod+d"],
+  handler: closeDialog,
+  options: { description: "Close dialog" },
+})
+```
+
+Use `useShortcut()` directly when you need advanced fluent chains, `onDebug`, `record`, or imperative scope control.
 
 ## 2. Chain API: All Possibilities
 
@@ -65,37 +95,45 @@ export function Example() {
 
 ### Example covering all chain operations
 ```tsx
+import { useEffect } from "react"
 import { useShortcut } from "@remcostoeten/use-shortcut"
 
 export function FullChainExample() {
   const $ = useShortcut({ activeScopes: ["global", "editor"] })
 
-  $.setScopes(["global"])
-  $.enableScope("editor")
-  $.disableScope("modal")
+  useEffect(() => {
+    $.setScopes(["global"])
+    $.enableScope("editor")
+    $.disableScope("modal")
 
-  const active = $.getScopes()
-  const isEditorOn = $.isScopeActive("editor")
-  console.log(active, isEditorOn)
+    const active = $.getScopes()
+    const isEditorOn = $.isScopeActive("editor")
+    console.log(active, isEditorOn)
 
-  $.ctrl.shift.key("p")
-    .in(["global", "editor"])
-    .except((event) => (event.target as HTMLElement | null)?.matches?.("[data-readonly='true']") ?? false)
-    .then("k")
-    .on((event) => {
-      event.preventDefault()
-      console.log("complex shortcut")
-    }, {
-      priority: 10,
-      stopOnMatch: true,
-      sequenceTimeout: 1200,
-      description: "Complex chain example",
+    const complex = $.ctrl.shift.key("p")
+      .in(["global", "editor"])
+      .except((event) => (event.target as HTMLElement | null)?.matches?.("[data-readonly='true']") ?? false)
+      .then("k")
+      .on((event) => {
+        event.preventDefault()
+        console.log("complex shortcut")
+      }, {
+        priority: 10,
+        stopOnMatch: true,
+        sequenceTimeout: 1200,
+        description: "Complex chain example",
+      })
+
+    const handled = $.alt.key("x").handle({
+      handler: () => console.log("handled via .handle"),
+      delay: 150,
     })
 
-  $.alt.key("x").handle({
-    handler: () => console.log("handled via .handle"),
-    delay: 150,
-  })
+    return () => {
+      complex.unbind()
+      handled.unbind()
+    }
+  }, [$])
 
   return null
 }
@@ -158,18 +196,22 @@ All available per-binding options:
 - `stopOnMatch?: boolean`
 
 ```tsx
-$.mod.key("s").on(save, {
-  preventDefault: true,
-  stopPropagation: false,
-  delay: 0,
-  description: "Save document",
-  disabled: false,
-  except: ["input", "typing"],
-  scopes: ["editor"],
-  sequenceTimeout: 1000,
-  priority: 5,
-  stopOnMatch: true,
-})
+useEffect(() => {
+  const result = $.mod.key("s").on(save, {
+    preventDefault: true,
+    stopPropagation: false,
+    delay: 0,
+    description: "Save document",
+    disabled: false,
+    except: ["input", "typing"],
+    scopes: ["editor"],
+    sequenceTimeout: 1000,
+    priority: 5,
+    stopOnMatch: true,
+  })
+
+  return () => result.unbind()
+}, [$, save])
 ```
 
 ## 5. `ShortcutResult`: All Methods/Fields
@@ -188,26 +230,30 @@ Returned by `.on(...)` / `.handle(...)`:
 - `onDebug(callback)`
 
 ```tsx
-const result = $.mod.key("s").on(() => console.log("save"))
+useEffect(() => {
+  const result = $.mod.key("s").on(() => console.log("save"))
 
-console.log(result.display) // e.g. "⌘S"
-console.log(result.combo)   // e.g. "cmd+s"
+  console.log(result.display) // e.g. "⌘S"
+  console.log(result.combo)   // e.g. "cmd+s"
 
-result.disable()
-result.enable()
-result.trigger()
+  result.disable()
+  result.enable()
+  result.trigger()
 
-const removeDebug = $.onDebug((event) => {
-  console.log("input", event.input.combo, event.attempts)
-})
+  const removeDebug = $.onDebug((event) => {
+    console.log("input", event.input.combo, event.attempts)
+  })
 
-const unsubscribe = result.onAttempt?.((matched, _event, details) => {
-  console.log("attempt", matched, details?.status, details?.steps)
-})
+  const unsubscribe = result.onAttempt?.((matched, _event, details) => {
+    console.log("attempt", matched, details?.status, details?.steps)
+  })
 
-removeDebug()
-unsubscribe?.()
-result.unbind()
+  return () => {
+    removeDebug()
+    unsubscribe?.()
+    result.unbind()
+  }
+}, [$])
 ```
 
 ## 6. Recording (`ShortcutRecordingOptions`)
@@ -263,6 +309,9 @@ window.addEventListener("keydown", (event) => {
 ### `formatShortcut(shortcut, platform?)`
 Formats shortcut strings for display.
 
+### `getModifierSymbols(platform?)`
+Returns the display symbols for `meta`, `ctrl`, `alt`, and `shift` from the formatter subpath.
+
 ### `detectPlatform()`
 Returns `"mac" | "windows" | "linux"`.
 
@@ -292,14 +341,16 @@ import {
   ModifierDisplaySymbols,
   ModifierDisplayOrder,
 } from "@remcostoeten/use-shortcut"
+import { getModifierSymbols } from "@remcostoeten/use-shortcut/formatter"
 
 const platform = detectPlatform()
 const label = formatShortcut("mod+shift+p", platform)
 const symbols = ModifierDisplaySymbols[platform]
+const symbolMap = getModifierSymbols(platform)
 const order = ModifierDisplayOrder[platform]
 
 console.log(platform === Platform.MAC ? "mac behavior" : "non-mac behavior")
-console.log(label, symbols, order)
+console.log(label, symbols, symbolMap, order)
 ```
 
 ## 9. Type Exports: What They Enable
@@ -324,6 +375,7 @@ console.log(label, symbols, order)
 - `UseShortcutOptions`
 - `ShortcutResult`
 - `ShortcutRecordingOptions`
+- `ShortcutBinding`
 
 ### Parsing/conflict/scope typing
 - `ParsedShortcut`
@@ -335,8 +387,7 @@ console.log(label, symbols, order)
 ## 10. Practical Patterns
 
 ### A) Simple app (recommended default)
-- Use `useShortcut`
-- Use `.mod.key(...).on(...)`
+- Use `useShortcutBinding`
 - Use `formatShortcut` for UI labels
 
 ### B) Editor app

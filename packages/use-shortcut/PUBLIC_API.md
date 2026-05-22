@@ -15,6 +15,8 @@ Preferred React entrypoint. Source of truth: `src/react.ts`.
 Exports:
 
 - `useShortcut(options?)`
+- `useShortcutBinding(keys, handler, options?, shortcutOptions?)`
+- `useShortcutBinding(binding, shortcutOptions?)`
 - `useShortcutMap(shortcutMap, options?)`
 - `registerShortcutMap(builder, shortcutMap)`
 - `createShortcutGroup()`
@@ -78,9 +80,13 @@ Exports:
 
 - `formatShortcut(shortcut, platform?)`
 
+`getModifierSymbols(platform?)` is available from `@remcostoeten/use-shortcut/formatter`.
+
 ### React hooks and registration helpers
 
 - `useShortcut(options?)`
+- `useShortcutBinding(keys, handler, options?, shortcutOptions?)`
+- `useShortcutBinding(binding, shortcutOptions?)`
 - `useShortcutMap(shortcutMap, options?)`
 - `registerShortcutMap(builder, shortcutMap)`
 - `createShortcutGroup()`
@@ -119,6 +125,7 @@ Exports:
 - `ShortcutDebugEvent`
 - `ShortcutDebugOptions`
 - `ShortcutRecordingOptions`
+- `ShortcutBinding`
 - `ShortcutMapEntry`
 - `ShortcutMap`
 - `ShortcutMapResult`

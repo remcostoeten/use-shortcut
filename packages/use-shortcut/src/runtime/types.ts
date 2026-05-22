@@ -41,6 +41,9 @@ export type RegistryEntry = {
     stopPropagation: boolean
     stopOnMatch: boolean
     priority: number
+    timeoutIds: Set<ReturnType<typeof setTimeout>>
+    renderSlot?: number
+    lastSeenRenderCycle?: number
 }
 
 export type ShortcutRegistry = {
@@ -54,4 +57,9 @@ export type ShortcutRegistry = {
     listener: ((event: KeyboardEvent) => void) | null
     listenerTarget: (HTMLElement | Window) | null
     listenerEventType: "keydown" | "keyup"
+    reconcileRenderBindings?: boolean
+    collectingRenderBindings?: boolean
+    renderCycle: number
+    nextRenderSlot: number
+    renderSlots: Map<number, RegistryEntry>
 }

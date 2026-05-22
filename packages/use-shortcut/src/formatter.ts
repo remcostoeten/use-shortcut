@@ -54,7 +54,7 @@ const _NON_MAC_DISPLAY_NAMES: Record<string, string> = {
  */
 export function formatShortcut(shortcut: string, platform?: PlatformType): string {
     const targetPlatform = platform ?? detectPlatform()
-    const parsed = parseShortcut(shortcut)
+    const parsed = parseShortcut(shortcut, targetPlatform)
     const symbols = ModifierDisplaySymbols[targetPlatform]
     const order = ModifierDisplayOrder[targetPlatform]
 

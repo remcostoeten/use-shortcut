@@ -40,19 +40,12 @@ bun add @remcostoeten/use-shortcut
 // or npm....
 ```
 ```tsx
-import { useShortcut } from '@remcostoeten/use-shortcut';
+import { useShortcutBinding } from '@remcostoeten/use-shortcut/react';
 
 function App() {
-  const $ = useShortcut();
-
-  // Simple shortcut
-  $.key('k').on(() => console.log('k pressed'));
-
-  // Combo shortcut
-  $.mod.key('s').on(() => console.log('Ctrl/Cmd+S'));
-
-  // Sequence shortcut
-  $.seq('g', 'g').on(() => console.log('gg pressed'));
+  useShortcutBinding('k', () => console.log('k pressed'));
+  useShortcutBinding('mod+s', () => console.log('Ctrl/Cmd+S'));
+  useShortcutBinding('g then g', () => console.log('gg pressed'));
 
   return <div>Your app content</div>;
 }

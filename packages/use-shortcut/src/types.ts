@@ -23,8 +23,14 @@ export type SpecialKey =
 /** Symbol and punctuation keys */
 export type SymbolKey =
     | "minus" | "plus" | "equal" | "equals"
-    | "bracketleft" | "bracketright" | "backslash" | "slash" | "/"
-    | "comma" | "period" | "semicolon" | "quote" | "backtick"
+    | "-" | "+" | "="
+    | "bracket" | "openbracket" | "leftbracket" | "lbracket" | "bracketleft"
+    | "closebracket" | "rightbracket" | "rbracket" | "bracketright"
+    | "[" | "]"
+    | "backslash" | "slash" | "\\" | "/"
+    | "comma" | "period" | "dot" | "," | "."
+    | "semicolon" | "quote" | "apostrophe" | "singlequote" | "backtick" | "backquote" | "grave"
+    | ";" | "'" | "`"
 
 /**
  * All valid action keys that can be used with `.key()`
@@ -41,6 +47,7 @@ export type ModifierFlags = {
     shift: boolean
     alt: boolean
     cmd: boolean
+    mod: boolean
 }
 
 /** Modifier key state from a keyboard event */
@@ -218,7 +225,13 @@ export type ModifierChain<Used extends Partial<ModifierFlags>> = {
     shift: Used["shift"] extends true ? never : ModifierChain<Used & { shift: true }>
     alt: Used["alt"] extends true ? never : ModifierChain<Used & { alt: true }>
     cmd: Used["cmd"] extends true ? never : ModifierChain<Used & { cmd: true }>
-    mod: Used["cmd"] extends true ? never : ModifierChain<Used & { cmd: true }>
+    mod: Used["mod"] extends true
+        ? never
+        : Used["cmd"] extends true
+            ? never
+            : Used["ctrl"] extends true
+                ? never
+                : ModifierChain<Used & { mod: true; cmd: true; ctrl: true }>
     key: <K extends ActionKey>(key: K) => KeyChain<K>
     in: (scopes: ShortcutScope) => ModifierChain<Used>
 }
@@ -267,7 +280,7 @@ export type ShortcutBuilder = ModifierChain<EmptyModifiers> & {
     shift: ModifierChain<{ shift: true }>
     alt: ModifierChain<{ alt: true }>
     cmd: ModifierChain<{ cmd: true }>
-    mod: ModifierChain<{ cmd: true }>
+    mod: ModifierChain<{ mod: true; cmd: true; ctrl: true }>
     key: <K extends ActionKey>(key: K) => KeyChain<K>
     /** Bind a pre-defined combo string */
     bind: (combo: string | string[]) => KeyChain<any>
@@ -323,6 +336,9 @@ export type ShortcutMapEntry = {
     handler: ShortcutHandler
     options?: HandlerOptions
 }
+
+/** Declarative single shortcut binding used by `useShortcutBinding`. */
+export type ShortcutBinding = ShortcutMapEntry
 
 /** Bulk registration shape mapping action ids to key+handler definitions. */
 export type ShortcutMap = Record<string, ShortcutMapEntry>

@@ -26,6 +26,7 @@ describe("package entrypoints", () => {
 
     it("exposes the React surface from the react entrypoint", () => {
         expect(reactEntry.useShortcut).toBeTypeOf("function")
+        expect(reactEntry.useShortcutBinding).toBeTypeOf("function")
         expect(reactEntry.useShortcutMap).toBeTypeOf("function")
         expect(reactEntry.registerShortcutMap).toBeTypeOf("function")
         expect(reactEntry.createShortcutGroup).toBeTypeOf("function")
@@ -56,6 +57,7 @@ describe("package entrypoints", () => {
 
     it("keeps the root barrel compatible with the React-first surface", () => {
         expect(rootEntry.useShortcut).toBe(reactEntry.useShortcut)
+        expect(rootEntry.useShortcutBinding).toBe(reactEntry.useShortcutBinding)
         expect(rootEntry.useShortcutMap).toBe(reactEntry.useShortcutMap)
         expect(rootEntry.registerShortcutMap).toBe(reactEntry.registerShortcutMap)
         expect(rootEntry.createShortcutGroup).toBe(reactEntry.createShortcutGroup)

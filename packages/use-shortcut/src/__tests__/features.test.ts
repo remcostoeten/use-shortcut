@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { _createShortcutBuilder } from "../builder"
 import { registerShortcutMap, createShortcutGroup } from "../hook"
+import { _attachRegistryListener } from "../runtime/listener"
 import type { ShortcutAttemptDebugEvent, ShortcutBuilder, UseShortcutOptions } from "../types"
 
 function dispatchKey(key: string, options: KeyboardEventInit = {}) {
@@ -139,7 +140,7 @@ describe("advanced shortcut features", () => {
     })
 
     it("respects priority and stopOnMatch for overlapping combos", () => {
-        const $ = createTestShortcut({ ignoreInputs: false })
+        const $ = createTestShortcut({ ignoreInputs: false, conflictWarnings: false })
         const primary = vi.fn()
         const secondary = vi.fn()
 
@@ -226,5 +227,143 @@ describe("advanced shortcut features", () => {
         expect(debugListener.mock.calls[1][0].attempts[0].status).toBe("matched")
 
         unsubscribe()
+    })
+
+    it("reports exact conflicts for duplicate combos", () => {
+        const onConflict = vi.fn()
+        const $ = createTestShortcut({ ignoreInputs: false, onConflict })
+
+        $.mod.key("k").on(() => {})
+        $.mod.key("k").on(() => {})
+
+        expect(onConflict).toHaveBeenCalledTimes(1)
+        expect(onConflict.mock.calls[0][0]).toMatchObject({
+            combo: "ctrl+k",
+            existingCombo: "ctrl+k",
+            reason: "exact",
+        })
+    })
+
+    it("does not run delayed handlers after unbind", () => {
+        vi.useFakeTimers()
+        const $ = createTestShortcut({ ignoreInputs: false })
+        const handler = vi.fn()
+
+        const result = $.key("x").on(handler, { delay: 50 })
+        dispatchKey("x")
+        result.unbind()
+        vi.advanceTimersByTime(50)
+
+        expect(handler).toHaveBeenCalledTimes(0)
+        vi.useRealTimers()
+    })
+
+    it("does not run delayed handlers after disable", () => {
+        vi.useFakeTimers()
+        const $ = createTestShortcut({ ignoreInputs: false })
+        const handler = vi.fn()
+
+        const result = $.key("x").on(handler, { delay: 50 })
+        dispatchKey("x")
+        result.disable()
+        vi.advanceTimersByTime(50)
+
+        expect(handler).toHaveBeenCalledTimes(0)
+        vi.useRealTimers()
+    })
+
+    it("reattaches when target or event type changes", () => {
+        const firstTarget = document.createElement("div")
+        const secondTarget = document.createElement("div")
+        const handler = vi.fn()
+        const { builder, registry } = _createShortcutBuilder({
+            target: firstTarget,
+            ignoreInputs: false,
+        })
+
+        builder.key("x").on(handler)
+        firstTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "x", bubbles: true }))
+        expect(handler).toHaveBeenCalledTimes(1)
+
+        registry.options = {
+            ...registry.options,
+            target: secondTarget,
+            eventType: "keyup",
+        }
+        _attachRegistryListener(registry)
+
+        firstTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "x", bubbles: true }))
+        secondTarget.dispatchEvent(new KeyboardEvent("keydown", { key: "x", bubbles: true }))
+        secondTarget.dispatchEvent(new KeyboardEvent("keyup", { key: "x", bubbles: true }))
+
+        expect(handler).toHaveBeenCalledTimes(2)
+    })
+
+    it("reconciles render-style registrations by slot instead of stacking duplicates", () => {
+        const firstHandler = vi.fn()
+        const secondHandler = vi.fn()
+        const { builder, registry } = _createShortcutBuilder({
+            target: window,
+            ignoreInputs: false,
+        })
+
+        registry.reconcileRenderBindings = true
+        registry.collectingRenderBindings = true
+        registry.renderCycle = 1
+        registry.nextRenderSlot = 0
+        builder.key("x").on(firstHandler)
+
+        registry.renderCycle = 2
+        registry.nextRenderSlot = 0
+        builder.key("x").on(secondHandler)
+        registry.collectingRenderBindings = false
+        _attachRegistryListener(registry)
+
+        dispatchKey("x")
+
+        expect(firstHandler).toHaveBeenCalledTimes(0)
+        expect(secondHandler).toHaveBeenCalledTimes(1)
+    })
+
+    it("attaches effect-time registrations immediately in reconcile mode", () => {
+        const handler = vi.fn()
+        const { builder, registry } = _createShortcutBuilder({
+            target: window,
+            ignoreInputs: false,
+        })
+
+        registry.reconcileRenderBindings = true
+        registry.collectingRenderBindings = false
+        registry.renderCycle = 1
+        registry.nextRenderSlot = 0
+
+        builder.key("x").on(handler)
+        dispatchKey("x")
+
+        expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it("does not prune effect-time registrations during render-slot reconciliation", () => {
+        const handler = vi.fn()
+        const { builder, registry } = _createShortcutBuilder({
+            target: window,
+            ignoreInputs: false,
+        })
+
+        registry.reconcileRenderBindings = true
+        registry.collectingRenderBindings = false
+        registry.renderCycle = 1
+        builder.key("x").on(handler)
+
+        registry.collectingRenderBindings = true
+        registry.renderCycle = 2
+        registry.nextRenderSlot = 0
+        expect(registry.renderSlots.size).toBe(0)
+        registry.collectingRenderBindings = false
+        _attachRegistryListener(registry)
+
+        dispatchKey("x")
+
+        expect(handler).toHaveBeenCalledTimes(1)
     })
 })
