@@ -308,6 +308,7 @@ describe("advanced shortcut features", () => {
         })
 
         registry.reconcileRenderBindings = true
+        registry.collectingRenderBindings = true
         registry.renderCycle = 1
         registry.nextRenderSlot = 0
         builder.key("x").on(firstHandler)
@@ -315,6 +316,7 @@ describe("advanced shortcut features", () => {
         registry.renderCycle = 2
         registry.nextRenderSlot = 0
         builder.key("x").on(secondHandler)
+        registry.collectingRenderBindings = false
         _attachRegistryListener(registry)
 
         dispatchKey("x")
@@ -336,6 +338,30 @@ describe("advanced shortcut features", () => {
         registry.nextRenderSlot = 0
 
         builder.key("x").on(handler)
+        dispatchKey("x")
+
+        expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it("does not prune effect-time registrations during render-slot reconciliation", () => {
+        const handler = vi.fn()
+        const { builder, registry } = _createShortcutBuilder({
+            target: window,
+            ignoreInputs: false,
+        })
+
+        registry.reconcileRenderBindings = true
+        registry.collectingRenderBindings = false
+        registry.renderCycle = 1
+        builder.key("x").on(handler)
+
+        registry.collectingRenderBindings = true
+        registry.renderCycle = 2
+        registry.nextRenderSlot = 0
+        expect(registry.renderSlots.size).toBe(0)
+        registry.collectingRenderBindings = false
+        _attachRegistryListener(registry)
+
         dispatchKey("x")
 
         expect(handler).toHaveBeenCalledTimes(1)

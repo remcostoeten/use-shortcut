@@ -139,7 +139,9 @@ function _registerBinding(
     const debug = options.debug ?? false
     const except = stateExcept ?? handlerOptions.except
 
-    const renderSlot = registry.reconcileRenderBindings ? registry.nextRenderSlot++ : undefined
+    const renderSlot = registry.reconcileRenderBindings && registry.collectingRenderBindings
+        ? registry.nextRenderSlot++
+        : undefined
     const existingRenderEntry = renderSlot === undefined ? undefined : registry.renderSlots.get(renderSlot)
 
     if (existingRenderEntry && existingRenderEntry.combo !== combo) {
