@@ -26,7 +26,7 @@ export function ApiMethodMatrix({ methodGroups, optionGroups }: Props) {
   return (
     <section aria-label="API method and option matrix" className="w-full space-y-8">
       <div>
-        <h3 className="mb-2 font-display text-base font-bold lowercase tracking-tight text-foreground">method matrix</h3>
+        <h3 className="mb-2 font-display text-base font-bold lowercase text-foreground">method matrix</h3>
         <p className="mb-4 text-xs lowercase leading-relaxed text-muted-foreground">
           exhaustive callable surface across builder chains, registration handles, and utility functions.
         </p>
@@ -67,7 +67,7 @@ export function ApiMethodMatrix({ methodGroups, optionGroups }: Props) {
           </div>
           {canCollapseMethods && !showAllMethods ? (
             <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background via-background/94 to-transparent"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-28 border-b border-border bg-background/95"
               aria-hidden="true"
             />
           ) : null}
@@ -91,7 +91,7 @@ export function ApiMethodMatrix({ methodGroups, optionGroups }: Props) {
       </div>
 
       <div>
-        <h3 className="mb-2 font-display text-base font-bold lowercase tracking-tight text-foreground">option matrix</h3>
+        <h3 className="mb-2 font-display text-base font-bold lowercase text-foreground">option matrix</h3>
         <p className="mb-4 text-xs lowercase leading-relaxed text-muted-foreground">
           exhaustive config keys for hook-level, handler-level, and recording behavior.
         </p>
@@ -99,7 +99,7 @@ export function ApiMethodMatrix({ methodGroups, optionGroups }: Props) {
         <div className="relative">
           <div className="space-y-4">
             {visibleOptionGroups.map((group) => (
-              <article key={group.title} className="border border-border bg-gradient-to-br from-card via-card to-card/70">
+              <article key={group.title} className="border border-border bg-card/60">
                 <header className="border-b border-dashed border-border px-3 py-2.5">
                   <h4 className="font-mono text-xs font-semibold lowercase text-primary">{group.title}</h4>
                   {group.description ? (
@@ -143,7 +143,7 @@ export function ApiMethodMatrix({ methodGroups, optionGroups }: Props) {
           </div>
           {canCollapseOptions && !showAllOptions ? (
             <div
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background via-background/94 to-transparent"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-28 border-b border-border bg-background/95"
               aria-hidden="true"
             />
           ) : null}

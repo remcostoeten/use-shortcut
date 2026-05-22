@@ -23,7 +23,7 @@ export function ApiPropGuidance({
   return (
     <section aria-label="prop guidance" className="w-full border border-border bg-card/40">
       <div className="border-b border-dashed border-border px-3 py-2.5">
-        <h3 className="font-display text-base font-bold lowercase tracking-tight text-foreground">
+        <h3 className="font-display text-base font-bold lowercase text-foreground">
           {title}
         </h3>
         <p className="mt-1 text-xs lowercase leading-relaxed text-muted-foreground">

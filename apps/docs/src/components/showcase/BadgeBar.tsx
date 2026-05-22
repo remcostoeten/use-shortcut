@@ -39,11 +39,11 @@ export function BadgeBar({
   const { version, weeklyDownloads, isLoading } = useNpmStats(installName);
 
   const skeletonClass =
-    "inline-block h-3 w-10 animate-pulse rounded bg-muted-foreground/20";
+    "inline-block h-3 w-10 animate-pulse bg-muted-foreground/20";
   const hero = variant === "hero";
   const itemClassName = hero
-    ? "inline-flex min-h-8 items-center gap-1.5 rounded border border-border/80 bg-card/70 px-2.5 py-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-    : "inline-flex items-center gap-1.5 rounded border border-dashed border-border px-2.5 py-1 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground";
+    ? "inline-flex min-h-8 items-center gap-1.5 border border-border/80 bg-card/70 px-2.5 py-1.5 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+    : "inline-flex items-center gap-1.5 border border-dashed border-border px-2.5 py-1 font-mono text-[10px] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground";
   const resolvedPrimaryUrl = primaryUrl ?? npmUrl;
   const resolvedPrimaryValue = shouldLoadNpmStats
     ? isLoading

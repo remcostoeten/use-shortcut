@@ -126,12 +126,12 @@ export function DocsAssistantDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-1rem)] max-w-5xl overflow-hidden border-border bg-background p-0 shadow-[0_24px_90px_rgba(0,0,0,0.45)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,98,0,0.16),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.03),transparent_24%)]" aria-hidden="true" />
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-5xl overflow-hidden border-border bg-background p-0">
+        <div className="absolute inset-0 bg-card/50" aria-hidden="true" />
         <DialogHeader className="relative border-b border-border/80 px-4 pb-4 pt-5 sm:px-6">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1 text-left">
-              <DialogTitle className="font-display text-xl lowercase tracking-tight text-foreground">
+              <DialogTitle className="font-display text-xl lowercase text-foreground">
                 ask the docs
               </DialogTitle>
               <DialogDescription className="max-w-2xl text-xs lowercase leading-relaxed text-muted-foreground">
@@ -290,7 +290,7 @@ export function DocsAssistantDialog({
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
               <article className="border border-border bg-card/35 p-4">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-display text-xl lowercase tracking-tight text-foreground">
+                  <h3 className="font-display text-xl lowercase text-foreground">
                     {answer.headline}
                   </h3>
                   <span className="inline-flex min-h-7 items-center border border-border bg-background px-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">

@@ -244,15 +244,10 @@ export function ApiCapabilities({ capabilities }: Props) {
               id={`api-capability-result-${index}`}
               tabIndex={0}
               onFocus={() => setActiveResultIndex(index)}
-              className="group border border-border bg-gradient-to-br from-card via-card to-card/60 p-4 shadow-[0_0_0_1px_hsl(var(--border)/0.25)] transition-colors hover:border-primary/50"
+              className="group border border-border p-4 transition-colors hover:border-primary/50"
               data-active={activeResultIndex === index ? "true" : "false"}
               data-flash={flashResultIndex === index ? "true" : "false"}
               aria-current={activeResultIndex === index ? "true" : undefined}
-              style={
-                activeResultIndex === index
-                  ? { boxShadow: "0 0 0 1px hsl(var(--primary) / 0.6)" }
-                  : undefined
-              }
             >
               <header className="mb-2 flex items-start justify-between gap-3">
                 <h3 className="font-mono text-xs font-semibold text-foreground">{item.name}</h3>
@@ -286,7 +281,7 @@ export function ApiCapabilities({ capabilities }: Props) {
         </div>
         {shouldCollapse && !showAll ? (
           <div
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background via-background/94 to-transparent"
+            className="pointer-events-none absolute inset-x-0 bottom-0 h-28 border-b border-border bg-background/95"
             aria-hidden="true"
           />
         ) : null}

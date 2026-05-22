@@ -28,7 +28,7 @@ export function CodeBlock({ title, code, language = "tsx" }: CodeBlockProps) {
       <div className="flex items-center justify-between gap-3 border-b border-border/80 bg-card/40 px-4 py-2">
         <div className="min-w-0">
           {title ? (
-            <p className="truncate font-display text-sm font-semibold lowercase tracking-tight text-foreground">
+            <p className="truncate font-display text-sm font-semibold lowercase text-foreground">
               {title}
             </p>
           ) : null}

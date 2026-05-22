@@ -32,7 +32,7 @@ export function ApiTable({
 
   return (
     <div className="w-full">
-      <h2 className="font-display text-base font-bold lowercase tracking-tight text-foreground mb-4">
+      <h2 className="mb-4 font-display text-base font-bold lowercase text-foreground">
         {title}
       </h2>
 

@@ -9,7 +9,7 @@ export function ShowcaseSection({ children, className, ...props }: ShowcaseSecti
     return (
         <div
             className={cn(
-                "border-b border-dashed border-border -mx-[1px] bg-card/30 px-4 py-8 sm:px-8 flex flex-col gap-6",
+                "border-b border-border -mx-[1px] bg-card/60 px-5 py-10 sm:px-8 lg:px-10 flex flex-col gap-6",
                 className
             )}
             {...props}

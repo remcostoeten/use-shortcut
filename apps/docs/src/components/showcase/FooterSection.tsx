@@ -53,7 +53,7 @@ export function FooterSection({
           </span>
           {shortcutHints.map((cta) => (
             <span key={`${cta.label}-${cta.shortcutKey}`} className="inline-flex items-center gap-1.5">
-              <kbd className="inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[10px] uppercase text-muted-foreground">
+              <kbd className="inline-flex h-5 min-w-[20px] items-center justify-center border border-border bg-muted px-1 font-mono text-[10px] uppercase text-muted-foreground">
                 {cta.shortcutKey}
               </kbd>
               <span className="font-mono text-[10px] lowercase text-muted-foreground">{cta.label}</span>

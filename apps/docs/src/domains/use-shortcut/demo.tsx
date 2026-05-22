@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ShortcutAttemptDebugEvent, ShortcutDebugEvent } from "@remcostoeten/use-shortcut";
 import { useShortcut, formatShortcut } from "@remcostoeten/use-shortcut";
 import { Save, CircleHelp, X } from "lucide-react";
@@ -87,15 +87,15 @@ export function UseShortcutDemo() {
     };
   }, []);
 
-  const flashCombo = (combo: string) => {
+  const flashCombo = useCallback((combo: string) => {
     setActiveCombo(combo);
     if (flashTimeoutRef.current) {
       window.clearTimeout(flashTimeoutRef.current);
     }
     flashTimeoutRef.current = window.setTimeout(() => setActiveCombo(null), 700);
-  };
+  }, []);
 
-  const showToast = (message: string) => {
+  const showToast = useCallback((message: string) => {
     toastRef.current = message;
     setToast(message);
     if (toastTimeoutRef.current) {
@@ -105,15 +105,15 @@ export function UseShortcutDemo() {
       toastRef.current = null;
       setToast(null);
     }, 2200);
-  };
+  }, []);
 
-  const pushEvent = (combo: string, display: string, label: string) => {
+  const pushEvent = useCallback((combo: string, display: string, label: string) => {
     const id = ++idRef.current;
     setEvents((prev) => [{ id, combo, display, label, timestamp: Date.now() }, ...prev].slice(0, MAX_EVENTS));
     flashCombo(combo);
-  };
+  }, [flashCombo]);
 
-  const pushDebugToast = (kind: DebugToast["kind"], title: string, message: string) => {
+  const pushDebugToast = useCallback((kind: DebugToast["kind"], title: string, message: string) => {
     const id = ++idRef.current;
     setDebugToasts((prev) => [{ id, kind, title, message }, ...prev].slice(0, MAX_DEBUG_TOASTS));
     const timeoutId = window.setTimeout(() => {
@@ -121,9 +121,9 @@ export function UseShortcutDemo() {
       debugToastTimeoutsRef.current = debugToastTimeoutsRef.current.filter((current) => current !== timeoutId);
     }, 1800);
     debugToastTimeoutsRef.current.push(timeoutId);
-  };
+  }, []);
 
-  const describeInput = (input: ShortcutDebugEvent["input"]) => {
+  const describeInput = useCallback((input: ShortcutDebugEvent["input"]) => {
     const details = [`key ${input.key}`];
     if (input.code) {
       details.push(`code ${input.code}`);
@@ -133,9 +133,9 @@ export function UseShortcutDemo() {
       details.push(`keyCode ${input.keyCode}`);
     }
     return details.join(" · ");
-  };
+  }, []);
 
-  const announceProbeAttempt = (details: ShortcutAttemptDebugEvent) => {
+  const announceProbeAttempt = useCallback((details: ShortcutAttemptDebugEvent) => {
     if (details.status === "matched") {
       pushDebugToast("success", details.display, "matched in order");
       return;
@@ -152,24 +152,24 @@ export function UseShortcutDemo() {
     }
 
     pushDebugToast("neutral", details.display, "sequence in progress");
-  };
+  }, [pushDebugToast]);
 
-  const saveDraft = () => {
+  const saveDraft = useCallback(() => {
     showToast("Save triggered");
     pushEvent("cmd+s", formatShortcut("cmd+s"), "save");
-  };
+  }, [pushEvent, showToast]);
 
-  const openSearch = () => {
+  const openSearch = useCallback(() => {
     showToast("Command trigger fired");
     pushEvent("mod+k", formatShortcut("mod+k"), "search");
-  };
+  }, [pushEvent, showToast]);
 
-  const undoDraft = () => {
+  const undoDraft = useCallback(() => {
     showToast("Undo triggered");
     pushEvent("mod+z", formatShortcut("mod+z"), "undo");
-  };
+  }, [pushEvent, showToast]);
 
-  const copySnippet = async () => {
+  const copySnippet = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(`const $ = useShortcut()\n$.mod.key("k").on(openSearch, { preventDefault: true })`);
       showToast("Snippet copied");
@@ -177,23 +177,23 @@ export function UseShortcutDemo() {
       showToast("Clipboard unavailable");
     }
     pushEvent("mod+c", formatShortcut("mod+c"), "copy");
-  };
+  }, [pushEvent, showToast]);
 
-  const focusSearchOnly = () => {
+  const focusSearchOnly = useCallback(() => {
     showToast("Slash shortcut fired");
     pushEvent("/", "/", "focus search");
-  };
+  }, [pushEvent, showToast]);
 
-  const toggleHelp = () => {
+  const toggleHelp = useCallback(() => {
     setHelpOpen((open) => {
       const next = !open;
       showToast(next ? "Help opened" : "Help hidden");
       return next;
     });
     pushEvent("shift+slash", "?", "toggle help");
-  };
+  }, [pushEvent, showToast]);
 
-  const dismissSurface = () => {
+  const dismissSurface = useCallback(() => {
     let dismissed = false;
     if (helpOpenRef.current) {
       helpOpenRef.current = false;
@@ -209,7 +209,7 @@ export function UseShortcutDemo() {
       showToast("Nothing to dismiss");
     }
     pushEvent("escape", "Esc", "dismiss");
-  };
+  }, [pushEvent, showToast]);
 
   const $ = useShortcut({
     disabled: !isActive,
@@ -248,7 +248,20 @@ export function UseShortcutDemo() {
       unsubscribeProbe?.();
       unsubscribeDebug();
     };
-  }, [$]);
+  }, [
+    $,
+    announceProbeAttempt,
+    copySnippet,
+    describeInput,
+    dismissSurface,
+    focusSearchOnly,
+    openSearch,
+    pushDebugToast,
+    pushEvent,
+    saveDraft,
+    toggleHelp,
+    undoDraft,
+  ]);
 
   const shortcuts = DEMO_SHORTCUTS.map((shortcut, index) => ({
     ...shortcut,
@@ -320,7 +333,7 @@ export function UseShortcutDemo() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2">
-          <span className={`inline-block h-2 w-2 rounded-full ${isActive ? "bg-primary/80 animate-pulse" : "bg-muted-foreground/40"}`} />
+          <span className={`inline-block h-2 w-2 ${isActive ? "bg-primary/80 animate-pulse" : "bg-muted-foreground/40"}`} />
           <p className="font-mono text-xs text-muted-foreground lowercase">
             live shortcut workspace
           </p>
@@ -346,9 +359,9 @@ export function UseShortcutDemo() {
             <span className="font-mono text-[10px] lowercase text-muted-foreground/50">wired to fake ui</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/20" />
-            <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/20" />
-            <span className="h-2.5 w-2.5 rounded-full bg-primary/40" />
+            <span className="h-2.5 w-2.5 bg-muted-foreground/20" />
+            <span className="h-2.5 w-2.5 bg-muted-foreground/20" />
+            <span className="h-2.5 w-2.5 bg-primary/40" />
           </div>
         </div>
 
@@ -606,7 +619,7 @@ export function UseShortcutDemo() {
         {debugToasts.map((toastItem) => (
           <div
             key={toastItem.id}
-            className={`border px-3 py-2 shadow-lg backdrop-blur-sm ${
+            className={`border px-3 py-2 backdrop-blur-sm ${
               toastItem.kind === "success"
                 ? "border-emerald-500/35 bg-emerald-950/85 text-emerald-100"
                 : toastItem.kind === "warning"
