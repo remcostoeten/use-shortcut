@@ -377,7 +377,7 @@ function App() {
             <input
               ref={paletteInputRef}
               aria-label="Search commands"
-              placeholder="Search commands..."
+              placeholder="Search commands…"
               spellCheck={false}
             />
             <div className="command-list">
@@ -494,7 +494,7 @@ function SettingsPanel(props: {
           <h2>Shortcut control room</h2>
         </div>
         <button type="button" className="primary-action" onClick={props.onRecord} disabled={props.recording}>
-          <span>{props.recording ? "Recording..." : "Record combo"}</span>
+          <span>{props.recording ? "Recording…" : "Record combo"}</span>
         </button>
       </div>
 

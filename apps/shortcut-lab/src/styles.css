@@ -1,33 +1,49 @@
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Manrope:wght@500;600;700;800&display=swap");
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+
+@font-face {
+  font-family: "Geist Pixel Square";
+  src: url("/fonts/GeistPixel-Square.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
 
 :root {
   color-scheme: light;
-  --paper: #f5f0e6;
-  --ink: #181612;
-  --muted: #73695b;
-  --line: #d7cbb7;
-  --raised: #fffaf0;
-  --accent: #16615a;
-  --accent-strong: #0d433f;
-  --warm: #c2542f;
-  --blue: #315f91;
-  --shadow: 0 22px 70px rgb(66 45 26 / 0.18);
-  font-family: "Manrope", sans-serif;
-  background:
-    radial-gradient(circle at 20% 10%, rgb(194 84 47 / 0.15), transparent 34rem),
-    radial-gradient(circle at 90% 0%, rgb(49 95 145 / 0.16), transparent 30rem),
-    linear-gradient(135deg, #f7f1e6 0%, #efe4d1 100%);
-  color: var(--ink);
+  --background: #ffffff;
+  --foreground: #050505;
+  --muted: #666666;
+  --faint: #8a8a8a;
+  --line: #e5e5e5;
+  --line-strong: #111111;
+  --panel: #fafafa;
+  --panel-strong: #f4f4f4;
+  --inverse: #050505;
+  --inverse-foreground: #ffffff;
+  --success: #097a3f;
+  --warning: #9a5b00;
+  --danger: #b42318;
+  font-family: "Geist Variable", "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--background);
+  color: var(--foreground);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  letter-spacing: 0 !important;
 }
 
 html {
   min-height: 100%;
+  scrollbar-color: #bdbdbd #ffffff;
+  scrollbar-width: thin;
 }
 
 body {
@@ -45,29 +61,43 @@ button {
   touch-action: manipulation;
 }
 
+button,
+a {
+  color: inherit;
+}
+
 button:focus-visible,
 textarea:focus-visible,
 input:focus-visible,
 a:focus-visible {
-  outline: 3px solid rgb(22 97 90 / 0.45);
+  outline: 2px solid var(--foreground);
   outline-offset: 3px;
 }
 
 button:disabled {
   cursor: wait;
-  opacity: 0.7;
+  opacity: 0.62;
+}
+
+button:not(:disabled) {
+  cursor: pointer;
 }
 
 kbd {
-  border: 1px solid rgb(24 22 18 / 0.18);
-  border-bottom-width: 2px;
-  border-radius: 5px;
-  background: rgb(255 250 240 / 0.8);
-  padding: 0.14rem 0.42rem;
-  font-family: "IBM Plex Mono", monospace;
+  display: inline-flex;
+  min-height: 1.5rem;
+  min-width: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  background: var(--background);
+  color: var(--muted);
+  padding: 0.1rem 0.42rem;
+  font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 560;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .skip-link {
@@ -76,11 +106,10 @@ kbd {
   top: 1rem;
   z-index: 20;
   translate: 0 -160%;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--raised);
-  color: var(--ink);
-  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  background: var(--background);
+  color: var(--foreground);
+  padding: 0.65rem 0.8rem;
 }
 
 .skip-link:focus {
@@ -93,54 +122,47 @@ kbd {
 }
 
 .topbar,
-.lab-grid,
-.surface,
-.rail,
-.activity,
-.palette,
-.debug-card,
-.settings-grid > article {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgb(255 250 240 / 0.72);
-  box-shadow: 0 1px 0 rgb(255 255 255 / 0.78) inset;
+.lab-grid {
+  width: min(100%, 1440px);
+  margin-inline: auto;
 }
 
 .topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 1rem;
-  margin: 0 auto 1rem;
-  max-width: 1440px;
-  padding: 1rem;
+  align-items: end;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: var(--background);
+  padding: 1.25rem;
 }
 
 h1,
 h2 {
   margin: 0;
-  font-family: "Instrument Serif", serif;
-  font-weight: 400;
-  letter-spacing: 0;
+  font-family: "Geist Pixel Square", "Geist Mono Variable", monospace;
+  font-weight: 500;
+  text-transform: lowercase;
 }
 
 h1 {
-  font-size: clamp(2.2rem, 5vw, 4.7rem);
-  line-height: 0.9;
+  font-size: clamp(2.6rem, 7vw, 6.8rem);
+  line-height: 0.82;
 }
 
 h2 {
-  font-size: 2.1rem;
-  line-height: 1;
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  line-height: 0.9;
 }
 
 .eyebrow {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.5rem;
   color: var(--muted);
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.72rem;
-  font-weight: 600;
-  text-transform: uppercase;
+  font-weight: 560;
+  text-transform: lowercase;
 }
 
 .topbar-actions,
@@ -151,56 +173,51 @@ h2 {
 }
 
 .chip,
-.segmented button {
-  min-height: 2.5rem;
+.segmented button,
+.rail-button,
+.primary-action,
+.command-list button {
+  min-height: 2.75rem;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.35);
+  background: var(--background);
   color: var(--muted);
-  padding: 0.45rem 0.8rem;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.76rem;
+  font-weight: 560;
+}
+
+.chip,
+.segmented button {
+  padding: 0.45rem 0.85rem;
 }
 
 .chip.active,
-.segmented button.active {
-  border-color: rgb(22 97 90 / 0.5);
-  background: rgb(22 97 90 / 0.12);
-  color: var(--accent-strong);
+.segmented button.active,
+.rail-button.active {
+  border-color: var(--line-strong);
+  background: var(--inverse);
+  color: var(--inverse-foreground);
 }
 
 .lab-grid {
   display: grid;
-  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr) minmax(16rem, 21rem);
-  gap: 1rem;
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 1rem;
-  box-shadow: var(--shadow);
+  grid-template-columns: minmax(13rem, 16rem) minmax(0, 1fr) minmax(17rem, 22rem);
+  border: 1px solid var(--line);
+  background: var(--background);
 }
 
 .rail,
 .activity {
-  align-self: stretch;
-  padding: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
 }
 
 .rail {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-}
-
-.rail-button,
-.primary-action,
-.command-list button {
-  min-height: 2.8rem;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--raised);
-  color: var(--ink);
-  cursor: pointer;
+  gap: 0.65rem;
+  border-right: 1px solid var(--line);
+  background: var(--panel);
 }
 
 .rail-button {
@@ -208,19 +225,20 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 0.8rem;
-  padding: 0.65rem;
+  padding: 0.7rem;
   text-align: left;
 }
 
-.rail-button.active {
-  border-color: rgb(194 84 47 / 0.5);
-  background: rgb(194 84 47 / 0.11);
+.rail-button.active kbd {
+  border-color: #3a3a3a;
+  background: #111111;
+  color: var(--inverse-foreground);
 }
 
 .rail-card {
   margin-top: auto;
-  border-top: 1px dashed var(--line);
-  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
 }
 
 dl,
@@ -231,7 +249,7 @@ dd {
 
 .rail-card dl {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.7rem;
 }
 
 .rail-card div,
@@ -240,7 +258,7 @@ dd {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.7rem;
+  gap: 0.75rem;
 }
 
 dt,
@@ -252,14 +270,15 @@ dt,
 }
 
 dd {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .surface {
   min-width: 0;
-  min-height: min(68vh, 48rem);
-  padding: 1rem;
+  min-height: min(70vh, 52rem);
+  padding: 1.25rem;
 }
 
 .panel-stack {
@@ -271,7 +290,7 @@ dd {
 
 .panel-head {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
   border-bottom: 1px solid var(--line);
@@ -282,29 +301,34 @@ dd {
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 0.65rem 0.8rem;
-  background: var(--accent);
-  color: white;
+  border-color: var(--line-strong);
+  background: var(--inverse);
+  color: var(--inverse-foreground);
+  padding: 0.7rem 0.9rem;
 }
 
 .primary-action kbd {
-  color: var(--ink);
+  border-color: #303030;
+  background: #111111;
+  color: #f5f5f5;
 }
 
 textarea {
-  min-height: 30rem;
+  min-height: 32rem;
   width: 100%;
   resize: vertical;
   border: 1px solid var(--line);
-  border-radius: 7px;
-  background:
-    linear-gradient(90deg, rgb(24 22 18 / 0.05) 1px, transparent 1px) 0 0 / 3rem 3rem,
-    var(--raised);
-  color: var(--ink);
+  background: var(--panel);
+  color: var(--foreground);
   padding: 1rem;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 1rem;
   line-height: 1.65;
+}
+
+.activity {
+  border-left: 1px solid var(--line);
+  background: var(--panel);
 }
 
 .activity-head {
@@ -312,7 +336,13 @@ textarea {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--line);
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.7rem;
+}
+
+.activity-head span {
+  font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .activity-list,
@@ -322,11 +352,12 @@ textarea {
 }
 
 .activity-item,
-.event-row {
-  border: 1px solid rgb(215 203 183 / 0.7);
-  border-radius: 7px;
-  background: rgb(255 255 255 / 0.28);
-  padding: 0.7rem;
+.event-row,
+.debug-card,
+.settings-grid > article {
+  border: 1px solid var(--line);
+  background: var(--background);
+  padding: 0.8rem;
 }
 
 .activity-item div {
@@ -350,19 +381,21 @@ textarea {
 .debug-card,
 .settings-grid > article {
   display: grid;
-  gap: 0.5rem;
-  padding: 1rem;
+  gap: 0.55rem;
+  background: var(--panel);
 }
 
 .debug-card strong,
 .settings-grid strong {
-  font-size: 1.35rem;
+  font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .event-row {
   display: grid;
   grid-template-columns: minmax(5rem, 8rem) minmax(0, 1fr) auto auto;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.78rem;
 }
 
@@ -372,25 +405,25 @@ textarea {
   z-index: 10;
   display: grid;
   place-items: start center;
-  background: rgb(24 22 18 / 0.3);
+  background: rgb(255 255 255 / 0.84);
   padding: 12vh 1rem 1rem;
-  backdrop-filter: blur(8px);
 }
 
 .palette {
-  width: min(42rem, 100%);
+  width: min(44rem, 100%);
+  border: 1px solid var(--line-strong);
+  background: var(--background);
   padding: 0.8rem;
 }
 
 .palette input {
   width: 100%;
-  min-height: 3rem;
+  min-height: 3.2rem;
   border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--raised);
-  color: var(--ink);
-  padding: 0.8rem;
-  font-size: 1rem;
+  background: var(--panel);
+  color: var(--foreground);
+  padding: 0.85rem;
+  font-size: max(1rem, 16px);
 }
 
 .command-list {
@@ -403,7 +436,20 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem;
+  padding: 0.8rem;
+}
+
+.chip:hover,
+.segmented button:hover,
+.rail-button:hover,
+.primary-action:hover,
+.command-list button:hover {
+  border-color: var(--line-strong);
+  color: var(--foreground);
+}
+
+.primary-action:hover {
+  color: var(--inverse-foreground);
 }
 
 .sr-only {
@@ -417,13 +463,28 @@ textarea {
 }
 
 @media (max-width: 1050px) {
+  .topbar,
+  .lab-grid {
+    width: 100%;
+  }
+
   .lab-grid {
     grid-template-columns: 1fr;
+  }
+
+  .rail,
+  .activity {
+    border-inline: 0;
   }
 
   .rail {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-bottom: 1px solid var(--line);
+  }
+
+  .activity {
+    border-top: 1px solid var(--line);
   }
 
   .rail-card {
@@ -439,11 +500,18 @@ textarea {
   .topbar,
   .panel-head {
     align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+
+  .panel-head {
     flex-direction: column;
   }
 
-  .lab-grid {
-    padding: 0.6rem;
+  .topbar,
+  .surface,
+  .rail,
+  .activity {
+    padding: 0.8rem;
   }
 
   .rail,

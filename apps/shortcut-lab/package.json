@@ -11,6 +11,8 @@
     "typecheck": "tsc -b"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "^5.2.9",
+    "@fontsource-variable/geist-mono": "^5.2.8",
     "@remcostoeten/use-shortcut": "workspace:*",
     "react": "19.2.6",
     "react-dom": "19.2.6"
