@@ -38,6 +38,34 @@ export function Example() {
 }
 ```
 
+### `useShortcutBinding(keys, handler, options?, shortcutOptions?)`
+Registers one shortcut declaratively and cleans it up automatically.
+
+```tsx
+import { useShortcutBinding } from "@remcostoeten/use-shortcut"
+
+export function SaveShortcut() {
+  const saveResult = useShortcutBinding("mod+s", saveDocument, {
+    description: "Save document",
+    preventDefault: true,
+  })
+
+  return <kbd>{saveResult.display}</kbd>
+}
+```
+
+Object form:
+
+```tsx
+useShortcutBinding({
+  keys: ["escape", "mod+d"],
+  handler: closeDialog,
+  options: { description: "Close dialog" },
+})
+```
+
+Use `useShortcut()` directly when you need advanced fluent chains, `onDebug`, `record`, or imperative scope control.
+
 ## 2. Chain API: All Possibilities
 
 `useShortcut()` returns `ShortcutBuilder`.
@@ -347,6 +375,7 @@ console.log(label, symbols, symbolMap, order)
 - `UseShortcutOptions`
 - `ShortcutResult`
 - `ShortcutRecordingOptions`
+- `ShortcutBinding`
 
 ### Parsing/conflict/scope typing
 - `ParsedShortcut`
@@ -358,8 +387,7 @@ console.log(label, symbols, symbolMap, order)
 ## 10. Practical Patterns
 
 ### A) Simple app (recommended default)
-- Use `useShortcut`
-- Use `.mod.key(...).on(...)`
+- Use `useShortcutBinding`
 - Use `formatShortcut` for UI labels
 
 ### B) Editor app

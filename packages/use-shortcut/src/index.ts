@@ -40,6 +40,7 @@ export type {
     ShortcutDebugEvent,
     ShortcutDebugOptions,
     ShortcutRecordingOptions,
+    ShortcutBinding,
     ShortcutMapEntry,
     ShortcutMap,
     ShortcutMapResult,
@@ -57,6 +58,7 @@ export { formatShortcut } from "./formatter"
 
 export {
     useShortcut,
+    useShortcutBinding,
     useShortcutMap,
     registerShortcutMap,
     createShortcutGroup,

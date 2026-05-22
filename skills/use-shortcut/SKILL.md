@@ -15,6 +15,7 @@ import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 1. Inspect the consumer context before adding shortcuts: target element, active modal/dialog state, focused inputs, required scopes, and expected browser/native shortcut collisions.
 2. Choose the smallest API that fits:
+   - Use `useShortcutBinding()` for one cleanup-safe shortcut binding in a component.
    - Use `useShortcut()` for fluent one-off bindings.
    - Use `useShortcutMap()` or `registerShortcutMap()` for config-driven command sets.
    - Use `.bind(...)` when combos already exist as strings from settings or config.
@@ -34,32 +35,22 @@ import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 ## Common Patterns
 
-Add a fluent shortcut:
+Add a declarative shortcut:
 
 ```tsx
-const $ = useShortcut()
-
-useEffect(() => {
-  const shortcut = $.mod.key("k").on(openCommandPalette, {
-    description: "Open command palette",
-    preventDefault: true,
-  })
-
-  return () => shortcut.unbind()
-}, [$, openCommandPalette])
+useShortcutBinding("mod+k", openCommandPalette, {
+  description: "Open command palette",
+  preventDefault: true,
+})
 ```
 
 Use a sequence:
 
 ```tsx
-useEffect(() => {
-  const shortcut = $.key("g").then("d").on(goToDashboard, {
-    description: "Go to dashboard",
-    sequenceTimeout: 1000,
-  })
-
-  return () => shortcut.unbind()
-}, [$, goToDashboard])
+useShortcutBinding("g then d", goToDashboard, {
+  description: "Go to dashboard",
+  sequenceTimeout: 1000,
+})
 ```
 
 Use scopes:

@@ -12,6 +12,23 @@ Load this reference for exact API names, option choices, and implementation patt
 
 ## Fluent Builder
 
+Prefer `useShortcutBinding()` for a single cleanup-safe binding:
+
+```tsx
+useShortcutBinding("mod+s", save, {
+  description: "Save document",
+  preventDefault: true,
+})
+
+useShortcutBinding({
+  keys: ["escape", "mod+d"],
+  handler: closeDialog,
+  options: { description: "Close dialog" },
+})
+```
+
+Use the fluent builder when you need advanced chaining, `onDebug`, recording, or imperative scope control.
+
 Use modifiers before `.key(...)`:
 
 ```tsx

@@ -10,6 +10,7 @@ import type {
     ShortcutMap,
     ShortcutMapResult,
     ShortcutMapEntry,
+    ShortcutBinding,
     ShortcutGroup,
     ShortcutResult,
     ShortcutHandler,
@@ -30,6 +31,8 @@ type ShortcutMapChain = {
     mod: ShortcutMapChain
     key: (key: ActionKey) => ShortcutMapSequenceChain
 }
+
+const _EMPTY_USE_SHORTCUT_OPTIONS: UseShortcutOptions = {}
 
 function _areShortcutMapKeysEqual(a: ShortcutMapEntry["keys"], b: ShortcutMapEntry["keys"]): boolean {
     if (Array.isArray(a) && Array.isArray(b)) {
@@ -94,6 +97,52 @@ function _createPendingShortcutResult(keys: ShortcutMapEntry["keys"]): ShortcutR
         enable: () => {},
         disable: () => {},
         onAttempt: () => () => {},
+    }
+}
+
+function _createDelegatingShortcutResult(source: { current: ShortcutResult }): ShortcutResult {
+    return {
+        unbind: () => source.current.unbind(),
+        get display() {
+            return source.current.display
+        },
+        get combo() {
+            return source.current.combo
+        },
+        trigger: () => source.current.trigger(),
+        get isEnabled() {
+            return source.current.isEnabled
+        },
+        enable: () => source.current.enable(),
+        disable: () => source.current.disable(),
+        onAttempt: (callback) => source.current.onAttempt?.(callback) ?? (() => {}),
+    }
+}
+
+function _normalizeShortcutBindingArgs(
+    keysOrBinding: ShortcutBinding["keys"] | ShortcutBinding,
+    handlerOrShortcutOptions?: ShortcutHandler | UseShortcutOptions,
+    handlerOptions?: HandlerOptions,
+    shortcutOptions?: UseShortcutOptions,
+): { binding: ShortcutBinding; shortcutOptions: UseShortcutOptions } {
+    if (typeof keysOrBinding === "object" && !Array.isArray(keysOrBinding)) {
+        return {
+            binding: keysOrBinding,
+            shortcutOptions: (handlerOrShortcutOptions as UseShortcutOptions | undefined) ?? _EMPTY_USE_SHORTCUT_OPTIONS,
+        }
+    }
+
+    if (typeof handlerOrShortcutOptions !== "function") {
+        throw new Error("[useShortcutBinding] A handler function is required for positional binding arguments.")
+    }
+
+    return {
+        binding: {
+            keys: keysOrBinding,
+            handler: handlerOrShortcutOptions,
+            options: handlerOptions,
+        },
+        shortcutOptions: shortcutOptions ?? _EMPTY_USE_SHORTCUT_OPTIONS,
     }
 }
 
@@ -264,6 +313,84 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
     }, [registry])
 
     return builder as ShortcutBuilder
+}
+
+/**
+ * React hook for one cleanup-safe shortcut binding.
+ *
+ * @param keys - Shortcut combo string or combo array, such as `"mod+s"` or `["escape", "mod+d"]`
+ * @param handler - Handler invoked when the shortcut matches
+ * @param options - Per-binding options such as `preventDefault`, `scopes`, and `priority`
+ * @param shortcutOptions - Hook-level options such as `target`, `eventType`, and `activeScopes`
+ * @returns A stable `ShortcutResult` handle. Before the effect runs, the handle is disabled and uses the provided keys as its display text.
+ *
+ * @example
+ * ```ts
+ * const saveShortcut = useShortcutBinding("mod+s", saveDocument, {
+ *   description: "Save document",
+ *   preventDefault: true,
+ * })
+ * ```
+ */
+export function useShortcutBinding(
+    keys: ShortcutBinding["keys"],
+    handler: ShortcutHandler,
+    options?: HandlerOptions,
+    shortcutOptions?: UseShortcutOptions,
+): ShortcutResult
+/**
+ * React hook for one cleanup-safe shortcut binding.
+ *
+ * @param binding - Object containing `keys`, `handler`, and optional per-binding `options`
+ * @param shortcutOptions - Hook-level options such as `target`, `eventType`, and `activeScopes`
+ * @returns A stable `ShortcutResult` handle. Before the effect runs, the handle is disabled and uses the provided keys as its display text.
+ *
+ * @example
+ * ```ts
+ * const closeShortcut = useShortcutBinding({
+ *   keys: ["escape", "mod+d"],
+ *   handler: closeDialog,
+ *   options: { description: "Close dialog" },
+ * })
+ * ```
+ */
+export function useShortcutBinding(
+    binding: ShortcutBinding,
+    shortcutOptions?: UseShortcutOptions,
+): ShortcutResult
+export function useShortcutBinding(
+    keysOrBinding: ShortcutBinding["keys"] | ShortcutBinding,
+    handlerOrShortcutOptions?: ShortcutHandler | UseShortcutOptions,
+    handlerOptions?: HandlerOptions,
+    shortcutOptions?: UseShortcutOptions,
+): ShortcutResult {
+    const { binding, shortcutOptions: normalizedShortcutOptions } = _normalizeShortcutBindingArgs(
+        keysOrBinding,
+        handlerOrShortcutOptions,
+        handlerOptions,
+        shortcutOptions,
+    )
+    const $ = useShortcut(normalizedShortcutOptions)
+    const resultRef = useRef<ShortcutResult>(_createPendingShortcutResult(binding.keys))
+    const stableResultRef = useRef<ShortcutResult | null>(null)
+    if (!stableResultRef.current) {
+        stableResultRef.current = _createDelegatingShortcutResult(resultRef)
+    }
+
+    useEffect(() => {
+        const registrations = registerShortcutMap($, {
+            current: binding,
+        })
+
+        resultRef.current = registrations.current
+
+        return () => {
+            registrations.current.unbind()
+            resultRef.current = _createPendingShortcutResult(binding.keys)
+        }
+    }, [$, binding.keys, binding.handler, binding.options])
+
+    return stableResultRef.current
 }
 
 /**

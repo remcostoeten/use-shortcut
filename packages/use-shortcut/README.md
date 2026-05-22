@@ -32,24 +32,15 @@ That means the runtime is already small in practice. The entrypoint split mainly
 ## React API
 
 The public runtime API is React-only. Parser, formatter, and constants exports are supporting utilities inside the same React/Next.js package, not a separate framework-agnostic runtime.
-Register fluent shortcuts from an effect so React renders stay side-effect free; memoize shortcut maps before passing them to `useShortcutMap()`.
+For one-off shortcuts, prefer `useShortcutBinding()` so React owns registration and cleanup. Use the fluent `useShortcut()` builder when you need advanced chaining, recording, debug streams, or imperative scope control.
 
 ```tsx
-import { useEffect } from "react"
-import { useShortcut } from "@remcostoeten/use-shortcut/react"
+import { useShortcutBinding } from "@remcostoeten/use-shortcut/react"
 
 function App() {
-  const $ = useShortcut()
-
-  useEffect(() => {
-    const shortcuts = [
-      $.mod.key("k").on(() => openPalette(), { preventDefault: true }),
-      $.bind("mod+p").on(() => openProjects()),
-      $.key("escape").on(() => closePalette()),
-    ]
-
-    return () => shortcuts.forEach((shortcut) => shortcut.unbind())
-  }, [$, openPalette, openProjects, closePalette])
+  useShortcutBinding("mod+k", openPalette, { preventDefault: true })
+  useShortcutBinding("mod+p", openProjects)
+  useShortcutBinding("escape", closePalette)
 
   return <div>Press Cmd/Ctrl+K</div>
 }
@@ -58,19 +49,19 @@ function App() {
 Main React exports:
 
 - `useShortcut(options?)`
+- `useShortcutBinding(keys, handler, options?, shortcutOptions?)`
 - `useShortcutMap(shortcutMap, options?)`
 - `registerShortcutMap(builder, shortcutMap)`
 - `createShortcutGroup()`
 - `useShortcutGroup()`
 
-## Bound combo example
+## Bound Combo Example
 
 Use `.bind()` when your shortcuts already exist as strings in config or user
 settings.
 
 ```tsx
-import { useEffect } from "react"
-import { useShortcut } from "@remcostoeten/use-shortcut/react"
+import { useShortcutBinding } from "@remcostoeten/use-shortcut/react"
 
 const appShortcuts = {
   openCommandPalette: {
@@ -84,27 +75,22 @@ const appShortcuts = {
 }
 
 function App() {
-  const $ = useShortcut()
-
-  useEffect(() => {
-    const open = $.bind(appShortcuts.openCommandPalette.combo).on(() => {
-      openPalette()
-    }, {
+  useShortcutBinding(
+    appShortcuts.openCommandPalette.combo,
+    openPalette,
+    {
       description: appShortcuts.openCommandPalette.description,
       preventDefault: true,
-    })
+    },
+  )
 
-    const close = $.bind(appShortcuts.closeDialog.combo).on(() => {
-      closeDialog()
-    }, {
+  useShortcutBinding({
+    keys: appShortcuts.closeDialog.combo,
+    handler: closeDialog,
+    options: {
       description: appShortcuts.closeDialog.description,
-    })
-
-    return () => {
-      open.unbind()
-      close.unbind()
-    }
-  }, [$, openPalette, closeDialog])
+    },
+  })
 
   return <div>Shortcuts ready</div>
 }
@@ -113,6 +99,7 @@ function App() {
 ## Features
 
 - Chainable shortcut builder: `$.mod.key("k").on(handler)`
+- Declarative single bindings: `useShortcutBinding("mod+k", handler)`
 - Pre-bound combos with `$.bind("mod+k").on(handler)`
 - Bulk shortcut maps: `useShortcutMap()` and `registerShortcutMap()`
 - Modifier support: `ctrl`, `shift`, `alt`, `cmd`, `mod`

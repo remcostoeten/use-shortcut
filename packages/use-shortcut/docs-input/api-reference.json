@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-05-22T12:41:43.070Z",
+  "generatedAt": "2026-05-22T12:47:25.029Z",
   "package": "@remcostoeten/use-shortcut",
   "sourceEntry": "src/index.ts",
-  "count": 52,
+  "count": 54,
   "items": [
     {
       "name": "ActionKey",
@@ -39,7 +39,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 345,
+        "line": 472,
         "column": 1
       },
       "summary": "Creates an imperative group controller for many shortcut registrations.",
@@ -423,7 +423,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 169,
+        "line": 218,
         "column": 1
       },
       "summary": "Registers an object-based shortcut map in one call and returns per-action handles.",
@@ -466,6 +466,20 @@
         "column": 1
       },
       "summary": "High-level match status for one shortcut attempt against the current keyboard input.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": []
+    },
+    {
+      "name": "ShortcutBinding",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 341,
+        "column": 1
+      },
+      "summary": "Declarative single shortcut binding used by `useShortcutBinding`.",
       "signature": null,
       "params": [],
       "returns": null,
@@ -588,7 +602,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 349,
+        "line": 352,
         "column": 1
       },
       "summary": "Imperative grouping controller for binding/unbinding many shortcut registrations together.",
@@ -621,7 +635,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 341,
+        "line": 344,
         "column": 1
       },
       "summary": "Bulk registration shape mapping action ids to key+handler definitions.",
@@ -649,7 +663,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 344,
+        "line": 347,
         "column": 1
       },
       "summary": "Return type for map registrations, keyed by the same ids as the source map.",
@@ -747,7 +761,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 215,
+        "line": 264,
         "column": 1
       },
       "summary": "React hook for registering chainable keyboard shortcuts",
@@ -764,11 +778,53 @@
       ]
     },
     {
+      "name": "useShortcutBinding",
+      "kind": "function",
+      "source": {
+        "file": "src/hook.ts",
+        "line": 335,
+        "column": 1
+      },
+      "summary": "React hook for one cleanup-safe shortcut binding.",
+      "signature": "(keys: string | string[], handler: ShortcutHandler, options?: HandlerOptions, shortcutOptions?: UseShortcutOptions): ShortcutResult",
+      "params": [
+        {
+          "name": "keys",
+          "description": "- Shortcut combo string or combo array, such as `\"mod+s\"` or `[\"escape\", \"mod+d\"]`"
+        },
+        {
+          "name": "handler",
+          "description": "- Handler invoked when the shortcut matches"
+        },
+        {
+          "name": "options",
+          "description": "- Per-binding options such as `preventDefault`, `scopes`, and `priority`"
+        },
+        {
+          "name": "shortcutOptions",
+          "description": "- Hook-level options such as `target`, `eventType`, and `activeScopes`"
+        },
+        {
+          "name": "binding",
+          "description": "- Object containing `keys`, `handler`, and optional per-binding `options`"
+        },
+        {
+          "name": "shortcutOptions",
+          "description": "- Hook-level options such as `target`, `eventType`, and `activeScopes`"
+        }
+      ],
+      "returns": "A stable `ShortcutResult` handle. Before the effect runs, the handle is disabled and uses the provided keys as its display text.",
+      "examples": [
+        "```ts\nconst saveShortcut = useShortcutBinding(\"mod+s\", saveDocument, {\n  description: \"Save document\",\n  preventDefault: true,\n})\n```",
+        "```ts\nconst closeShortcut = useShortcutBinding({\n  keys: [\"escape\", \"mod+d\"],\n  handler: closeDialog,\n  options: { description: \"Close dialog\" },\n})\n```"
+      ]
+    },
+    {
       "name": "useShortcutGroup",
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 383,
+        "line": 510,
         "column": 1
       },
       "summary": "React hook that returns a stable `ShortcutGroup` instance.",
@@ -784,7 +840,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 286,
+        "line": 413,
         "column": 1
       },
       "summary": "React hook that registers a shortcut map and automatically unbinds on cleanup.",

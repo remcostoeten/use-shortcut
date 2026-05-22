@@ -1,5 +1,6 @@
 export {
     useShortcut,
+    useShortcutBinding,
     useShortcutMap,
     registerShortcutMap,
     createShortcutGroup,
@@ -36,6 +37,7 @@ export type {
     ShortcutDebugEvent,
     ShortcutDebugOptions,
     ShortcutRecordingOptions,
+    ShortcutBinding,
     ShortcutMapEntry,
     ShortcutMap,
     ShortcutMapResult,

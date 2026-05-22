@@ -337,6 +337,9 @@ export type ShortcutMapEntry = {
     options?: HandlerOptions
 }
 
+/** Declarative single shortcut binding used by `useShortcutBinding`. */
+export type ShortcutBinding = ShortcutMapEntry
+
 /** Bulk registration shape mapping action ids to key+handler definitions. */
 export type ShortcutMap = Record<string, ShortcutMapEntry>
 

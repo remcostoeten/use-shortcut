@@ -37,8 +37,30 @@ if (missingInInventory.length > 0) {
     _fail(`PUBLIC_API.md missing: ${missingInInventory.map((x) => x.name).join(", ")}`)
 }
 
-if (/```[^\n]*\n```/.test(generatedApiMd)) {
-    _fail("docs-input/api-reference.md contains nested or empty fenced code blocks")
+let inFence = false
+let fenceHasContent = false
+for (const line of generatedApiMd.split("\n")) {
+    if (line.startsWith("```")) {
+        if (inFence) {
+            if (!fenceHasContent) {
+                _fail("docs-input/api-reference.md contains an empty fenced code block")
+            }
+            inFence = false
+            fenceHasContent = false
+        } else {
+            inFence = true
+            fenceHasContent = false
+        }
+        continue
+    }
+
+    if (inFence && line.trim()) {
+        fenceHasContent = true
+    }
+}
+
+if (inFence) {
+    _fail("docs-input/api-reference.md contains an unterminated fenced code block")
 }
 
 console.log("docs:check passed")
