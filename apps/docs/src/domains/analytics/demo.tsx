@@ -96,7 +96,7 @@ export default function AnalyticsDemo() {
           <div className={`${panelClassName} px-3 py-3`}>
             <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-primary">2. host ingestion</p>
             <p className={bodyCopyClassName}>
-              Point <code className="font-mono text-[11px] text-foreground">NEXT_PUBLIC_REMCO_ANALYTICS_URL</code> at your own Node ingestion service, for example a Vercel app exposing <code className="font-mono text-[11px] text-foreground">POST /ingest</code>.
+              Point <code className="font-mono text-[11px] text-foreground">VITE_ANALYTICS_URL</code> or <code className="font-mono text-[11px] text-foreground">NEXT_PUBLIC_ANALYTICS_URL</code> at your ingestion service, for example <code className="font-mono text-[11px] text-foreground">https://ingestion.remcostoeten.nl</code> exposing <code className="font-mono text-[11px] text-foreground">POST /e</code>.
             </p>
           </div>
           <div className={`${panelClassName} px-3 py-3`}>
@@ -114,7 +114,7 @@ export default function AnalyticsDemo() {
               In the SDK, <code className="font-mono text-[11px] text-foreground">&lt;Analytics /&gt;</code> triggers <code className="font-mono text-[11px] text-foreground">trackPageView(...)</code>, and manual calls like <code className="font-mono text-[11px] text-foreground">trackEvent(...)</code> build a browser payload with project id, path, referrer, user agent, visitor id, and session id.
             </p>
             <p>
-              That payload is sent with <code className="font-mono text-[11px] text-foreground">navigator.sendBeacon</code>, with <code className="font-mono text-[11px] text-foreground">fetch(..., &#123; keepalive: true &#125;)</code> as fallback, to <code className="font-mono text-[11px] text-foreground">/ingest</code>.
+              That payload is sent with <code className="font-mono text-[11px] text-foreground">navigator.sendBeacon</code>, with <code className="font-mono text-[11px] text-foreground">fetch(..., &#123; keepalive: true &#125;)</code> as fallback, to <code className="font-mono text-[11px] text-foreground">/e</code> on your ingestion host.
             </p>
             <p>
               The ingestion app validates, hashes the IP, detects bots, extracts geo headers, deduplicates the event, and then inserts the row into <code className="font-mono text-[11px] text-foreground">events</code> in Postgres.

@@ -22,7 +22,7 @@
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-toast": "^1.2.14",
     "@radix-ui/react-tooltip": "^1.2.7",
-    "@remcostoeten/analytics": "^0.0.1",
+    "@remcostoeten/analytics": "^1.4.0",
     "@remcostoeten/use-shortcut": "workspace:*",
     "@tanstack/react-query": "^5.83.0",
     "class-variance-authority": "^0.7.1",

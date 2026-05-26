@@ -64,6 +64,8 @@ VITE_ANALYTICS_DOCS_URL=https://analytics.remcostoeten.nl
 VITE_VSCODE_CODE_REFINERY_DOCS_URL=https://vscode-code-refinery.remcostoeten.nl
 ```
 
+Analytics ingestion for this docs app is fixed to `https://ingestion.remcostoeten.nl` in `src/lib/analytics.ts`. Set `VITE_ANALYTICS_DISABLED=true` locally to skip client-side tracking.
+
 The slug-to-domain mapping follows `VITE_<SLUG>_DOCS_URL`, so adding a new entry does not require editing `site.ts`.
 If you need package-mode for a dedicated domain, also set:
 
