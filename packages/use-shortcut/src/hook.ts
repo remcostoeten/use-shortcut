@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useMemo } from "react"
 import { _createShortcutBuilder } from "./builder"
+import { parseShortcut } from "./parser"
 import { _removeRegistryEntry } from "./runtime/binding"
 import { _attachRegistryListener } from "./runtime/listener"
 import type {
@@ -147,47 +148,19 @@ function _normalizeShortcutBindingArgs(
 }
 
 function _applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequenceChain {
-    const tokens = step
-        .toLowerCase()
-        .split("+")
-        .map((token) => token.trim())
-        .filter(Boolean)
+    const parsed = parseShortcut(step)
+    const key = parsed.key === " " ? "space" : parsed.key.toLowerCase()
 
-    if (tokens.length === 0) {
+    if (!key) {
         throw new Error("[useShortcutMap] Invalid step: empty shortcut step")
     }
 
-    const key = tokens.pop()!
     let chain = builder
 
-    for (const token of tokens) {
-        if (token === "ctrl" || token === "control") {
-            chain = chain.ctrl
-            continue
-        }
-
-        if (token === "shift") {
-            chain = chain.shift
-            continue
-        }
-
-        if (token === "alt" || token === "option") {
-            chain = chain.alt
-            continue
-        }
-
-        if (token === "cmd" || token === "command" || token === "meta") {
-            chain = chain.cmd
-            continue
-        }
-
-        if (token === "mod") {
-            chain = chain.mod
-            continue
-        }
-
-        throw new Error(`[useShortcutMap] Unsupported modifier token "${token}" in step "${step}"`)
-    }
+    if (parsed.modifiers.ctrl) chain = chain.ctrl
+    if (parsed.modifiers.alt) chain = chain.alt
+    if (parsed.modifiers.shift) chain = chain.shift
+    if (parsed.modifiers.meta) chain = chain.cmd
 
     return chain.key(key as ActionKey)
 }
@@ -207,7 +180,7 @@ function _applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequenc
  * useEffect(() => {
  *   const results = registerShortcutMap($, {
  *     save: { keys: "mod+s", handler: onSave },
- *     nav: { keys: ["g", "d"], handler: onGoDashboard },
+ *     nav: { keys: "g then d", handler: onGoDashboard },
  *   })
  *   group.addMany(results)
  *

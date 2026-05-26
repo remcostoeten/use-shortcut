@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-import { useShortcut } from "@remcostoeten/use-shortcut";
+import { useShortcut } from "@remcostoeten/use-shortcut/react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "./Navbar";
 import { InstallCommand } from "./InstallCommand";
@@ -188,17 +188,17 @@ export default function RootLayout({ children }) {
       />
 
       <div className="overflow-x-clip">
-        <main id="main-content" className="mx-auto max-w-2xl border-x border-border min-h-screen relative z-10">
+        <main id="main-content" className="mx-auto max-w-6xl border-x border-border min-h-screen relative z-10">
         <header
           id="overview"
           data-doc-search-scope="true"
           data-search-label="overview"
           className={cn(
-            "border-b border-border px-4 pb-8 pt-6 sm:px-8 sm:pb-10 sm:pt-8",
+            "border-b border-border px-5 pb-10 pt-8 sm:px-8 lg:px-10 lg:pb-14 lg:pt-12",
             isLeaving ? "animate-fade-out-down" : "animate-fade-up"
           )}
         >
-          <div className="flex flex-col gap-6">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(320px,430px)] lg:items-start">
             <div className="flex flex-col gap-4 lg:justify-between">
               <div className="min-w-0">
                 <div className={cn("flex flex-wrap items-center gap-x-3 gap-y-2", !isLeaving && "animate-fade-up stagger-1")}>
@@ -232,21 +232,21 @@ export default function RootLayout({ children }) {
                     cycleInterval={250}
                     staggerDelay={60}
                     initialFont="square"
-                    className="mt-4 text-3xl font-bold lowercase tracking-tight text-foreground sm:text-4xl leading-[1.02]"
+                    className="mt-5 text-4xl font-bold lowercase text-foreground sm:text-5xl lg:text-6xl leading-[1.02]"
                   >
                     {config.heroTitle}
                   </PixelHeading>
                 </div>
 
                 <p className={cn(
-                  "mt-4 max-w-xl text-sm lowercase leading-relaxed text-muted-foreground",
+                  "mt-5 max-w-2xl text-base lowercase leading-relaxed text-muted-foreground",
                   !isLeaving && "animate-fade-up stagger-3"
                 )}>
                   {config.description}
                 </p>
                 {config.heroSubcopy ? (
                   <p className={cn(
-                    "mt-2 max-w-xl text-xs lowercase leading-relaxed text-muted-foreground/80",
+                    "mt-3 max-w-2xl text-sm lowercase leading-relaxed text-muted-foreground/80",
                     !isLeaving && "animate-fade-up stagger-4"
                   )}>
                     {config.heroSubcopy}
@@ -271,8 +271,8 @@ export default function RootLayout({ children }) {
               </div>
             </div>
 
-            <div className="grid gap-4 mt-8">
-              <div className="border border-border bg-card/24 p-4 sm:p-5">
+            <div className="grid gap-4">
+              <div className="border border-border bg-card/60 p-4 sm:p-5">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <p className="font-mono text-xs text-primary">[search-docs]</p>
@@ -283,7 +283,7 @@ export default function RootLayout({ children }) {
                   <button
                     type="button"
                     onClick={() => openAssistant({ source: "hero" })}
-                    className="flex min-w-[200px] min-h-11 items-center justify-center gap-2 border border-border bg-background/80 px-3 font-mono text-tiny lowercase text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex min-w-[200px] min-h-11 items-center justify-center gap-2 border border-border bg-background px-3 font-mono text-tiny lowercase text-muted-foreground transition-colors hover:border-primary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     open-docs-assistant
                     <kbd className="flex min-h-6 items-center justify-center border border-border bg-card/70 px-2 font-mono text-tiny uppercase text-muted-foreground">
@@ -320,7 +320,7 @@ export default function RootLayout({ children }) {
                       >
                         {cta.label}
                         {cta.shortcutKey ? (
-                          <kbd className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-primary/30 bg-background/40 px-1 font-mono text-tiny font-normal uppercase text-primary/80">
+                          <kbd className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center border border-primary/30 bg-background/40 px-1 font-mono text-tiny font-normal uppercase text-primary/80">
                             {cta.shortcutKey}
                           </kbd>
                         ) : null}
@@ -340,7 +340,7 @@ export default function RootLayout({ children }) {
                       >
                         {cta.label}
                         {cta.shortcutKey ? (
-                          <kbd className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center rounded border border-border bg-muted px-1 font-mono text-tiny font-normal uppercase text-muted-foreground">
+                          <kbd className="ml-0.5 inline-flex h-5 min-w-[20px] items-center justify-center border border-border bg-muted px-1 font-mono text-tiny font-normal uppercase text-muted-foreground">
                             {cta.shortcutKey}
                           </kbd>
                         ) : null}
@@ -357,7 +357,7 @@ export default function RootLayout({ children }) {
           id="install"
           data-doc-search-scope="true"
           data-search-label="install"
-          className="border-b border-border px-4 py-8 sm:px-8"
+          className="border-b border-border px-5 py-10 sm:px-8 lg:px-10"
         >
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
@@ -387,7 +387,7 @@ export default function RootLayout({ children }) {
                     onClick={() => {
                       navigator.clipboard.writeText(manager.command);
                     }}
-                    className="inline-flex min-h-9 items-center gap-2 rounded-sm border border-border bg-background px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="inline-flex min-h-9 items-center gap-2 border border-border bg-background px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <span className="font-mono">{manager.command}</span>
                   </button>
@@ -413,10 +413,10 @@ export default function RootLayout({ children }) {
           ) : null}
 
           {config.codeExamples && config.codeExamples.length > 0 && (
-            <div id="syntax" data-doc-search-scope="true" data-search-label="syntax" className="px-4 py-8 sm:px-8">
+            <div id="syntax" data-doc-search-scope="true" data-search-label="syntax" className="px-5 py-10 sm:px-8 lg:px-10">
               <div className="mb-6">
                 <p className="font-mono text-xs text-primary mb-1.5">[recipes]</p>
-                <h2 className="font-display text-base font-bold lowercase tracking-tight text-foreground mb-1.5">
+                <h2 className="font-display text-xl font-bold lowercase text-foreground mb-1.5">
                   copy-ready examples
                 </h2>
                 <p className="text-xs text-muted-foreground lowercase leading-relaxed max-w-md">
@@ -430,7 +430,7 @@ export default function RootLayout({ children }) {
           )}
 
           {config.apiProps && config.apiProps.length > 0 && (
-            <div id="api" data-doc-search-scope="true" data-search-label="api options" className="border-y border-dashed border-border -mx-[1px] bg-card/30 px-4 py-8 sm:px-8">
+            <div id="api" data-doc-search-scope="true" data-search-label="api options" className="border-y border-border -mx-[1px] bg-card/60 px-5 py-10 sm:px-8 lg:px-10">
               <ApiTable
                 props={config.apiProps}
                 guidance={config.apiPropGuidance}
@@ -446,10 +446,10 @@ export default function RootLayout({ children }) {
           )}
 
           {config.apiCapabilities && config.apiCapabilities.length > 0 && (
-            <div id="api-reference" data-doc-search-scope="true" data-search-label="api reference" className="px-4 py-8 sm:px-8">
+            <div id="api-reference" data-doc-search-scope="true" data-search-label="api reference" className="px-5 py-10 sm:px-8 lg:px-10">
               <div className="mb-6">
                 <p className="font-mono text-xs text-primary mb-1.5">[api]</p>
-                <h2 className="font-display text-base font-bold lowercase tracking-tight text-foreground mb-1.5">
+                <h2 className="font-display text-xl font-bold lowercase text-foreground mb-1.5">
                   exports at a glance
                 </h2>
                 <p className="text-xs text-muted-foreground lowercase leading-relaxed max-w-md">
@@ -461,10 +461,10 @@ export default function RootLayout({ children }) {
           )}
 
           {config.apiMethodGroups && config.apiOptionGroups && (
-            <div id="api-matrix" data-doc-search-scope="true" data-search-label="api matrix" className="border-y border-dashed border-border -mx-[1px] bg-card/30 px-4 py-8 sm:px-8">
+            <div id="api-matrix" data-doc-search-scope="true" data-search-label="api matrix" className="border-y border-border -mx-[1px] bg-card/60 px-5 py-10 sm:px-8 lg:px-10">
               <div className="mb-6">
                 <p className="font-mono text-xs text-primary mb-1.5">[full api]</p>
-                <h2 className="font-display text-base font-bold lowercase tracking-tight text-foreground mb-1.5">
+                <h2 className="font-display text-xl font-bold lowercase text-foreground mb-1.5">
                   every method and option
                 </h2>
                 <p className="text-xs text-muted-foreground lowercase leading-relaxed max-w-md">

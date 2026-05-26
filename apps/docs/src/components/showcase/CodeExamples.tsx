@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { useShortcut } from "@remcostoeten/use-shortcut";
+import { useShortcut } from "@remcostoeten/use-shortcut/react";
 import { CodeBlock } from "./CodeBlock";
 import type { UiUseCase } from "@/config/types";
 import {

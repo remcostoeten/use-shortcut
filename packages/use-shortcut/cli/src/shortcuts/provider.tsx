@@ -9,7 +9,7 @@ import {
     useState,
     type ReactNode,
 } from "react"
-import { registerShortcutMap, useShortcut, type UseShortcutOptions } from "@remcostoeten/use-shortcut"
+import { registerShortcutMap, useShortcut, type UseShortcutOptions } from "@remcostoeten/use-shortcut/react"
 import { shortcutRegistry, type ShortcutActionId, type ShortcutBindings } from "./registry"
 import { buildShortcutMap, createDefaultShortcutBindings } from "./runtime"
 import { defaultActiveScopes, normalizeScopes, type ShortcutScope } from "./scopes"

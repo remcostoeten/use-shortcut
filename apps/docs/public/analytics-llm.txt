@@ -3,7 +3,8 @@
 Package:
 - npm: @remcostoeten/analytics
 - github: https://github.com/remcostoeten/analytics
-- docs: https://use-shortcut.vercel.app/analytics
+- docs: https://analytics.remcostoeten.nl
+- ingestion: https://ingestion.remcostoeten.nl
 
 What this is:
 - Privacy focused, cookie free analytics SDK for React apps.
@@ -20,7 +21,7 @@ npm install @remcostoeten/analytics
 If you are an LLM implementing this package:
 - Install the package before writing code.
 - Import from '@remcostoeten/analytics'.
-- Set NEXT_PUBLIC_REMCO_ANALYTICS_URL env var to your ingestion base URL.
+- Set VITE_ANALYTICS_URL (Vite) or NEXT_PUBLIC_ANALYTICS_URL (Next.js) to your ingestion base URL, e.g. https://ingestion.remcostoeten.nl.
 - Use <Analytics /> component for automatic pageview tracking.
 - For Next.js App Router, create a PageViews component with usePathname.
 - Use trackEvent, trackClick, trackError for custom events.
@@ -69,11 +70,11 @@ export function PageViews({ projectId }: { projectId?: string }) {
 ```
 
 Mental model:
-- <Analytics /> tracks pageview on mount/prop changes.
+- <Analytics /> tracks pageviews, web vitals, scroll depth, and time on page.
 - trackPageView() for manual pageview tracking.
 - trackEvent(name, meta) for custom events.
 - trackClick(element, meta) for click interactions.
 - trackError(error, meta) for error tracking.
 - getVisitorId()/getSessionId() for identity management.
 - optOut()/optIn() for privacy controls.
-- Events sent via POST {ingestUrl}/ingest using sendBeacon.
+- Events sent via POST {ingestUrl}/e using sendBeacon.

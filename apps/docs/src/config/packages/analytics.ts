@@ -53,7 +53,7 @@ export const analyticsConfig: PackageConfig = {
     {
       name: 'ingestUrl',
       type: 'string',
-      description: 'defaults to process.env.NEXT_PUBLIC_REMCO_ANALYTICS_URL or http://localhost:3001',
+      description: 'ingestion base URL (defaults to VITE_ANALYTICS_URL, NEXT_PUBLIC_ANALYTICS_URL, or https://ingestion.remcostoeten.nl)',
     },
     {
       name: 'disabled',

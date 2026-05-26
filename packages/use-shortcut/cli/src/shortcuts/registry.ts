@@ -1,4 +1,4 @@
-import type { HandlerOptions } from "@remcostoeten/use-shortcut"
+import type { HandlerOptions } from "@remcostoeten/use-shortcut/react"
 import type { ShortcutScope } from "./scopes"
 
 export type ShortcutDefinition = {

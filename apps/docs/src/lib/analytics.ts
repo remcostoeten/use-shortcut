@@ -1,14 +1,19 @@
-import { trackEvent } from "@remcostoeten/analytics";
+import { trackEvent, validateIngestUrl } from "@remcostoeten/analytics";
+
+export const ANALYTICS_INGEST_URL = "https://ingestion.remcostoeten.nl";
 
 export const analyticsProjectId =
   (import.meta.env.VITE_ANALYTICS_PROJECT_ID as string | undefined)
   || "registry-docs";
 
-export const analyticsIngestUrl = import.meta.env.VITE_REMCO_ANALYTICS_URL as
-  | string
-  | undefined;
+export const analyticsIngestUrl = ANALYTICS_INGEST_URL;
 
-export const analyticsEnabled = Boolean(analyticsIngestUrl);
+export const analyticsEnabled =
+  import.meta.env.VITE_ANALYTICS_DISABLED !== "true";
+
+if (!validateIngestUrl(analyticsIngestUrl)) {
+  throw new Error(`Invalid analytics ingest URL: ${analyticsIngestUrl}`);
+}
 
 export function trackDocsEvent(
   eventName: string,

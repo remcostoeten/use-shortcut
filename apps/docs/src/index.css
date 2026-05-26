@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap');
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 
 @font-face {
   font-family: 'Geist Pixel Square';
@@ -80,7 +81,7 @@
   .prose-custom h4,
   .prose-custom h5,
   .prose-custom h6 {
-    @apply font-display font-bold tracking-tight;
+    @apply font-display font-bold;
   }
   .prose-custom h1 {
     @apply text-3xl;
@@ -113,8 +114,12 @@
 
 html {
   color-scheme: dark;
-  scrollbar-color: hsl(0 0% 24%) hsl(0 0% 6%);
+  scrollbar-color: hsl(0 0% 28%) hsl(0 0% 4%);
   scrollbar-width: thin;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -122,45 +127,46 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @layer base {
-  :root {
+  :root,
+  .dark {
     --background: 0 0% 4%;
-    --foreground: 0 0% 98%;
+    --foreground: 0 0% 96%;
 
     --card: 0 0% 7%;
-    --card-foreground: 0 0% 98%;
+    --card-foreground: 0 0% 96%;
 
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 96%;
 
-    --primary: 18 100% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 0 0% 96%;
+    --primary-foreground: 0 0% 4%;
 
     --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary-foreground: 0 0% 96%;
 
     --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 55%;
+    --muted-foreground: 0 0% 62%;
 
-    --accent: 18 100% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 0 0% 16%;
+    --accent-foreground: 0 0% 96%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 62.8% 50%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
-    --ring: 18 100% 50%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 82%;
 
     --radius: 0rem;
 
     --sidebar-background: 0 0% 6%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 18 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 0 0% 96%;
+    --sidebar-primary-foreground: 0 0% 4%;
     --sidebar-accent: 0 0% 12%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 14%;
-    --sidebar-ring: 18 100% 50%;
+    --sidebar-accent-foreground: 0 0% 96%;
+    --sidebar-border: 0 0% 18%;
+    --sidebar-ring: 0 0% 82%;
   }
 }
 
@@ -171,19 +177,53 @@ h1, h2, h3, h4, h5, h6 {
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Geist', system-ui, -apple-system, sans-serif;
+    font-family: 'Geist Variable', 'Geist', system-ui, -apple-system, sans-serif;
   }
 
   code, pre, .font-mono {
-    font-family: 'Geist Mono', 'SF Mono', 'Fira Code', monospace;
+    font-family: 'Geist Mono Variable', 'Geist Mono', 'SF Mono', monospace;
   }
 
   .font-display {
-    font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+    font-family: 'Geist Pixel Square', 'Geist Mono Variable', monospace;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Geist Pixel Square', 'Geist Mono Variable', monospace;
+    letter-spacing: 0;
+    text-transform: lowercase;
   }
 
   kbd {
-    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-family: 'Geist Mono Variable', 'SF Mono', monospace;
+  }
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    letter-spacing: 0 !important;
+  }
+
+  [class*="shadow"],
+  [class*="rounded"] {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  [class*="bg-gradient"],
+  [class*="from-"],
+  [class*="via-"],
+  [class*="to-"] {
+    background-image: none !important;
   }
 }
 
@@ -193,20 +233,20 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 *::-webkit-scrollbar-track {
-  background: hsl(0 0% 6%);
+  background: hsl(0 0% 4%);
 }
 
 *::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, hsl(0 0% 24%), hsl(0 0% 16%));
-  border: 2px solid hsl(0 0% 6%);
+  background: hsl(0 0% 28%);
+  border: 2px solid hsl(0 0% 4%);
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, hsl(0 0% 30%), hsl(0 0% 20%));
+  background: hsl(0 0% 38%);
 }
 
 *::-webkit-scrollbar-corner {
-  background: hsl(0 0% 6%);
+  background: hsl(0 0% 4%);
 }
 
 @keyframes fade-out-up {
@@ -276,15 +316,12 @@ h1, h2, h3, h4, h5, h6 {
 
 @keyframes docs-result-flash {
   0% {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.95), 0 0 0 0 hsl(var(--primary) / 0.22);
-    background-color: hsl(var(--primary) / 0.18);
+    background-color: hsl(var(--primary) / 0.1);
   }
   45% {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.9), 0 0 0 12px hsl(var(--primary) / 0.08);
-    background-color: hsl(var(--primary) / 0.12);
+    background-color: hsl(var(--primary) / 0.08);
   }
   100% {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.6), 0 0 0 0 hsl(var(--primary) / 0);
     background-color: transparent;
   }
 }

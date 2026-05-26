@@ -40,7 +40,7 @@ npm install @remcostoeten/use-shortcut
 
 ## If you are an LLM implementing this package
 - Install the package before writing code.
-- Import \`useShortcut\` from \`@remcostoeten/use-shortcut\`.
+- Import \`useShortcut\` from \`@remcostoeten/use-shortcut/react\`.
 - Prefer React + TypeScript examples.
 - Default to \`ignoreInputs: true\` unless the product clearly wants shortcuts inside editable fields.
 - Add \`preventDefault: true\` for browser-conflicting combos like \`mod+k\` and \`mod+s\`.
@@ -52,7 +52,7 @@ npm install @remcostoeten/use-shortcut
 
 ## Minimal example
 \`\`\`tsx
-import { useShortcut } from "@remcostoeten/use-shortcut"
+import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 function App() {
   const $ = useShortcut({ ignoreInputs: true })
@@ -235,7 +235,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                 }
               }}
               onKeyDown={(e) => handleKeyDown(e, item.id)}
-              className={`rounded-sm px-2.5 py-1.5 font-mono text-xs lowercase transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${active === item.id
+              className={`px-2.5 py-1.5 font-mono text-xs lowercase transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${active === item.id
                 ? "text-foreground"
                 : "text-muted-foreground hover:text-foreground"
                 }`}
@@ -286,7 +286,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                           <Tooltip.Trigger asChild>
                             <button
                               type="button"
-                              className="flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              className="flex h-5 w-5 items-center justify-center text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               aria-label={`More info about ${activeAsset.label}`}
                             >
                               <HelpCircle className="h-3 w-3" />
@@ -294,7 +294,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                           </Tooltip.Trigger>
                           <Tooltip.Portal>
                             <Tooltip.Content
-                              className="z-50 max-w-[280px] rounded-md border bg-popover p-3 text-xs text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+                              className="z-50 max-w-[280px] border bg-popover p-3 text-xs text-popover-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
                               sideOffset={5}
                             >
                               <p className="leading-relaxed text-foreground">{activeAsset.tooltip}</p>
@@ -313,7 +313,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                   <button
                     type="button"
                     onClick={() => copyAsset(activeAssetContent, activeAsset.label)}
-                    className="inline-flex min-h-9 items-center gap-2 rounded-sm border border-border px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="inline-flex min-h-9 items-center gap-2 border border-border px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={`Copy ${activeAsset.label} to clipboard`}
                   >
                     {copiedAsset === activeAsset.label ? (
@@ -331,7 +331,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                   <button
                     type="button"
                     onClick={() => handleView(activeAsset)}
-                    className="inline-flex min-h-9 items-center gap-2 rounded-sm border border-border px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="inline-flex min-h-9 items-center gap-2 border border-border px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={`View ${activeAsset.label}`}
                   >
                     <Eye className="h-4 w-4" />
@@ -340,7 +340,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
                   <button
                     type="button"
                     onClick={() => handleDownload(activeAsset)}
-                    className="inline-flex min-h-9 items-center gap-2 rounded-sm border border-border px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="inline-flex min-h-9 items-center gap-2 border border-border px-3 text-xs text-foreground transition-colors hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={`Download ${activeAsset.label}`}
                   >
                     <Download className="h-4 w-4" />
@@ -371,7 +371,7 @@ export function InstallCommand({ packageName = "package-name" }: InstallCommandP
               {viewingAsset?.description}
             </DialogDescription>
           </DialogHeader>
-          <pre className="mt-2 overflow-x-auto rounded border bg-muted p-4 text-xs font-mono text-muted-foreground whitespace-pre-wrap">
+          <pre className="mt-2 overflow-x-auto border bg-muted p-4 text-xs font-mono text-muted-foreground whitespace-pre-wrap">
             {viewingAsset ? (
               <SyntaxHighlight
                 code={assetContent[viewingAsset.href]}

@@ -24,7 +24,7 @@ Lowercase letter keys a-z
 ## createShortcutGroup
 
 - Kind: `function`
-- Source: `src/hook.ts:472:1`
+- Source: `src/hook.ts:445:1`
 - Signature: `(): ShortcutGroup`
 
 Creates an imperative group controller for many shortcut registrations.
@@ -261,7 +261,7 @@ Public platform constant alias (`Platform.MAC`, `Platform.WINDOWS`, `Platform.LI
 ## registerShortcutMap
 
 - Kind: `function`
-- Source: `src/hook.ts:218:1`
+- Source: `src/hook.ts:191:1`
 - Signature: `<T extends ShortcutMap>(builder: ShortcutBuilder, shortcutMap: T): ShortcutMapResult<T>`
 
 Registers an object-based shortcut map in one call and returns per-action handles.
@@ -280,7 +280,7 @@ const group = useShortcutGroup()
 useEffect(() => {
   const results = registerShortcutMap($, {
     save: { keys: "mod+s", handler: onSave },
-    nav: { keys: ["g", "d"], handler: onGoDashboard },
+    nav: { keys: "g then d", handler: onGoDashboard },
   })
   group.addMany(results)
 
@@ -449,7 +449,7 @@ Symbol and punctuation keys
 ## useShortcut
 
 - Kind: `function`
-- Source: `src/hook.ts:264:1`
+- Source: `src/hook.ts:237:1`
 - Signature: `(options?: UseShortcutOptions): ShortcutBuilder`
 
 React hook for registering chainable keyboard shortcuts
@@ -476,7 +476,7 @@ useEffect(() => {
 ## useShortcutBinding
 
 - Kind: `function`
-- Source: `src/hook.ts:335:1`
+- Source: `src/hook.ts:308:1`
 - Signature: `(keys: string | string[], handler: ShortcutHandler, options?: HandlerOptions, shortcutOptions?: UseShortcutOptions): ShortcutResult`
 
 React hook for one cleanup-safe shortcut binding.
@@ -509,7 +509,7 @@ const closeShortcut = useShortcutBinding({
 ## useShortcutGroup
 
 - Kind: `function`
-- Source: `src/hook.ts:510:1`
+- Source: `src/hook.ts:483:1`
 - Signature: `(): ShortcutGroup`
 
 React hook that returns a stable `ShortcutGroup` instance.
@@ -524,7 +524,7 @@ const group = useShortcutGroup()
 ## useShortcutMap
 
 - Kind: `function`
-- Source: `src/hook.ts:413:1`
+- Source: `src/hook.ts:386:1`
 - Signature: `<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>`
 
 React hook that registers a shortcut map and automatically unbinds on cleanup.

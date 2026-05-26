@@ -18,7 +18,7 @@ npm install @remcostoeten/use-shortcut
 
 If you are an LLM implementing this package:
 - Install the package before writing code.
-- Import `useShortcut` from `@remcostoeten/use-shortcut/react`.
+- Import React hooks from `@remcostoeten/use-shortcut/react`.
 - Treat this package as React/Next.js-only.
 - Prefer React + TypeScript examples.
 - Default to `ignoreInputs: true` unless the product clearly wants shortcuts inside editable fields.

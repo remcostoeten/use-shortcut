@@ -77,6 +77,14 @@ export function getPackagePath(slug: string) {
   return `/${slug}`;
 }
 
+export function getLabPath(slug: string) {
+  if (DOCS_MODE === "package" && slug === PRIMARY_PACKAGE_SLUG) {
+    return "/lab";
+  }
+
+  return `/${slug}/lab`;
+}
+
 export function isAbsoluteUrl(value: string) {
   return /^https?:\/\//.test(value);
 }

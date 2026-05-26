@@ -23,17 +23,20 @@ export default function RootLayout({
 }
 
 # .env.local
-NEXT_PUBLIC_REMCO_ANALYTICS_URL=https://your-analytics.vercel.app`,
+NEXT_PUBLIC_ANALYTICS_URL=https://ingestion.remcostoeten.nl`,
     language: 'tsx',
   },
   {
     title: 'environment variables',
     description: 'configure your analytics endpoint',
-    code: `# .env.local
-NEXT_PUBLIC_REMCO_ANALYTICS_URL=https://your-analytics.vercel.app
+    code: `# Vite (.env)
+VITE_ANALYTICS_URL=https://ingestion.remcostoeten.nl
+
+# Next.js (.env.local)
+NEXT_PUBLIC_ANALYTICS_URL=https://ingestion.remcostoeten.nl
 
 # optional: custom project identifier
-NEXT_PUBLIC_REMCO_ANALYTICS_PROJECT_ID=my-app`,
+VITE_ANALYTICS_PROJECT_ID=my-app`,
     language: 'bash',
   },
 ];
