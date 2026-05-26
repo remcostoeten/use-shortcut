@@ -15,5 +15,20 @@ export default defineConfig(() => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ["react", "react-dom"],
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (
+            id.includes("node_modules/react-dom/")
+            || id.includes("node_modules/react/")
+          ) {
+            return "react-vendor";
+          }
+        },
+      },
+    },
   },
 }));
