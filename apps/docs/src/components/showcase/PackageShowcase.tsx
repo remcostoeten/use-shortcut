@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-import { useShortcut } from "@remcostoeten/use-shortcut";
+import { useShortcut } from "@remcostoeten/use-shortcut/react";
 import { useNavigate } from "react-router-dom";
 import { Navbar } from "./Navbar";
 import { InstallCommand } from "./InstallCommand";

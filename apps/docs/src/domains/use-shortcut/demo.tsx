@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ShortcutAttemptDebugEvent, ShortcutDebugEvent } from "@remcostoeten/use-shortcut";
-import { useShortcut, formatShortcut } from "@remcostoeten/use-shortcut";
+import { formatShortcut } from "@remcostoeten/use-shortcut/formatter";
+import { useShortcut, type ShortcutAttemptDebugEvent, type ShortcutDebugEvent } from "@remcostoeten/use-shortcut/react";
 import { Save, CircleHelp, X } from "lucide-react";
 import { SyntaxHighlight } from "@/components/showcase/SyntaxHighlight";
 
@@ -171,7 +171,7 @@ export function UseShortcutDemo() {
 
   const copySnippet = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(`const $ = useShortcut()\n$.mod.key("k").on(openSearch, { preventDefault: true })`);
+      await navigator.clipboard.writeText(`import { useShortcut } from "@remcostoeten/use-shortcut/react"\n\nconst $ = useShortcut()\n$.mod.key("k").on(openSearch, { preventDefault: true })`);
       showToast("Snippet copied");
     } catch {
       showToast("Clipboard unavailable");

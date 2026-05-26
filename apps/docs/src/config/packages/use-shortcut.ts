@@ -5,7 +5,7 @@ import {
   parseShortcut,
   parseShortcuts,
 } from "@remcostoeten/use-shortcut";
-import { getPackageDocsUrl } from "../site";
+import { getPackageDocsUrl, getLabPath } from "../site";
 
 const activePlatform = detectPlatform();
 const stringifyResult = (value: unknown) => JSON.stringify(value, null, 2);
@@ -31,6 +31,7 @@ const useShortcutConfig: PackageConfig = {
   navLinks: [
     { label: "setup", url: "#install" },
     { label: "example", url: "#demo" },
+    { label: "lab", url: getLabPath("use-shortcut") },
     { label: "recipes", url: "#syntax" },
     { label: "options", url: "#api" },
     { label: "api reference", url: "#api-reference" },
@@ -351,7 +352,7 @@ $.key("g").then("d").on(goToDashboard)`,
         { name: "onConflict", type: "(conflict: ShortcutConflict) => void", default: "—", description: "Custom callback invoked on conflicts." },
         { name: "eventFilter", type: "(event: KeyboardEvent) => boolean", default: "—", description: "Global predicate to allow/deny event processing." },
       ],
-      usageExample: `import { useShortcut } from "@remcostoeten/use-shortcut"
+      usageExample: `import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 const $ = useShortcut({
   debug: {
@@ -418,7 +419,7 @@ setUserShortcut(combo)`,
     {
       title: "quick start",
       description: "Use this when you want the smallest possible starter: one save shortcut and one escape hatch, with no app-shell wiring yet.",
-      code: `import { useShortcut } from "@remcostoeten/use-shortcut"
+      code: `import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 function App() {
   const $ = useShortcut()
@@ -434,7 +435,7 @@ function App() {
       title: "debug stream and toast wiring",
       description: "Use this when you want generic keystroke telemetry plus per-shortcut visual feedback for matches, mismatches, and wrong order.",
       code: `import { useEffect } from "react"
-import { useShortcut } from "@remcostoeten/use-shortcut"
+import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 function ShortcutDebugger() {
   const $ = useShortcut({

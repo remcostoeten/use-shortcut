@@ -280,7 +280,7 @@ const group = useShortcutGroup()
 useEffect(() => {
   const results = registerShortcutMap($, {
     save: { keys: "mod+s", handler: onSave },
-    nav: { keys: ["g", "d"], handler: onGoDashboard },
+    nav: { keys: "g then d", handler: onGoDashboard },
   })
   group.addMany(results)
 

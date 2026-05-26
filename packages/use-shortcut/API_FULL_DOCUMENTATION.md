@@ -9,7 +9,7 @@ Creates a chainable shortcut builder.
 
 ```tsx
 import { useEffect } from "react"
-import { useShortcut } from "@remcostoeten/use-shortcut"
+import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 export function Example() {
   const $ = useShortcut({ activeScopes: ["editor"] })
@@ -42,7 +42,7 @@ export function Example() {
 Registers one shortcut declaratively and cleans it up automatically.
 
 ```tsx
-import { useShortcutBinding } from "@remcostoeten/use-shortcut"
+import { useShortcutBinding } from "@remcostoeten/use-shortcut/react"
 
 export function SaveShortcut() {
   const saveResult = useShortcutBinding("mod+s", saveDocument, {
@@ -96,7 +96,7 @@ Use `useShortcut()` directly when you need advanced fluent chains, `onDebug`, `r
 ### Example covering all chain operations
 ```tsx
 import { useEffect } from "react"
-import { useShortcut } from "@remcostoeten/use-shortcut"
+import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 export function FullChainExample() {
   const $ = useShortcut({ activeScopes: ["global", "editor"] })

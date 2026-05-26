@@ -1,4 +1,4 @@
-import type { HandlerOptions, ShortcutMap } from "@remcostoeten/use-shortcut"
+import type { HandlerOptions, ShortcutMap } from "@remcostoeten/use-shortcut/react"
 import { shortcutRegistry, type ShortcutActionId, type ShortcutBindings } from "./registry"
 import type { ShortcutHandlers } from "./types"
 

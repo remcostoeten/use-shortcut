@@ -25,18 +25,22 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick, className 
     () => navLinks.filter((link) => link.url.startsWith("#")),
     [navLinks],
   );
+  const routeLinks = useMemo(
+    () => navLinks.filter((link) => link.url.startsWith("/")),
+    [navLinks],
+  );
   const externalLinks = useMemo(
-    () => navLinks.filter((link) => !link.url.startsWith("#")),
+    () => navLinks.filter((link) => !link.url.startsWith("#") && !link.url.startsWith("/")),
     [navLinks],
   );
   const primaryDesktopLinks = useMemo(() => {
-    const preferredOrder = ["setup", "example", "recipes", "options"];
+    const preferredOrder = ["setup", "example", "lab", "recipes", "options"];
     const picked = preferredOrder
-      .map((label) => anchorLinks.find((link) => link.label === label))
+      .map((label) => navLinks.find((link) => link.label === label))
       .filter((link): link is ShowcaseNavLink => Boolean(link));
 
-    return picked.length > 0 ? picked : anchorLinks.slice(0, 4);
-  }, [anchorLinks]);
+    return picked.length > 0 ? picked : [...routeLinks, ...anchorLinks].slice(0, 5);
+  }, [anchorLinks, navLinks, routeLinks]);
   const packageLinks = useMemo(
     () =>
       packages.map((pkg) => {
@@ -271,11 +275,33 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick, className 
         </div>
       </div>
 
-      {anchorLinks.length > 0 ? (
+      {primaryDesktopLinks.length > 0 ? (
         <div className="hidden border-t border-dashed border-border/80 bg-background/80 md:block">
           <div className="mx-auto w-full max-w-6xl border-x border-border px-4 py-2 sm:px-8">
             <div className="flex max-w-full items-center gap-1 overflow-x-auto [-webkit-overflow-scrolling:touch]">
               {primaryDesktopLinks.map((link) => (
+                link.url.startsWith("/") ? (
+                  <Link
+                    key={link.label}
+                    to={link.url}
+                    onClick={() => {
+                      trackDocsEvent("nav_route_clicked", {
+                        label: link.label,
+                        href: link.url,
+                        location: "sticky",
+                      });
+                    }}
+                    className={[
+                      "inline-flex min-h-9 shrink-0 touch-manipulation items-center border px-2.5 font-mono text-tiny lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      location.pathname === link.url
+                        ? "border-primary/25 bg-primary/8 text-primary"
+                        : "border-border/80 bg-card/20 text-muted-foreground hover:bg-card/35 hover:text-foreground",
+                    ].join(" ")}
+                    aria-current={location.pathname === link.url ? "page" : undefined}
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
                 <a
                   key={link.label}
                   href={link.url}
@@ -307,6 +333,7 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick, className 
                 >
                   {link.label === "options" ? "api" : link.label}
                 </a>
+                )
               ))}
               <span className="w-2 shrink-0" aria-hidden="true" />
             </div>
@@ -373,7 +400,30 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick, className 
               ))}
             </div>
             <div className="grid gap-1">
-              {anchorLinks.map((link) => (
+              {[...routeLinks, ...anchorLinks].map((link) => (
+                link.url.startsWith("/") ? (
+                  <Link
+                    key={link.label}
+                    to={link.url}
+                    onClick={() => {
+                      setMobileOpen(false);
+                      trackDocsEvent("nav_route_clicked", {
+                        label: link.label,
+                        href: link.url,
+                        location: "mobile",
+                      });
+                    }}
+                    className={[
+                      "inline-flex min-h-11 items-center border border-transparent px-3 font-mono text-xs lowercase transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      location.pathname === link.url
+                        ? "border-primary/25 bg-primary/8 text-primary"
+                        : "text-muted-foreground hover:border-border hover:bg-card/30 hover:text-foreground",
+                    ].join(" ")}
+                    aria-current={location.pathname === link.url ? "page" : undefined}
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
                 <a
                   key={link.label}
                   href={link.url}
@@ -406,6 +456,7 @@ export function Navbar({ navLinks = [], currentSlug, onRegistryClick, className 
                 >
                   {link.label === "options" ? "api" : link.label}
                 </a>
+                )
               ))}
               {externalLinks.map((link) => (
                 <a

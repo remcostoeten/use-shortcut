@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Shortcut Lab">
-  <rect width="64" height="64" rx="12" fill="#f5f0e6"/>
-  <path d="M16 20h32v24H16z" fill="#16615a"/>
-  <path d="M22 27h7v7h-7zm13 0h7v7h-7zM22 37h20v4H22z" fill="#fffaf0"/>
-  <path d="M48 20v24h-5V25H16v-5z" fill="#c2542f"/>
-</svg>

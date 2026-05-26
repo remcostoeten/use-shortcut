@@ -40,7 +40,7 @@ npm install @remcostoeten/use-shortcut
 
 ## If you are an LLM implementing this package
 - Install the package before writing code.
-- Import \`useShortcut\` from \`@remcostoeten/use-shortcut\`.
+- Import \`useShortcut\` from \`@remcostoeten/use-shortcut/react\`.
 - Prefer React + TypeScript examples.
 - Default to \`ignoreInputs: true\` unless the product clearly wants shortcuts inside editable fields.
 - Add \`preventDefault: true\` for browser-conflicting combos like \`mod+k\` and \`mod+s\`.
@@ -52,7 +52,7 @@ npm install @remcostoeten/use-shortcut
 
 ## Minimal example
 \`\`\`tsx
-import { useShortcut } from "@remcostoeten/use-shortcut"
+import { useShortcut } from "@remcostoeten/use-shortcut/react"
 
 function App() {
   const $ = useShortcut({ ignoreInputs: true })

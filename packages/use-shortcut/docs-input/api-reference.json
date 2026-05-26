@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-22T13:01:02.224Z",
+  "generatedAt": "2026-05-26T14:54:03.272Z",
   "package": "@remcostoeten/use-shortcut",
   "sourceEntry": "src/index.ts",
   "count": 54,
@@ -440,7 +440,7 @@
       ],
       "returns": "A result map with one `ShortcutResult` per shortcut id",
       "examples": [
-        "```ts\nconst $ = useShortcut()\nconst group = useShortcutGroup()\n\nuseEffect(() => {\n  const results = registerShortcutMap($, {\n    save: { keys: \"mod+s\", handler: onSave },\n    nav: { keys: [\"g\", \"d\"], handler: onGoDashboard },\n  })\n  group.addMany(results)\n\n  return () => group.unbindAll()\n}, [$, group, onSave, onGoDashboard])\n```"
+        "```ts\nconst $ = useShortcut()\nconst group = useShortcutGroup()\n\nuseEffect(() => {\n  const results = registerShortcutMap($, {\n    save: { keys: \"mod+s\", handler: onSave },\n    nav: { keys: \"g then d\", handler: onGoDashboard },\n  })\n  group.addMany(results)\n\n  return () => group.unbindAll()\n}, [$, group, onSave, onGoDashboard])\n```"
       ]
     },
     {

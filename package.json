@@ -18,9 +18,6 @@
     "docs:build": "turbo run build --filter=@remcostoeten/use-shortcut-docs",
     "docs:lint": "turbo run lint --filter=@remcostoeten/use-shortcut-docs",
     "docs:test": "turbo run test --filter=@remcostoeten/use-shortcut-docs",
-    "lab:dev": "turbo run dev --filter=@remcostoeten/use-shortcut-lab",
-    "lab:build": "turbo run build --filter=@remcostoeten/use-shortcut-lab",
-    "lab:typecheck": "turbo run typecheck --filter=@remcostoeten/use-shortcut-lab",
     "package:build": "turbo run build --filter=@remcostoeten/use-shortcut",
     "package:test": "turbo run test --filter=@remcostoeten/use-shortcut",
     "package:typecheck": "turbo run typecheck --filter=@remcostoeten/use-shortcut"

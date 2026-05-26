@@ -52,7 +52,7 @@ Recommendation: add a scoped provider only if examples reveal repeated boilerpla
 
 ## Example app direction
 
-Build a focused `apps/shortcut-lab` example rather than expanding the package README demo. The app should behave like a small command-driven editor surface, not a landing page.
+Build a focused interactive lab inside `apps/docs` (route `/lab`) rather than expanding the package README demo. The app should behave like a small command-driven editor surface, not a landing page.
 
 Core screens:
 
@@ -73,7 +73,7 @@ API coverage:
 
 Implementation constraints:
 
-- Put the app under `apps/shortcut-lab` as a Vite React workspace.
+- Put the lab under `apps/docs/src/lab`, served at `/lab` (package mode) or `/use-shortcut/lab` (registry mode).
 - Depend on `@remcostoeten/use-shortcut` through the workspace package.
 - Keep it package-consumer realistic: no internal imports from `packages/use-shortcut/src`.
 - Include an accessible live region for shortcut feedback and debug status.

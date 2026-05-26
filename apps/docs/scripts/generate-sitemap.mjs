@@ -83,7 +83,7 @@ async function main() {
   const primaryPackageSlug = resolvePrimaryPackageSlug();
   const slugs = await readPackageSlugs(packagesDir);
   const routes = docsMode === "package"
-    ? ["/"]
+    ? ["/", "/lab"]
     : ["/", ...slugs
       .map((slug) => getPackageDocsUrl(slug, {
         docsMode,
@@ -97,6 +97,10 @@ async function main() {
         return pathname || "/";
       })
       .filter((route, index, list) => list.indexOf(route) === index)];
+
+  if (docsMode === "registry" && slugs.includes("use-shortcut")) {
+    routes.push("/use-shortcut/lab");
+  }
 
   const urlNodes = routes
     .map((route) => {
