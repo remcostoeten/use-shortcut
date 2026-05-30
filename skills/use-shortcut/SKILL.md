@@ -1,11 +1,9 @@
 ---
 name: use-shortcut
-description: Build, review, document, or debug React and Next.js keyboard shortcuts with @remcostoeten/use-shortcut. Use when adding shortcut handlers, command palettes, shortcut maps, scoped shortcuts, multi-key sequences, shortcut recording, formatter/parser utilities, accessible debug or attempt UIs, or package/docs/tests for the use-shortcut repository.
+description: Add scoped, accessible keyboard shortcuts to React apps with @remcostoeten/use-shortcut.
 ---
 
-# use-shortcut
-
-Use this skill for React keyboard shortcut work with `@remcostoeten/use-shortcut`. Prefer the narrow React entrypoint for app code:
+Add scoped, accessible keyboard shortcuts to React apps with `@remcostoeten/use-shortcut`. Prefer the narrow React entrypoint for app code:
 
 ```tsx
 import { useShortcut } from "@remcostoeten/use-shortcut/react"
