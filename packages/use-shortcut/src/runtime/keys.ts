@@ -52,7 +52,9 @@ export function _eventToCombo(event: KeyboardEvent): string {
     if (event.metaKey) modifiers.push("cmd")
 
     const key =
-        event.key === " " || event.key === "Spacebar"
+        !event.key
+            ? ""
+            : event.key === " " || event.key === "Spacebar"
             ? "space"
             : event.key.toLowerCase()
     return [...modifiers, key].join("+")
