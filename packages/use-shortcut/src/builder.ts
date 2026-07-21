@@ -42,6 +42,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
         activeScopes: new Set(_normalizeScopes(options.activeScopes)),
         nextId: 1,
         debugListeners: new Set(),
+        attemptCallbackCount: 0,
         listener: null,
         listenerTarget: null,
         listenerEventType: options.eventType ?? "keydown",

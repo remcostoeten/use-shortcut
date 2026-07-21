@@ -63,6 +63,12 @@ export type ParsedShortcut = {
     modifiers: ModifierState
     key: string
     original: string
+    /**
+     * `key` pre-normalized for event matching, computed once at parse time so
+     * the per-keydown matcher never re-normalizes the static side. Optional
+     * because `ParsedShortcut` values may be constructed outside `parseShortcut`.
+     */
+    matchKey?: string
 }
 
 export type EmptyModifiers = {}

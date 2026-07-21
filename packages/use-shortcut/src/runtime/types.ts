@@ -54,6 +54,12 @@ export type ShortcutRegistry = {
     activeScopes: Set<string>
     nextId: number
     debugListeners: Set<(event: ShortcutDebugEvent) => void>
+    /**
+     * Total attempt callbacks across all entries, maintained on add/remove so
+     * the dispatcher can decide in O(1) whether attempt details are needed
+     * instead of scanning every registered entry per keydown.
+     */
+    attemptCallbackCount: number
     listener: ((event: KeyboardEvent) => void) | null
     listenerTarget: (HTMLElement | Window) | null
     listenerEventType: "keydown" | "keyup"

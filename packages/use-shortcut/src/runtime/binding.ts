@@ -20,6 +20,8 @@ export function _removeRegistryEntry(registry: ShortcutRegistry, entry: Registry
     if (!currentEntries) return
 
     _clearEntryTimeouts(entry)
+    registry.attemptCallbackCount -= entry.attemptCallbacks.size
+    entry.attemptCallbacks.clear()
 
     const nextEntries = currentEntries.filter((item) => item.id !== entry.id)
 
@@ -48,10 +50,25 @@ export function _removeRegistryEntry(registry: ShortcutRegistry, entry: Registry
     }
 }
 
+/**
+ * Keeps a combo's entries ordered by priority (desc) then id (asc) at
+ * registration time, so the per-keydown dispatcher can iterate without
+ * copying or sorting.
+ */
+export function _sortEntriesInPlace(entries: RegistryEntry[]) {
+    if (entries.length <= 1) return
+    entries.sort((a, b) => {
+        if (b.priority !== a.priority) return b.priority - a.priority
+        return a.id - b.id
+    })
+}
+
 function _addRegistryEntry(registry: ShortcutRegistry, entry: RegistryEntry) {
     const comboEntries = registry.listeners.get(entry.combo)
     if (comboEntries) {
-        comboEntries.push(entry)
+        const nextEntries = [...comboEntries, entry]
+        _sortEntriesInPlace(nextEntries)
+        registry.listeners.set(entry.combo, nextEntries)
         return
     }
 
@@ -113,8 +130,15 @@ function _createResult(entry: RegistryEntry, registry: ShortcutRegistry): Shortc
             _clearEntryTimeouts(entry)
         },
         onAttempt: (callback) => {
-            entry.attemptCallbacks.add(callback)
-            return () => entry.attemptCallbacks.delete(callback)
+            if (!entry.attemptCallbacks.has(callback)) {
+                entry.attemptCallbacks.add(callback)
+                registry.attemptCallbackCount += 1
+            }
+            return () => {
+                if (entry.attemptCallbacks.delete(callback)) {
+                    registry.attemptCallbackCount -= 1
+                }
+            }
         },
     }
 }
@@ -202,6 +226,12 @@ function _registerBinding(
     if (existingRenderEntry && existingRenderEntry.combo === combo) {
         _updateRegistryEntry(existingRenderEntry, entry)
         existingRenderEntry.lastSeenRenderCycle = registry.renderCycle
+        const reconciledEntries = registry.listeners.get(combo)
+        if (reconciledEntries && reconciledEntries.length > 1) {
+            const nextEntries = [...reconciledEntries]
+            _sortEntriesInPlace(nextEntries)
+            registry.listeners.set(combo, nextEntries)
+        }
         return _createResult(existingRenderEntry, registry)
     }
 
