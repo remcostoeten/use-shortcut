@@ -89,11 +89,13 @@ export function parseShortcut(shortcut: string, platform: PlatformType = detectP
     }
 
     const normalizedKey = SpecialKeyMap[key] || key
+    const finalKey = normalizedKey.length === 1 ? normalizedKey.toLowerCase() : normalizedKey
 
     return {
         modifiers,
-        key: normalizedKey.length === 1 ? normalizedKey.toLowerCase() : normalizedKey,
+        key: finalKey,
         original: shortcut,
+        matchKey: _normalizeKeyToken(finalKey),
     }
 }
 
@@ -140,7 +142,7 @@ export function matchesShortcut(event: KeyboardEvent, parsed: ParsedShortcut): b
         eventModifiers.alt === parsed.modifiers.alt &&
         eventModifiers.shift === parsed.modifiers.shift
 
-    const keyMatches = eventKey === _normalizeKeyToken(parsed.key)
+    const keyMatches = eventKey === (parsed.matchKey ?? _normalizeKeyToken(parsed.key))
 
     return modifiersMatch && keyMatches
 }

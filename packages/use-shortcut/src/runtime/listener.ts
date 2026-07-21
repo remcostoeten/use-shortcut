@@ -6,31 +6,27 @@ import { _IGNORED_TAGS, _scopeMatch, _shouldExcept } from "./guards"
 import type { RegistryEntry, ShortcutRegistry } from "./types"
 import type { ShortcutAttemptDebugEvent, ShortcutDebugEvent } from "../types"
 
-function _sortEntries(entries: RegistryEntry[]): RegistryEntry[] {
-    if (entries.length <= 1) return entries
-
-    return [...entries].sort((a, b) => {
-        if (b.priority !== a.priority) return b.priority - a.priority
-        return a.id - b.id
-    })
-}
-
 function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent) {
     const runtimeOptions = registry.options
     if (runtimeOptions.disabled) return
     if (runtimeOptions.eventFilter && !runtimeOptions.eventFilter(event)) return
 
     const inputCombo = _eventToMatchStep(event)
-    const debugInput = _createDebugInput(event, inputCombo)
-    const attempts: ShortcutAttemptDebugEvent[] = []
-
-    const candidateCombos = new Set<string>()
     const includeAllForDebug =
         registry.debugListeners.size > 0 ||
         _shouldLogDebug(runtimeOptions.debug) ||
-        [...registry.listeners.values()].some((entries) => entries.some((entry) => entry.attemptCallbacks.size > 0))
+        registry.attemptCallbackCount > 0
 
     const firstStepCombos = registry.firstStepIndex.get(inputCombo)
+
+    if (!includeAllForDebug && !firstStepCombos && registry.activeSequenceCombos.size === 0) {
+        return
+    }
+
+    const debugInput = includeAllForDebug ? _createDebugInput(event, inputCombo) : null
+    const attempts: ShortcutAttemptDebugEvent[] = []
+
+    const candidateCombos = new Set<string>()
     if (firstStepCombos) {
         for (const combo of firstStepCombos) candidateCombos.add(combo)
     }
@@ -47,9 +43,7 @@ function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent
         const comboEntries = registry.listeners.get(combo)
         if (!comboEntries) continue
 
-        const orderedEntries = _sortEntries(comboEntries)
-
-        for (const item of orderedEntries) {
+        for (const item of comboEntries) {
             if (!item.isEnabled) continue
 
             if (!_scopeMatch(item.scopes, registry.activeScopes)) {
@@ -74,7 +68,7 @@ function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent
             if (item.progress > 0 && now - item.lastMatchedAt > item.sequenceTimeout) {
                 item.progress = 0
             }
-            if (item.debugHistory.length > 0 && now - item.lastDebugAt > item.sequenceTimeout) {
+            if (debugInput && item.debugHistory.length > 0 && now - item.lastDebugAt > item.sequenceTimeout) {
                 item.debugHistory = []
             }
 
@@ -96,32 +90,34 @@ function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent
                 item.progress = 0
             }
 
-            item.lastDebugAt = now
-            item.debugHistory.push(inputCombo)
-            if (item.debugHistory.length > item.expectedSteps.length) {
-                item.debugHistory.shift()
-            }
+            if (debugInput) {
+                item.lastDebugAt = now
+                item.debugHistory.push(inputCombo)
+                if (item.debugHistory.length > item.expectedSteps.length) {
+                    item.debugHistory.shift()
+                }
 
-            const actualSteps = item.debugHistory.slice(-item.expectedSteps.length)
-            const steps = _buildAttemptSteps(item.expectedSteps, actualSteps, matched)
-            const details: ShortcutAttemptDebugEvent = {
-                combo: item.combo,
-                display: item.display,
-                description: item.description,
-                status: _deriveAttemptStatus(steps, item.expectedSteps.length, actualSteps.length, matched),
-                matched,
-                progress: item.progress,
-                expectedSteps: item.expectedSteps,
-                actualSteps,
-                stepIndex,
-                input: debugInput,
-                steps,
-            }
+                const actualSteps = item.debugHistory.slice(-item.expectedSteps.length)
+                const steps = _buildAttemptSteps(item.expectedSteps, actualSteps, matched)
+                const details: ShortcutAttemptDebugEvent = {
+                    combo: item.combo,
+                    display: item.display,
+                    description: item.description,
+                    status: _deriveAttemptStatus(steps, item.expectedSteps.length, actualSteps.length, matched),
+                    matched,
+                    progress: item.progress,
+                    expectedSteps: item.expectedSteps,
+                    actualSteps,
+                    stepIndex,
+                    input: debugInput,
+                    steps,
+                }
 
-            attempts.push(details)
+                attempts.push(details)
 
-            for (const cb of item.attemptCallbacks) {
-                cb(matched, event, details)
+                for (const cb of item.attemptCallbacks) {
+                    cb(matched, event, details)
+                }
             }
 
             if (!matched) continue
@@ -163,6 +159,8 @@ function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent
             registry.activeSequenceCombos.delete(combo)
         }
     }
+
+    if (!debugInput) return
 
     const debugEvent: ShortcutDebugEvent = {
         input: debugInput,
