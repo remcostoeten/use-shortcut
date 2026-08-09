@@ -116,6 +116,18 @@ describe("advanced shortcut features", () => {
         await expect(recordPromise).resolves.toBe("ctrl+k")
     })
 
+    it("keeps recording through non-standard Meta key names", async () => {
+        const $ = createTestShortcut()
+
+        const recordPromise = $.record({ timeoutMs: 1000 })
+        dispatchKey("Super", { ctrlKey: true })
+        dispatchKey("OS", { ctrlKey: true })
+        dispatchKey("Hyper", { ctrlKey: true })
+        dispatchKey("m", { ctrlKey: true, metaKey: true })
+
+        await expect(recordPromise).resolves.toBe("ctrl+cmd+m")
+    })
+
     it("records space key combos as parseable tokens", async () => {
         const $ = createTestShortcut()
 

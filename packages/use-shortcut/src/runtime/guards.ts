@@ -76,7 +76,17 @@ export function _scopeMatch(
 
 export function _isPureModifier(event: KeyboardEvent): boolean {
     const key = event.key.toLowerCase()
+    // "super"/"hyper" (WebKitGTK) and "os" (legacy Firefox/IE) are
+    // non-standard names for the Meta key; without them, recording
+    // ends the moment Super is pressed instead of waiting for the
+    // final non-modifier key.
     return (
-        key === "shift" || key === "control" || key === "alt" || key === "meta"
+        key === "shift" ||
+        key === "control" ||
+        key === "alt" ||
+        key === "meta" ||
+        key === "super" ||
+        key === "hyper" ||
+        key === "os"
     )
 }
