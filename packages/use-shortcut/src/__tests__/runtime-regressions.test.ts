@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { _createShortcutBuilder } from "../builder"
+import { _resetSharedListeners } from "../runtime/listener"
 import type { ShortcutBuilder, UseShortcutOptions } from "../types"
 
 function createTestShortcut(options: UseShortcutOptions = {}) {
@@ -27,6 +28,7 @@ function dispatchKey(
 
 describe("runtime lifecycle regressions", () => {
     beforeEach(() => {
+        _resetSharedListeners()
         document.body.innerHTML = ""
     })
 

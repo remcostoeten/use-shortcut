@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { _createShortcutBuilder } from "../builder"
+import { _resetSharedListeners } from "../runtime/listener"
 import { matchesShortcut, parseShortcut } from "../parser"
 import type { ShortcutBuilder, UseShortcutOptions } from "../types"
 
@@ -27,6 +28,7 @@ function dispatchKey(
 
 describe("hot-path dispatch regressions", () => {
     beforeEach(() => {
+        _resetSharedListeners()
         document.body.innerHTML = ""
     })
 

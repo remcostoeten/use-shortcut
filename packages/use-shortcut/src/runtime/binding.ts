@@ -5,7 +5,7 @@ import { _debugLog } from "./debug"
 import { _detectConflict, _emitConflict, _scopesDisjoint } from "./conflicts"
 import { _canonicalizeParsed, _formatSequenceDisplay } from "./keys"
 import { _normalizeScopes } from "./guards"
-import { _attachRegistryListener, _detachRegistryListener } from "./listener"
+import { _attachRegistryListener, _detachRegistryListener, _getSiblingRegistries } from "./listener"
 import type { BuilderState, RegistryEntry, ShortcutRegistry } from "./types"
 
 function _clearEntryTimeouts(entry: RegistryEntry) {
@@ -109,6 +109,17 @@ function _updateRegistryEntry(
     entry.priority = next.priority
 }
 
+function _synthesizeTriggerEvent(entry: RegistryEntry, registry: ShortcutRegistry): KeyboardEvent {
+    const step = entry.parsedSteps[entry.parsedSteps.length - 1]
+    return new KeyboardEvent(registry.options.eventType ?? "keydown", {
+        key: step?.key ?? "",
+        ctrlKey: step?.modifiers.ctrl ?? false,
+        altKey: step?.modifiers.alt ?? false,
+        shiftKey: step?.modifiers.shift ?? false,
+        metaKey: step?.modifiers.meta ?? false,
+    })
+}
+
 function _createResult(entry: RegistryEntry, registry: ShortcutRegistry): ShortcutResult {
     return {
         unbind: () => _removeRegistryEntry(registry, entry),
@@ -118,7 +129,10 @@ function _createResult(entry: RegistryEntry, registry: ShortcutRegistry): Shortc
         get combo() {
             return entry.combo
         },
-        trigger: () => entry.userHandler(new KeyboardEvent(registry.options.eventType ?? "keydown")),
+        trigger: () => {
+            if (!entry.isEnabled) return
+            entry.userHandler(_synthesizeTriggerEvent(entry, registry))
+        },
         get isEnabled() {
             return entry.isEnabled
         },
@@ -175,14 +189,21 @@ function _registerBinding(
     const ignoredConflictId = existingRenderEntry?.combo === combo ? existingRenderEntry.id : undefined
     const requiredScopes = new Set(_normalizeScopes(state.scopes ?? handlerOptions.scopes))
 
-    for (const [existingCombo, entries] of registry.listeners.entries()) {
-        for (const existing of entries) {
-            if (existing.id === ignoredConflictId) continue
-            if (_scopesDisjoint(requiredScopes, existing.scopes)) continue
-            const reason = _detectConflict(parsedSteps, existing.parsedSteps)
-            if (!reason) continue
-            _emitConflict(registry, { combo, existingCombo, reason })
+    const scanForConflicts = (candidate: ShortcutRegistry) => {
+        for (const [existingCombo, entries] of candidate.listeners.entries()) {
+            for (const existing of entries) {
+                if (candidate === registry && existing.id === ignoredConflictId) continue
+                if (_scopesDisjoint(requiredScopes, existing.scopes)) continue
+                const reason = _detectConflict(parsedSteps, existing.parsedSteps)
+                if (!reason) continue
+                _emitConflict(registry, { combo, existingCombo, reason })
+            }
         }
+    }
+
+    scanForConflicts(registry)
+    for (const sibling of _getSiblingRegistries(registry)) {
+        scanForConflicts(sibling)
     }
 
     const isEnabled = !handlerOptions.disabled && !options.disabled
@@ -249,28 +270,11 @@ function _registerBinding(
     return _createResult(entry, registry)
 }
 
-export function _createBinding(
-    state: BuilderState,
-    handler: ShortcutHandler,
-    handlerOptions: HandlerOptions = {},
-    registry: ShortcutRegistry,
-): ShortcutResult {
-    const boundCombos = state.boundCombos?.filter((combo) => combo.trim())
-
-    if (!boundCombos || boundCombos.length <= 1) {
-        return _registerBinding(state, handler, handlerOptions, registry)
-    }
-
-    const results = boundCombos.map((combo) => {
-        const boundState: BuilderState = {
-            ...state,
-            boundCombos: [combo],
-            steps: [combo],
-        }
-
-        return _registerBinding(boundState, handler, handlerOptions, registry)
-    })
-
+/**
+ * Aggregates several registered alternatives (e.g. `["escape", "mod+d"]`) into
+ * one `ShortcutResult` handle that controls all of them together.
+ */
+export function _combineShortcutResults(results: ShortcutResult[]): ShortcutResult {
     return {
         unbind: () => {
             for (const result of results) {
@@ -298,9 +302,7 @@ export function _createBinding(
             }
         },
         onAttempt: (callback) => {
-            const removers = results
-                .map((result) => result.onAttempt?.(callback))
-                .filter((remove): remove is () => void => Boolean(remove))
+            const removers = results.map((result) => result.onAttempt(callback))
 
             return () => {
                 for (const remove of removers) {
@@ -309,4 +311,29 @@ export function _createBinding(
             }
         },
     }
+}
+
+export function _createBinding(
+    state: BuilderState,
+    handler: ShortcutHandler,
+    handlerOptions: HandlerOptions = {},
+    registry: ShortcutRegistry,
+): ShortcutResult {
+    const boundCombos = state.boundCombos?.filter((combo) => combo.trim())
+
+    if (!boundCombos || boundCombos.length <= 1) {
+        return _registerBinding(state, handler, handlerOptions, registry)
+    }
+
+    const results = boundCombos.map((combo) => {
+        const boundState: BuilderState = {
+            ...state,
+            boundCombos: [combo],
+            steps: [combo],
+        }
+
+        return _registerBinding(boundState, handler, handlerOptions, registry)
+    })
+
+    return _combineShortcutResults(results)
 }

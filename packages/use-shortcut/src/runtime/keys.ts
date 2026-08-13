@@ -1,6 +1,12 @@
 import { detectPlatform, ModifierDisplayOrder, ModifierKey } from "../constants"
 import { formatShortcut } from "../formatter"
+import { _SHIFTED_KEY_MAP } from "../parser"
 import type { ModifierFlags, ParsedShortcut } from "../types"
+
+const _UNSHIFTED_KEY_MAP: Record<string, string> = {}
+for (const [base, shifted] of Object.entries(_SHIFTED_KEY_MAP)) {
+    _UNSHIFTED_KEY_MAP[shifted] = base
+}
 
 export function _getActiveModifierTokens(
     modifiers: Partial<ModifierFlags>
@@ -62,4 +68,24 @@ export function _eventToCombo(event: KeyboardEvent): string {
 
 export function _eventToMatchStep(event: KeyboardEvent): string {
     return _eventToCombo(event)
+}
+
+/**
+ * Combo variant with the shifted character mapped back to its base key
+ * ("shift+@" → "shift+2"), so shifted-symbol bindings survive the
+ * first-step-index fast path. Returns null when no variant applies.
+ */
+export function _eventToUnshiftedMatchStep(event: KeyboardEvent): string | null {
+    if (!event.shiftKey || !event.key) return null
+
+    const base = _UNSHIFTED_KEY_MAP[event.key]
+    if (!base) return null
+
+    const modifiers: string[] = []
+    if (event.ctrlKey) modifiers.push("ctrl")
+    if (event.altKey) modifiers.push("alt")
+    modifiers.push("shift")
+    if (event.metaKey) modifiers.push("cmd")
+
+    return [...modifiers, base].join("+")
 }

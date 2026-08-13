@@ -3,8 +3,8 @@
 import { useEffect, useRef, useMemo } from "react"
 import { _createShortcutBuilder } from "./builder"
 import { parseShortcut } from "./parser"
-import { _removeRegistryEntry } from "./runtime/binding"
-import { _attachRegistryListener } from "./runtime/listener"
+import { _combineShortcutResults, _removeRegistryEntry } from "./runtime/binding"
+import { _attachRegistryListener, _detachRegistryListener } from "./runtime/listener"
 import type {
     ShortcutBuilder,
     UseShortcutOptions,
@@ -51,6 +51,32 @@ function _areShortcutMapKeysEqual(a: ShortcutMapEntry["keys"], b: ShortcutMapEnt
     return false
 }
 
+function _areOptionValuesEqual(a: unknown, b: unknown): boolean {
+    if (a === b) return true
+    if (Array.isArray(a) && Array.isArray(b)) {
+        if (a.length !== b.length) return false
+        for (let i = 0; i < a.length; i += 1) {
+            if (a[i] !== b[i]) return false
+        }
+        return true
+    }
+    return false
+}
+
+function _areHandlerOptionsEqual(a?: HandlerOptions, b?: HandlerOptions): boolean {
+    if (a === b) return true
+    if (!a || !b) return false
+
+    const aKeys = Object.keys(a) as Array<keyof HandlerOptions>
+    if (aKeys.length !== Object.keys(b).length) return false
+
+    for (const key of aKeys) {
+        if (!_areOptionValuesEqual(a[key], b[key])) return false
+    }
+
+    return true
+}
+
 function _areShortcutMapsEquivalent(a: ShortcutMap, b: ShortcutMap): boolean {
     const aKeys = Object.keys(a)
     const bKeys = Object.keys(b)
@@ -61,30 +87,39 @@ function _areShortcutMapsEquivalent(a: ShortcutMap, b: ShortcutMap): boolean {
         const bEntry = b[key]
         if (!bEntry) return false
         if (!_areShortcutMapKeysEqual(aEntry.keys, bEntry.keys)) return false
-        if (aEntry.handler !== bEntry.handler) return false
-        if (aEntry.options !== bEntry.options) return false
+        if (!_areHandlerOptionsEqual(aEntry.options, bEntry.options)) return false
     }
 
     return true
 }
 
-function _normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[] {
-    if (Array.isArray(keys)) {
-        return keys.map((key) => key.trim()).filter(Boolean)
-    }
-
-    const trimmed = keys.trim()
+function _splitSequenceSteps(combo: string): string[] {
+    const trimmed = combo.trim()
     if (!trimmed) return []
 
-    if (trimmed.includes(" then ")) {
-        return trimmed.split(/\s+then\s+/i).map((key) => key.trim()).filter(Boolean)
+    if (/\sthen\s/i.test(trimmed)) {
+        return trimmed.split(/\s+then\s+/i).map((step) => step.trim()).filter(Boolean)
     }
 
     if (trimmed.includes(" ") && !trimmed.includes("+")) {
-        return trimmed.split(/\s+/).map((key) => key.trim()).filter(Boolean)
+        return trimmed.split(/\s+/)
     }
 
     return [trimmed]
+}
+
+/**
+ * Normalizes `keys` into alternatives × sequence steps.
+ * An array means alternatives (any one of them fires the handler); a string
+ * with `" then "` (or bare spaces without `+`) means one multi-step sequence.
+ */
+function _normalizeShortcutMapKeys(keys: ShortcutMapEntry["keys"]): string[][] {
+    if (Array.isArray(keys)) {
+        return keys.map(_splitSequenceSteps).filter((alternative) => alternative.length > 0)
+    }
+
+    const steps = _splitSequenceSteps(keys)
+    return steps.length > 0 ? [steps] : []
 }
 
 function _createPendingShortcutResult(keys: ShortcutMapEntry["keys"]): ShortcutResult {
@@ -116,7 +151,7 @@ function _createDelegatingShortcutResult(source: { current: ShortcutResult }): S
         },
         enable: () => source.current.enable(),
         disable: () => source.current.disable(),
-        onAttempt: (callback) => source.current.onAttempt?.(callback) ?? (() => {}),
+        onAttempt: (callback) => source.current.onAttempt(callback),
     }
 }
 
@@ -168,6 +203,10 @@ function _applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequenc
 /**
  * Registers an object-based shortcut map in one call and returns per-action handles.
  *
+ * `keys` accepts one combo (`"mod+s"`), one sequence (`"g then d"`), or an
+ * array of alternatives (`["escape", "mod+d"]`) where any alternative fires
+ * the handler. Each alternative may itself be a sequence string.
+ *
  * @param builder - Builder returned by `useShortcut()`
  * @param shortcutMap - Record of action ids to key bindings, handlers, and options
  * @returns A result map with one `ShortcutResult` per shortcut id
@@ -181,11 +220,12 @@ function _applyStep(builder: ShortcutMapChain, step: string): ShortcutMapSequenc
  *   const results = registerShortcutMap($, {
  *     save: { keys: "mod+s", handler: onSave },
  *     nav: { keys: "g then d", handler: onGoDashboard },
+ *     close: { keys: ["escape", "mod+d"], handler: onClose },
  *   })
  *   group.addMany(results)
  *
  *   return () => group.unbindAll()
- * }, [$, group, onSave, onGoDashboard])
+ * }, [$, group, onSave, onGoDashboard, onClose])
  * ```
  */
 export function registerShortcutMap<T extends ShortcutMap>(
@@ -196,19 +236,25 @@ export function registerShortcutMap<T extends ShortcutMap>(
 
     for (const id of Object.keys(shortcutMap) as Array<keyof T>) {
         const entry = shortcutMap[id]
-        const steps = _normalizeShortcutMapKeys(entry.keys)
+        const alternatives = _normalizeShortcutMapKeys(entry.keys)
 
-        if (steps.length === 0) {
+        if (alternatives.length === 0) {
             throw new Error(`[useShortcutMap] Shortcut "${String(id)}" has no key steps`)
         }
 
-        let chain = _applyStep(builder, steps[0])
+        const alternativeResults = alternatives.map((steps) => {
+            let chain = _applyStep(builder, steps[0])
 
-        for (const step of steps.slice(1)) {
-            chain = chain.then(step)
-        }
+            for (const step of steps.slice(1)) {
+                chain = chain.then(step)
+            }
 
-        results[id] = chain.on(entry.handler, entry.options)
+            return chain.on(entry.handler, entry.options)
+        })
+
+        results[id] = alternativeResults.length === 1
+            ? alternativeResults[0]
+            : _combineShortcutResults(alternativeResults)
     }
 
     return results
@@ -247,6 +293,16 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
     registry.renderCycle += 1
     registry.nextRenderSlot = 0
 
+    // Close the render-binding window before any DOM event can fire: passive
+    // effects flush after paint, so an imperative `.on()` from an early event
+    // handler would otherwise be mistaken for a render binding and reconciled
+    // away. Microtasks run before paint, so this is race-free.
+    queueMicrotask(() => {
+        registry.collectingRenderBindings = false
+    })
+
+    // No dependency array on purpose: render-binding reconciliation must run
+    // after every commit, even when the caller memoizes `options`.
     useEffect(() => {
         registry.options = optionsRef.current
 
@@ -269,19 +325,29 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
         }
 
         registry.collectingRenderBindings = false
-    }, [registry, options])
+    })
 
     useEffect(() => {
         return () => {
+            for (const entries of registry.listeners.values()) {
+                for (const entry of entries) {
+                    for (const timeoutId of entry.timeoutIds) {
+                        clearTimeout(timeoutId)
+                    }
+                    entry.timeoutIds.clear()
+                }
+            }
+
+            for (const cancelRecording of [...registry.pendingRecordings]) {
+                cancelRecording()
+            }
+
             registry.listeners.clear()
             registry.firstStepIndex.clear()
             registry.activeSequenceCombos.clear()
+            registry.renderSlots.clear()
 
-            if (registry.listener && registry.listenerTarget) {
-                registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener as EventListener)
-                registry.listener = null
-                registry.listenerTarget = null
-            }
+            _detachRegistryListener(registry)
         }
     }, [registry])
 
@@ -291,7 +357,7 @@ export function useShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
 /**
  * React hook for one cleanup-safe shortcut binding.
  *
- * @param keys - Shortcut combo string or combo array, such as `"mod+s"` or `["escape", "mod+d"]`
+ * @param keys - Shortcut combo string, sequence string, or array of alternative combos, such as `"mod+s"`, `"g then d"`, or `["escape", "mod+d"]`
  * @param handler - Handler invoked when the shortcut matches
  * @param options - Per-binding options such as `preventDefault`, `scopes`, and `priority`
  * @param shortcutOptions - Hook-level options such as `target`, `eventType`, and `activeScopes`
@@ -344,6 +410,22 @@ export function useShortcutBinding(
         shortcutOptions,
     )
     const $ = useShortcut(normalizedShortcutOptions)
+
+    const handlerRef = useRef(binding.handler)
+    handlerRef.current = binding.handler
+
+    const stableKeysRef = useRef(binding.keys)
+    if (!_areShortcutMapKeysEqual(stableKeysRef.current, binding.keys)) {
+        stableKeysRef.current = binding.keys
+    }
+    const stableKeys = stableKeysRef.current
+
+    const stableOptionsRef = useRef(binding.options)
+    if (!_areHandlerOptionsEqual(stableOptionsRef.current, binding.options)) {
+        stableOptionsRef.current = binding.options
+    }
+    const stableOptions = stableOptionsRef.current
+
     const resultRef = useRef<ShortcutResult>(_createPendingShortcutResult(binding.keys))
     const stableResultRef = useRef<ShortcutResult | null>(null)
     if (!stableResultRef.current) {
@@ -352,16 +434,20 @@ export function useShortcutBinding(
 
     useEffect(() => {
         const registrations = registerShortcutMap($, {
-            current: binding,
+            current: {
+                keys: stableKeys,
+                handler: (event) => handlerRef.current(event),
+                options: stableOptions,
+            },
         })
 
         resultRef.current = registrations.current
 
         return () => {
             registrations.current.unbind()
-            resultRef.current = _createPendingShortcutResult(binding.keys)
+            resultRef.current = _createPendingShortcutResult(stableKeys)
         }
-    }, [$, binding.keys, binding.handler, binding.options])
+    }, [$, stableKeys, stableOptions])
 
     return stableResultRef.current
 }
@@ -369,18 +455,20 @@ export function useShortcutBinding(
 /**
  * React hook that registers a shortcut map and automatically unbinds on cleanup.
  *
+ * Handlers are kept in a ref, so inline handler functions never cause
+ * re-registration. The returned map and its per-id results are stable object
+ * references, safe to destructure at any point in the component lifecycle.
+ *
  * @param shortcutMap - Record of action ids to key bindings, handlers, and options
  * @param options - Same options as `useShortcut()`
  * @returns A map of `ShortcutResult` keyed by your shortcut ids
  *
  * @example
  * ```ts
- * const shortcuts = useMemo(() => ({
+ * const { save, close } = useShortcutMap({
  *   save: { keys: "mod+s", handler: onSave },
  *   close: { keys: "escape", handler: onClose },
- * }), [onSave, onClose])
- *
- * const mapResults = useShortcutMap(shortcuts)
+ * })
  * ```
  */
 export function useShortcutMap<T extends ShortcutMap>(
@@ -388,45 +476,66 @@ export function useShortcutMap<T extends ShortcutMap>(
     options: UseShortcutOptions = {},
 ): ShortcutMapResult<T> {
     const $ = useShortcut(options)
+
+    const handlersRef = useRef<Record<string, ShortcutHandler>>({})
+    handlersRef.current = {}
+    for (const id of Object.keys(shortcutMap)) {
+        handlersRef.current[id] = shortcutMap[id].handler
+    }
+
     const stableShortcutMapRef = useRef(shortcutMap)
     if (!_areShortcutMapsEquivalent(stableShortcutMapRef.current, shortcutMap)) {
         stableShortcutMapRef.current = shortcutMap
     }
-
     const stableShortcutMap = stableShortcutMapRef.current
-    const resultsRef = useRef<ShortcutMapResult<T>>({} as ShortcutMapResult<T>)
-    const results = resultsRef.current
 
-    for (const id of Object.keys(stableShortcutMap) as Array<keyof T>) {
-        if (!results[id]) {
-            results[id] = _createPendingShortcutResult(stableShortcutMap[id].keys) as ShortcutMapResult<T>[keyof T]
+    const sourcesRef = useRef(new Map<string, { current: ShortcutResult }>())
+    const delegatesRef = useRef({} as Record<string, ShortcutResult>)
+
+    for (const id of Object.keys(stableShortcutMap)) {
+        if (!sourcesRef.current.has(id)) {
+            const source = { current: _createPendingShortcutResult(stableShortcutMap[id].keys) }
+            sourcesRef.current.set(id, source)
+            delegatesRef.current[id] = _createDelegatingShortcutResult(source)
         }
     }
 
-    for (const id of Object.keys(results) as Array<keyof T>) {
+    for (const id of Object.keys(delegatesRef.current)) {
         if (!stableShortcutMap[id]) {
-            delete (results as Record<string, unknown>)[String(id)]
+            sourcesRef.current.delete(id)
+            delete delegatesRef.current[id]
         }
     }
 
     useEffect(() => {
-        const registrations = registerShortcutMap($, stableShortcutMap)
-        for (const key of Object.keys(results)) {
-            delete (results as Record<string, unknown>)[key]
+        const wrappedMap = {} as ShortcutMap
+        for (const id of Object.keys(stableShortcutMap)) {
+            wrappedMap[id] = {
+                keys: stableShortcutMap[id].keys,
+                handler: (event) => handlersRef.current[id]?.(event),
+                options: stableShortcutMap[id].options,
+            }
         }
-        Object.assign(results, registrations)
+
+        const registrations = registerShortcutMap($, wrappedMap)
+
+        for (const id of Object.keys(registrations)) {
+            const source = sourcesRef.current.get(id)
+            if (source) source.current = registrations[id]
+        }
 
         return () => {
-            for (const result of Object.values(registrations)) {
-                result.unbind()
-            }
-            for (const key of Object.keys(results)) {
-                delete (results as Record<string, unknown>)[key]
+            for (const id of Object.keys(registrations)) {
+                registrations[id].unbind()
+                const source = sourcesRef.current.get(id)
+                if (source) {
+                    source.current = _createPendingShortcutResult(stableShortcutMap[id]?.keys ?? "")
+                }
             }
         }
     }, [$, stableShortcutMap])
 
-    return resultsRef.current
+    return delegatesRef.current as ShortcutMapResult<T>
 }
 
 /**

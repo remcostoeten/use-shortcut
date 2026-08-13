@@ -1,10 +1,54 @@
 import { matchesShortcut } from "../parser"
 
 import { _buildAttemptSteps, _createDebugInput, _debugLog, _deriveAttemptStatus, _logDebugEvent, _shouldLogDebug } from "./debug"
-import { _eventToMatchStep } from "./keys"
+import { _eventToMatchStep, _eventToUnshiftedMatchStep } from "./keys"
 import { _IGNORED_TAGS, _scopeMatch, _shouldExcept } from "./guards"
-import type { RegistryEntry, ShortcutRegistry } from "./types"
+import type { ShortcutRegistry } from "./types"
 import type { ShortcutAttemptDebugEvent, ShortcutDebugEvent } from "../types"
+
+type ListenerEventType = "keydown" | "keyup"
+
+type SharedListenerBucket = {
+    listener: (event: KeyboardEvent) => void
+    registries: Set<ShortcutRegistry>
+}
+
+/**
+ * One DOM listener per (target, eventType), shared by every registry bound to
+ * that pair, so N hook instances cost one keydown listener instead of N.
+ */
+const _sharedListenerBuckets = new Map<HTMLElement | Window, Map<ListenerEventType, SharedListenerBucket>>()
+
+export function _resolveListenerTarget(registry: ShortcutRegistry): (HTMLElement | Window) | null {
+    return registry.options.target ?? (typeof window !== "undefined" ? window : null)
+}
+
+export function _getSiblingRegistries(registry: ShortcutRegistry): ShortcutRegistry[] {
+    const target = _resolveListenerTarget(registry)
+    if (!target) return []
+
+    const bucket = _sharedListenerBuckets.get(target)?.get(registry.options.eventType ?? "keydown")
+    if (!bucket) return []
+
+    const siblings: ShortcutRegistry[] = []
+    for (const candidate of bucket.registries) {
+        if (candidate !== registry) siblings.push(candidate)
+    }
+    return siblings
+}
+
+/** Test-only: drop all shared buckets and their DOM listeners. */
+export function _resetSharedListeners() {
+    for (const [target, targetBuckets] of _sharedListenerBuckets) {
+        for (const [eventType, bucket] of targetBuckets) {
+            target.removeEventListener(eventType, bucket.listener as EventListener)
+            for (const registry of bucket.registries) {
+                registry.listenerTarget = null
+            }
+        }
+    }
+    _sharedListenerBuckets.clear()
+}
 
 function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent) {
     const runtimeOptions = registry.options
@@ -18,8 +62,17 @@ function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent
         registry.attemptCallbackCount > 0
 
     const firstStepCombos = registry.firstStepIndex.get(inputCombo)
+    const unshiftedInputCombo = _eventToUnshiftedMatchStep(event)
+    const unshiftedFirstStepCombos = unshiftedInputCombo
+        ? registry.firstStepIndex.get(unshiftedInputCombo)
+        : undefined
 
-    if (!includeAllForDebug && !firstStepCombos && registry.activeSequenceCombos.size === 0) {
+    if (
+        !includeAllForDebug &&
+        !firstStepCombos &&
+        !unshiftedFirstStepCombos &&
+        registry.activeSequenceCombos.size === 0
+    ) {
         return
     }
 
@@ -29,6 +82,9 @@ function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent
     const candidateCombos = new Set<string>()
     if (firstStepCombos) {
         for (const combo of firstStepCombos) candidateCombos.add(combo)
+    }
+    if (unshiftedFirstStepCombos) {
+        for (const combo of unshiftedFirstStepCombos) candidateCombos.add(combo)
     }
     for (const combo of registry.activeSequenceCombos) {
         candidateCombos.add(combo)
@@ -177,19 +233,33 @@ function _dispatchRegistryEvent(registry: ShortcutRegistry, event: KeyboardEvent
 }
 
 export function _attachRegistryListener(registry: ShortcutRegistry) {
-    const target = registry.options.target ?? (typeof window !== "undefined" ? window : null)
+    const target = _resolveListenerTarget(registry)
     if (!target) return
 
     const eventType = registry.options.eventType ?? "keydown"
-    if (registry.listener) {
-        if (registry.listenerTarget === target && registry.listenerEventType === eventType) return
-        _detachRegistryListener(registry)
+    if (registry.listenerTarget === target && registry.listenerEventType === eventType) return
+    _detachRegistryListener(registry)
+
+    let targetBuckets = _sharedListenerBuckets.get(target)
+    if (!targetBuckets) {
+        targetBuckets = new Map()
+        _sharedListenerBuckets.set(target, targetBuckets)
     }
 
-    const listener = (event: KeyboardEvent) => _dispatchRegistryEvent(registry, event)
-    target.addEventListener(eventType, listener as EventListener)
+    let bucket = targetBuckets.get(eventType)
+    if (!bucket) {
+        const registries = new Set<ShortcutRegistry>()
+        const listener = (event: KeyboardEvent) => {
+            for (const attached of [...registries]) {
+                _dispatchRegistryEvent(attached, event)
+            }
+        }
+        bucket = { listener, registries }
+        targetBuckets.set(eventType, bucket)
+        target.addEventListener(eventType, listener as EventListener)
+    }
 
-    registry.listener = listener
+    bucket.registries.add(registry)
     registry.listenerTarget = target
     registry.listenerEventType = eventType
 
@@ -197,10 +267,24 @@ export function _attachRegistryListener(registry: ShortcutRegistry) {
 }
 
 export function _detachRegistryListener(registry: ShortcutRegistry) {
-    if (!registry.listener || !registry.listenerTarget) return
+    const target = registry.listenerTarget
+    if (!target) return
 
-    registry.listenerTarget.removeEventListener(registry.listenerEventType, registry.listener as EventListener)
-    registry.listener = null
+    const eventType = registry.listenerEventType
+    const targetBuckets = _sharedListenerBuckets.get(target)
+    const bucket = targetBuckets?.get(eventType)
+
+    if (targetBuckets && bucket) {
+        bucket.registries.delete(registry)
+        if (bucket.registries.size === 0) {
+            target.removeEventListener(eventType, bucket.listener as EventListener)
+            targetBuckets.delete(eventType)
+            if (targetBuckets.size === 0) {
+                _sharedListenerBuckets.delete(target)
+            }
+        }
+    }
+
     registry.listenerTarget = null
     _debugLog(registry.options.debug, "Listener detached")
 }

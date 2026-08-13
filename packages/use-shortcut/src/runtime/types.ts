@@ -60,9 +60,9 @@ export type ShortcutRegistry = {
      * instead of scanning every registered entry per keydown.
      */
     attemptCallbackCount: number
-    listener: ((event: KeyboardEvent) => void) | null
     listenerTarget: (HTMLElement | Window) | null
     listenerEventType: "keydown" | "keyup"
+    pendingRecordings: Set<() => void>
     reconcileRenderBindings?: boolean
     collectingRenderBindings?: boolean
     renderCycle: number

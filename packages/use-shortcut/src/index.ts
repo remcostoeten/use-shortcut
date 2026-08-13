@@ -52,9 +52,10 @@ export {
     parseShortcuts,
     matchesShortcut,
     matchesAnyShortcut,
+    getModifiersFromEvent,
 } from "./parser"
 
-export { formatShortcut } from "./formatter"
+export { formatShortcut, getModifierSymbols } from "./formatter"
 
 export {
     useShortcut,

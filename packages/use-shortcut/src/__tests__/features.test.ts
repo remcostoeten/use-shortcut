@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { _createShortcutBuilder } from "../builder"
 import { registerShortcutMap, createShortcutGroup } from "../hook"
-import { _attachRegistryListener } from "../runtime/listener"
+import { _attachRegistryListener, _resetSharedListeners } from "../runtime/listener"
 import type { ShortcutAttemptDebugEvent, ShortcutBuilder, UseShortcutOptions } from "../types"
 
 function dispatchKey(key: string, options: KeyboardEventInit = {}) {
@@ -26,6 +26,7 @@ function createTestShortcut(options: UseShortcutOptions = {}): ShortcutBuilder {
 
 describe("advanced shortcut features", () => {
     beforeEach(() => {
+        _resetSharedListeners()
         document.body.innerHTML = ""
     })
 
@@ -397,5 +398,150 @@ describe("advanced shortcut features", () => {
         dispatchKey("x")
 
         expect(handler).toHaveBeenCalledTimes(1)
+    })
+})
+
+describe("v2.5 API fixes", () => {
+    beforeEach(() => {
+        _resetSharedListeners()
+        document.body.innerHTML = ""
+    })
+
+    it("treats array keys in shortcut maps as alternatives, not a sequence", () => {
+        const close = vi.fn()
+        const $ = createTestShortcut({ ignoreInputs: false })
+
+        registerShortcutMap($, {
+            close: { keys: ["escape", "mod+d"], handler: close },
+        })
+
+        dispatchKey("Escape")
+        expect(close).toHaveBeenCalledTimes(1)
+
+        dispatchKey("d", { ctrlKey: true })
+        expect(close).toHaveBeenCalledTimes(2)
+    })
+
+    it("still treats 'then' strings in shortcut maps as sequences", () => {
+        const nav = vi.fn()
+        const $ = createTestShortcut({ ignoreInputs: false })
+
+        registerShortcutMap($, {
+            nav: { keys: "g then d", handler: nav },
+        })
+
+        dispatchKey("g")
+        expect(nav).toHaveBeenCalledTimes(0)
+        dispatchKey("d")
+        expect(nav).toHaveBeenCalledTimes(1)
+    })
+
+    it("supports sequence strings inside alternative arrays", () => {
+        const handler = vi.fn()
+        const $ = createTestShortcut({ ignoreInputs: false })
+
+        registerShortcutMap($, {
+            combo: { keys: ["mod+k", "g then k"], handler },
+        })
+
+        dispatchKey("k", { ctrlKey: true })
+        expect(handler).toHaveBeenCalledTimes(1)
+
+        dispatchKey("g")
+        dispatchKey("k")
+        expect(handler).toHaveBeenCalledTimes(2)
+    })
+
+    it("matches shifted symbol keys like shift+2 producing '@'", () => {
+        const handler = vi.fn()
+        const $ = createTestShortcut({ ignoreInputs: false })
+
+        $.shift.key("2").on(handler)
+
+        dispatchKey("@", { shiftKey: true })
+        expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it("shares one DOM listener across registries on the same target", () => {
+        const target = document.createElement("div")
+        const addSpy = vi.spyOn(target, "addEventListener")
+
+        const first = createTestShortcut({ target, ignoreInputs: false })
+        const second = createTestShortcut({ target, ignoreInputs: false })
+
+        first.key("a").on(() => {})
+        second.key("b").on(() => {})
+
+        expect(addSpy).toHaveBeenCalledTimes(1)
+    })
+
+    it("reports conflicts across registries on the same target", () => {
+        const onConflict = vi.fn()
+
+        const first = createTestShortcut({ ignoreInputs: false })
+        const second = createTestShortcut({ ignoreInputs: false, onConflict })
+
+        first.mod.key("k").on(() => {})
+        second.mod.key("k").on(() => {})
+
+        expect(onConflict).toHaveBeenCalledTimes(1)
+        expect(onConflict.mock.calls[0][0].reason).toBe("exact")
+    })
+
+    it("does not trigger a disabled shortcut", () => {
+        const handler = vi.fn()
+        const $ = createTestShortcut({ ignoreInputs: false })
+
+        const result = $.mod.key("s").on(handler)
+        result.disable()
+        result.trigger()
+
+        expect(handler).toHaveBeenCalledTimes(0)
+
+        result.enable()
+        result.trigger()
+        expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it("synthesizes key and modifier data on trigger()", () => {
+        const events: KeyboardEvent[] = []
+        const $ = createTestShortcut({ ignoreInputs: false })
+
+        $.mod.shift.key("s").on((event) => events.push(event))
+        $.key("g").then("d").on((event) => events.push(event))
+
+        const results = registerShortcutMap($, {
+            probe: { keys: "mod+shift+s", handler: () => {} },
+        })
+        void results
+
+        const combo = $.ctrl.key("x").on((event) => events.push(event))
+        combo.trigger()
+
+        expect(events[0].key).toBe("x")
+        expect(events[0].ctrlKey).toBe(true)
+    })
+
+    it("rejects recording when the abort signal fires", async () => {
+        const $ = createTestShortcut({ ignoreInputs: false })
+        const controller = new AbortController()
+
+        const recording = $.record({ signal: controller.signal })
+        controller.abort()
+
+        await expect(recording).rejects.toThrow("Recording aborted")
+    })
+
+    it("keeps ignored-input guard while allowing except overrides", () => {
+        const handler = vi.fn()
+        const $ = createTestShortcut({})
+
+        $.mod.key("s").on(handler)
+
+        const input = document.createElement("input")
+        document.body.appendChild(input)
+        input.dispatchEvent(new KeyboardEvent("keydown", { key: "s", ctrlKey: true, bubbles: true }))
+
+        expect(handler).toHaveBeenCalledTimes(0)
     })
 })

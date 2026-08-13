@@ -6,6 +6,33 @@ function _normalizeKeyToken(key: string): string {
     return key === " " ? "space" : key.toLowerCase()
 }
 
+// Pressing Shift changes `event.key` for digits and symbols ("shift+2" arrives
+// as "@"), so a shift-requiring binding must also accept the shifted character.
+// US layout; other layouts fall back to the exact-key comparison.
+export const _SHIFTED_KEY_MAP: Record<string, string> = {
+    "1": "!",
+    "2": "@",
+    "3": "#",
+    "4": "$",
+    "5": "%",
+    "6": "^",
+    "7": "&",
+    "8": "*",
+    "9": "(",
+    "0": ")",
+    "-": "_",
+    "=": "+",
+    "[": "{",
+    "]": "}",
+    "\\": "|",
+    ";": ":",
+    "'": '"',
+    ",": "<",
+    ".": ">",
+    "/": "?",
+    "`": "~",
+}
+
 function _tokenizeShortcut(shortcut: string): string[] {
     const normalized = shortcut.toLowerCase().trim()
 
@@ -142,7 +169,10 @@ export function matchesShortcut(event: KeyboardEvent, parsed: ParsedShortcut): b
         eventModifiers.alt === parsed.modifiers.alt &&
         eventModifiers.shift === parsed.modifiers.shift
 
-    const keyMatches = eventKey === (parsed.matchKey ?? _normalizeKeyToken(parsed.key))
+    const expectedKey = parsed.matchKey ?? _normalizeKeyToken(parsed.key)
+    const keyMatches =
+        eventKey === expectedKey ||
+        (parsed.modifiers.shift && _SHIFTED_KEY_MAP[expectedKey] === eventKey)
 
     return modifiersMatch && keyMatches
 }

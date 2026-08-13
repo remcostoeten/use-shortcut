@@ -195,7 +195,7 @@ export type HandlerOptions = {
     sequenceTimeout?: number
     /** Higher priority handlers run first (default: 0) */
     priority?: number
-    /** Stop evaluating other handlers for this combo when matched */
+    /** Stop evaluating other handlers bound to the same combo when matched (does not affect other combos) */
     stopOnMatch?: boolean
 }
 
@@ -219,7 +219,7 @@ export type ShortcutResult = {
     /** Temporarily disable the shortcut */
     disable: () => void
     /** Subscribe to shortcut attempt events (useful for visual feedback) */
-    onAttempt?: (callback: (matched: boolean, event: KeyboardEvent, details?: ShortcutAttemptDebugEvent) => void) => () => void
+    onAttempt: (callback: (matched: boolean, event: KeyboardEvent, details?: ShortcutAttemptDebugEvent) => void) => () => void
 }
 
 /**
@@ -251,7 +251,7 @@ export type KeyChain<Key extends string> = {
     /** Attach a handler with inline options */
     handle: (options: HandlerOptions & { handler: ShortcutHandler }) => ShortcutResult
     /** Bind a combo string mid-chain */
-    bind: (combo: string | string[]) => KeyChain<any>
+    bind: (combo: string | string[]) => KeyChain<string>
     /** Add exception conditions before attaching handler */
     except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => KeyChainWithExcept<Key>
     /** Add required named scopes */
@@ -276,6 +276,8 @@ export type ShortcutRecordingOptions = {
     target?: HTMLElement | Window | null
     eventType?: "keydown" | "keyup"
     timeoutMs?: number
+    /** Abort the recording; the returned promise rejects on abort */
+    signal?: AbortSignal
 }
 
 /**
@@ -288,8 +290,8 @@ export type ShortcutBuilder = ModifierChain<EmptyModifiers> & {
     cmd: ModifierChain<{ cmd: true }>
     mod: ModifierChain<{ mod: true; cmd: true; ctrl: true }>
     key: <K extends ActionKey>(key: K) => KeyChain<K>
-    /** Bind a pre-defined combo string */
-    bind: (combo: string | string[]) => KeyChain<any>
+    /** Bind a pre-defined combo string; an array registers each combo as an alternative */
+    bind: (combo: string | string[]) => KeyChain<string>
     /** Set required scopes for upcoming chain calls */
     in: (scopes: ShortcutScope) => ShortcutBuilder
     /** Update active scopes at runtime */
@@ -342,6 +344,11 @@ export type UseShortcutOptions = {
 
 /** Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`. */
 export type ShortcutMapEntry = {
+    /**
+     * One combo (`"mod+s"`), one sequence (`"g then d"`), or an array of
+     * alternatives (`["escape", "mod+d"]`) where any alternative fires the
+     * handler. Each alternative may itself be a sequence string.
+     */
     keys: string | string[]
     handler: ShortcutHandler
     options?: HandlerOptions

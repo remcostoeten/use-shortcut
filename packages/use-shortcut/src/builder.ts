@@ -9,6 +9,7 @@ import type {
     ExceptPreset,
     ExceptPredicate,
     ShortcutHandler,
+    ShortcutRecordingOptions,
 } from "./types"
 
 import { _createBinding } from "./runtime/binding"
@@ -19,7 +20,7 @@ import { _buildComboString } from "./runtime/keys"
 import { _createRecorder } from "./runtime/recording"
 import type { BuilderState, ShortcutRegistry } from "./runtime/types"
 
-const _MODIFIER_KEYS = new Set(["ctrl", "shift", "alt", "cmd", "mod"])
+type ModifierProp = "ctrl" | "shift" | "alt" | "cmd" | "mod"
 
 export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
     builder: IShortcutBuilder
@@ -35,7 +36,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
         },
         set options(nextOptions) {
             registryOptions = nextOptions
-            if (registry.listener && registry.listeners.size > 0) {
+            if (registry.listenerTarget && registry.listeners.size > 0) {
                 _attachRegistryListener(registry)
             }
         },
@@ -43,9 +44,9 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
         nextId: 1,
         debugListeners: new Set(),
         attemptCallbackCount: 0,
-        listener: null,
         listenerTarget: null,
         listenerEventType: options.eventType ?? "keydown",
+        pendingRecordings: new Set(),
         collectingRenderBindings: false,
         renderCycle: 0,
         nextRenderSlot: 0,
@@ -54,158 +55,118 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
 
     _debugLog(options.debug, "Builder created with options:", options)
 
-    function _createProxy(currentState: BuilderState): IShortcutBuilder {
-        return new Proxy({} as IShortcutBuilder, {
-            get(_, prop: string) {
-                if (prop === "__debug") {
-                    return currentState.options.debug
-                }
+    const record = _createRecorder(registry)
 
-                if (_MODIFIER_KEYS.has(prop)) {
-                    const platform = detectPlatform()
-                    const modKey = prop === "mod" ? (platform === Platform.MAC ? "cmd" : "ctrl") : prop
+    function _withModifier(currentState: BuilderState, prop: ModifierProp): IShortcutBuilder {
+        const platform = detectPlatform()
+        const modKey = prop === "mod" ? (platform === Platform.MAC ? "cmd" : "ctrl") : prop
 
-                    const newState: BuilderState = {
-                        ...currentState,
-                        modifiers: { ...currentState.modifiers, [modKey]: true },
-                    }
+        const newState: BuilderState = {
+            ...currentState,
+            modifiers: { ...currentState.modifiers, [modKey]: true },
+        }
 
-                    _debugLog(currentState.options.debug, `Chain: +${prop} →`, newState.modifiers)
+        _debugLog(currentState.options.debug, `Chain: +${prop} →`, newState.modifiers)
 
-                    return _createProxy(newState)
-                }
+        return _createChain(newState)
+    }
 
-                if (prop === "in") {
-                    return (scopes: ShortcutScope) => {
-                        const nextScopes = [..._normalizeScopes(currentState.scopes), ..._normalizeScopes(scopes)]
-                        const newState: BuilderState = {
-                            ...currentState,
-                            scopes: nextScopes,
-                        }
-
-                        return _createProxy(newState)
-                    }
-                }
-
-                if (prop === "setScopes") {
-                    return (scopes: ShortcutScope) => {
-                        registry.activeScopes = new Set(_normalizeScopes(scopes))
-                    }
-                }
-
-                if (prop === "enableScope") {
-                    return (scope: string) => {
-                        if (!scope?.trim()) return
-                        registry.activeScopes.add(scope.trim())
-                    }
-                }
-
-                if (prop === "disableScope") {
-                    return (scope: string) => {
-                        if (!scope?.trim()) return
-                        registry.activeScopes.delete(scope.trim())
-                    }
-                }
-
-                if (prop === "getScopes") {
-                    return () => [...registry.activeScopes]
-                }
-
-                if (prop === "isScopeActive") {
-                    return (scope: string) => registry.activeScopes.has(scope)
-                }
-
-                if (prop === "onDebug") {
-                    return (callback: (event: ShortcutDebugEvent) => void) => {
-                        registry.debugListeners.add(callback)
-                        return () => registry.debugListeners.delete(callback)
-                    }
-                }
-
-                if (prop === "record") {
-                    return _createRecorder(registry.options)
-                }
-
-                if (prop === "key") {
-                    return (key: ActionKey) => {
-                        const nextStep = _buildComboString(currentState.modifiers, key)
-                        const newState: BuilderState = {
-                            ...currentState,
-                            modifiers: {},
-                            boundCombos: undefined,
-                            steps: [...currentState.steps, nextStep],
-                        }
-
-                        _debugLog(currentState.options.debug, `Chain: .key("${key}")`)
-
-                        return _createProxy(newState)
-                    }
-                }
-
-                if (prop === "bind") {
-                    return (combo: string | string[]) => {
-                        const combos = Array.isArray(combo) ? combo : [combo]
-                        const newState: BuilderState = {
-                            ...currentState,
-                            modifiers: {},
-                            boundCombos: combos,
-                            steps: combos,
-                        }
-
-                        _debugLog(currentState.options.debug, `Chain: .bind("${combos.join('", "')}")`)
-
-                        return _createProxy(newState)
-                    }
-                }
-
-                if (prop === "then") {
-                    return (key: ActionKey | string) => {
-                        const nextStep = String(key).trim().toLowerCase()
-                        if (!nextStep) {
-                            throw new Error("[useShortcut] .then() requires a non-empty key or shortcut step.")
-                        }
-
-                        const newState: BuilderState = {
-                            ...currentState,
-                            boundCombos: undefined,
-                            steps: [...currentState.steps, nextStep],
-                        }
-
-                        _debugLog(currentState.options.debug, `Chain: .then("${nextStep}")`)
-
-                        return _createProxy(newState)
-                    }
-                }
-
-                if (prop === "except") {
-                    return (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => {
-                        const newState: BuilderState = {
-                            ...currentState,
-                            except: condition,
-                        }
-
-                        _debugLog(currentState.options.debug, "Chain: .except()", condition)
-
-                        return _createProxy(newState)
-                    }
-                }
-
-                if (prop === "on") {
-                    return (handler: ShortcutHandler, handlerOptions?: HandlerOptions) => {
-                        return _createBinding(currentState, handler, handlerOptions, registry)
-                    }
-                }
-
-                if (prop === "handle") {
-                    return (opts: HandlerOptions & { handler: ShortcutHandler }) => {
-                        const { handler, ...rest } = opts
-                        return _createBinding(currentState, handler, rest, registry)
-                    }
-                }
-
-                return undefined
+    function _createChain(currentState: BuilderState): IShortcutBuilder {
+        const chain = {
+            get ctrl() {
+                return _withModifier(currentState, "ctrl")
             },
-        })
+            get shift() {
+                return _withModifier(currentState, "shift")
+            },
+            get alt() {
+                return _withModifier(currentState, "alt")
+            },
+            get cmd() {
+                return _withModifier(currentState, "cmd")
+            },
+            get mod() {
+                return _withModifier(currentState, "mod")
+            },
+            in: (scopes: ShortcutScope) => {
+                const nextScopes = [..._normalizeScopes(currentState.scopes), ..._normalizeScopes(scopes)]
+                return _createChain({ ...currentState, scopes: nextScopes })
+            },
+            setScopes: (scopes: ShortcutScope) => {
+                registry.activeScopes = new Set(_normalizeScopes(scopes))
+            },
+            enableScope: (scope: string) => {
+                if (!scope?.trim()) return
+                registry.activeScopes.add(scope.trim())
+            },
+            disableScope: (scope: string) => {
+                if (!scope?.trim()) return
+                registry.activeScopes.delete(scope.trim())
+            },
+            getScopes: () => [...registry.activeScopes],
+            isScopeActive: (scope: string) => registry.activeScopes.has(scope),
+            onDebug: (callback: (event: ShortcutDebugEvent) => void) => {
+                registry.debugListeners.add(callback)
+                return () => registry.debugListeners.delete(callback)
+            },
+            record: (recordingOptions?: ShortcutRecordingOptions) => record(recordingOptions),
+            key: (key: ActionKey) => {
+                const nextStep = _buildComboString(currentState.modifiers, key)
+                const newState: BuilderState = {
+                    ...currentState,
+                    modifiers: {},
+                    boundCombos: undefined,
+                    steps: [...currentState.steps, nextStep],
+                }
+
+                _debugLog(currentState.options.debug, `Chain: .key("${key}")`)
+
+                return _createChain(newState)
+            },
+            bind: (combo: string | string[]) => {
+                const combos = Array.isArray(combo) ? combo : [combo]
+                const newState: BuilderState = {
+                    ...currentState,
+                    modifiers: {},
+                    boundCombos: combos,
+                    steps: combos,
+                }
+
+                _debugLog(currentState.options.debug, `Chain: .bind("${combos.join('", "')}")`)
+
+                return _createChain(newState)
+            },
+            then: (key: ActionKey | string) => {
+                const nextStep = String(key).trim().toLowerCase()
+                if (!nextStep) {
+                    throw new Error("[useShortcut] .then() requires a non-empty key or shortcut step.")
+                }
+
+                const newState: BuilderState = {
+                    ...currentState,
+                    boundCombos: undefined,
+                    steps: [...currentState.steps, nextStep],
+                }
+
+                _debugLog(currentState.options.debug, `Chain: .then("${nextStep}")`)
+
+                return _createChain(newState)
+            },
+            except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => {
+                _debugLog(currentState.options.debug, "Chain: .except()", condition)
+
+                return _createChain({ ...currentState, except: condition })
+            },
+            on: (handler: ShortcutHandler, handlerOptions?: HandlerOptions) => {
+                return _createBinding(currentState, handler, handlerOptions, registry)
+            },
+            handle: (opts: HandlerOptions & { handler: ShortcutHandler }) => {
+                const { handler, ...rest } = opts
+                return _createBinding(currentState, handler, rest, registry)
+            },
+        }
+
+        return chain as unknown as IShortcutBuilder
     }
 
     const initialState: BuilderState = {
@@ -215,7 +176,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
     }
 
     return {
-        builder: _createProxy(initialState),
+        builder: _createChain(initialState),
         registry,
     }
 }
