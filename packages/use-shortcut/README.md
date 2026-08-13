@@ -21,13 +21,13 @@ This package is for React and Next.js apps. If you are building on that stack, p
 
 ## Size
 
-Measured in this package on March 12, 2026:
+Measured in this package on August 13, 2026 (v2.5):
 
-- root published ESM build: about `16.5 kB` minified
-- app bundle for `useShortcut` only: about `13.8 kB` minified
-- gzip for the React hook path: about `5.3 kB`
+- root published ESM build: about `24 kB` minified
+- React entrypoint (`/react`): about `23.7 kB` minified, `8.2 kB` gzip
+- parser-only entrypoint: about `2.9 kB` minified
 
-That means the runtime is already small in practice. The entrypoint split mainly prevents accidental convenience-barrel imports and makes the architecture explicit.
+The runtime is small in practice, and every hook instance on the same target now shares one DOM keydown listener instead of attaching its own. The entrypoint split prevents accidental convenience-barrel imports and makes the architecture explicit.
 
 ## React API
 
@@ -54,6 +54,13 @@ Main React exports:
 - `registerShortcutMap(builder, shortcutMap)`
 - `createShortcutGroup()`
 - `useShortcutGroup()`
+
+## Key Semantics
+
+- `"mod+s"` — one combo
+- `"g then d"` — one multi-step sequence
+- `["escape", "mod+d"]` — alternatives; any one of them fires the handler
+- `["mod+k", "g then k"]` — alternatives may themselves be sequences
 
 ## Bound Combo Example
 
@@ -106,10 +113,12 @@ function App() {
 - Sequence support: `$.key("g").then("d")`
 - Scope-aware shortcuts with `.in(...)`, `setScopes`, `enableScope`, `disableScope`
 - Exception predicates and presets with `.except(...)`
-- Recording mode with `$.record({ timeoutMs })`
+- Recording mode with `$.record({ timeoutMs, signal })` (abortable, auto-cancelled on unmount)
 - Structured debug stream with `$.onDebug(...)`
 - Per-shortcut attempt inspection with `result.onAttempt(...)`
-- Conflict detection for exact and sequence-prefix overlaps
+- Conflict detection for exact and sequence-prefix overlaps, including across hook instances on the same target
+- One shared DOM listener per `(target, eventType)` across all hook instances
+- Shifted-symbol matching: `shift+2` also matches the `@` the browser reports
 - Priority ordering and `stopOnMatch`
 - Global guard/filter support via `eventFilter`
 

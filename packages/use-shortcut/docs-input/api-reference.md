@@ -24,7 +24,7 @@ Lowercase letter keys a-z
 ## createShortcutGroup
 
 - Kind: `function`
-- Source: `src/hook.ts:445:1`
+- Source: `src/hook.ts:554:1`
 - Signature: `(): ShortcutGroup`
 
 Creates an imperative group controller for many shortcut registrations.
@@ -99,6 +99,37 @@ formatShortcut("ctrl+shift+p", "mac") // "⌃⇧P"
 
 Function keys F1-F12
 
+## getModifiersFromEvent
+
+- Kind: `function`
+- Source: `src/parser.ts:146:1`
+- Signature: `(event: KeyboardEvent): ModifierState`
+
+Extract modifier state from a keyboard event
+
+Parameters:
+- `event`: - The keyboard event
+
+Returns: Object with meta, ctrl, alt, shift boolean flags
+
+## getModifierSymbols
+
+- Kind: `function`
+- Source: `src/formatter.ts:94:1`
+- Signature: `(platform?: PlatformType): Record<ModifierKeyType, string>`
+
+Get the modifier key symbols for a platform
+
+Parameters:
+- `platform`: - Optional platform override (default: auto-detect)
+
+Returns: Object mapping modifier keys to display symbols
+
+Examples:
+```ts
+getModifierSymbols("mac") // { meta: "⌘", ctrl: "⌃", alt: "⌥", shift: "⇧" }
+```
+
 ## HandlerOptions
 
 - Kind: `type`
@@ -116,7 +147,7 @@ Chain state after calling `.key()` - ready to attach a handler
 ## matchesAnyShortcut
 
 - Kind: `function`
-- Source: `src/parser.ts:157:1`
+- Source: `src/parser.ts:187:1`
 - Signature: `(event: KeyboardEvent, parsedShortcuts: ParsedShortcut[]): boolean`
 
 Check if a keyboard event matches any of the parsed shortcuts
@@ -130,7 +161,7 @@ Returns: `true` if the event matches any shortcut
 ## matchesShortcut
 
 - Kind: `function`
-- Source: `src/parser.ts:135:1`
+- Source: `src/parser.ts:162:1`
 - Signature: `(event: KeyboardEvent, parsed: ParsedShortcut): boolean`
 
 Check if a keyboard event matches a parsed shortcut
@@ -222,7 +253,7 @@ Result of parsing a shortcut string
 ## parseShortcut
 
 - Kind: `function`
-- Source: `src/parser.ts:57:1`
+- Source: `src/parser.ts:84:1`
 - Signature: `(shortcut: string, platform?: PlatformType): ParsedShortcut`
 
 Parse a shortcut string into its components
@@ -241,7 +272,7 @@ const parsed = parseShortcut("cmd+s")
 ## parseShortcuts
 
 - Kind: `function`
-- Source: `src/parser.ts:108:1`
+- Source: `src/parser.ts:135:1`
 - Signature: `(shortcuts: string | string[], platform?: PlatformType): ParsedShortcut[]`
 
 Parse multiple shortcut strings
@@ -261,10 +292,14 @@ Public platform constant alias (`Platform.MAC`, `Platform.WINDOWS`, `Platform.LI
 ## registerShortcutMap
 
 - Kind: `function`
-- Source: `src/hook.ts:191:1`
+- Source: `src/hook.ts:231:1`
 - Signature: `<T extends ShortcutMap>(builder: ShortcutBuilder, shortcutMap: T): ShortcutMapResult<T>`
 
 Registers an object-based shortcut map in one call and returns per-action handles.
+
+`keys` accepts one combo (`"mod+s"`), one sequence (`"g then d"`), or an
+array of alternatives (`["escape", "mod+d"]`) where any alternative fires
+the handler. Each alternative may itself be a sequence string.
 
 Parameters:
 - `builder`: - Builder returned by `useShortcut()`
@@ -281,11 +316,12 @@ useEffect(() => {
   const results = registerShortcutMap($, {
     save: { keys: "mod+s", handler: onSave },
     nav: { keys: "g then d", handler: onGoDashboard },
+    close: { keys: ["escape", "mod+d"], handler: onClose },
   })
   group.addMany(results)
 
   return () => group.unbindAll()
-}, [$, group, onSave, onGoDashboard])
+}, [$, group, onSave, onGoDashboard, onClose])
 ```
 
 ## ShortcutAttemptDebugEvent
@@ -305,14 +341,14 @@ High-level match status for one shortcut attempt against the current keyboard in
 ## ShortcutBinding
 
 - Kind: `type`
-- Source: `src/types.ts:351:1`
+- Source: `src/types.ts:358:1`
 
 Declarative single shortcut binding used by `useShortcutBinding`.
 
 ## ShortcutBuilder
 
 - Kind: `type`
-- Source: `src/types.ts:284:1`
+- Source: `src/types.ts:286:1`
 
 The main shortcut builder interface returned by `useShortcut()`
 
@@ -368,7 +404,7 @@ Token-level verdict for modifiers and keys inside debug attempt payloads.
 ## ShortcutGroup
 
 - Kind: `type`
-- Source: `src/types.ts:362:1`
+- Source: `src/types.ts:369:1`
 
 Imperative grouping controller for binding/unbinding many shortcut registrations together.
 
@@ -385,21 +421,21 @@ Parameters:
 ## ShortcutMap
 
 - Kind: `type`
-- Source: `src/types.ts:354:1`
+- Source: `src/types.ts:361:1`
 
 Bulk registration shape mapping action ids to key+handler definitions.
 
 ## ShortcutMapEntry
 
 - Kind: `type`
-- Source: `src/types.ts:344:1`
+- Source: `src/types.ts:346:1`
 
 Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.
 
 ## ShortcutMapResult
 
 - Kind: `type`
-- Source: `src/types.ts:357:1`
+- Source: `src/types.ts:364:1`
 
 Return type for map registrations, keyed by the same ids as the source map.
 
@@ -449,7 +485,7 @@ Symbol and punctuation keys
 ## useShortcut
 
 - Kind: `function`
-- Source: `src/hook.ts:237:1`
+- Source: `src/hook.ts:283:1`
 - Signature: `(options?: UseShortcutOptions): ShortcutBuilder`
 
 React hook for registering chainable keyboard shortcuts
@@ -476,13 +512,13 @@ useEffect(() => {
 ## useShortcutBinding
 
 - Kind: `function`
-- Source: `src/hook.ts:308:1`
+- Source: `src/hook.ts:374:1`
 - Signature: `(keys: string | string[], handler: ShortcutHandler, options?: HandlerOptions, shortcutOptions?: UseShortcutOptions): ShortcutResult`
 
 React hook for one cleanup-safe shortcut binding.
 
 Parameters:
-- `keys`: - Shortcut combo string or combo array, such as `"mod+s"` or `["escape", "mod+d"]`
+- `keys`: - Shortcut combo string, sequence string, or array of alternative combos, such as `"mod+s"`, `"g then d"`, or `["escape", "mod+d"]`
 - `handler`: - Handler invoked when the shortcut matches
 - `options`: - Per-binding options such as `preventDefault`, `scopes`, and `priority`
 - `shortcutOptions`: - Hook-level options such as `target`, `eventType`, and `activeScopes`
@@ -509,7 +545,7 @@ const closeShortcut = useShortcutBinding({
 ## useShortcutGroup
 
 - Kind: `function`
-- Source: `src/hook.ts:483:1`
+- Source: `src/hook.ts:592:1`
 - Signature: `(): ShortcutGroup`
 
 React hook that returns a stable `ShortcutGroup` instance.
@@ -524,10 +560,14 @@ const group = useShortcutGroup()
 ## useShortcutMap
 
 - Kind: `function`
-- Source: `src/hook.ts:386:1`
+- Source: `src/hook.ts:474:1`
 - Signature: `<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>`
 
 React hook that registers a shortcut map and automatically unbinds on cleanup.
+
+Handlers are kept in a ref, so inline handler functions never cause
+re-registration. The returned map and its per-id results are stable object
+references, safe to destructure at any point in the component lifecycle.
 
 Parameters:
 - `shortcutMap`: - Record of action ids to key bindings, handlers, and options
@@ -537,18 +577,16 @@ Returns: A map of `ShortcutResult` keyed by your shortcut ids
 
 Examples:
 ```ts
-const shortcuts = useMemo(() => ({
+const { save, close } = useShortcutMap({
   save: { keys: "mod+s", handler: onSave },
   close: { keys: "escape", handler: onClose },
-}), [onSave, onClose])
-
-const mapResults = useShortcutMap(shortcuts)
+})
 ```
 
 ## UseShortcutOptions
 
 - Kind: `type`
-- Source: `src/types.ts:314:1`
+- Source: `src/types.ts:316:1`
 
 Options for the `useShortcut` hook
 

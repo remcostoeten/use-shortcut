@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-09T18:35:32.400Z",
+  "generatedAt": "2026-08-13T18:17:08.369Z",
   "package": "@remcostoeten/use-shortcut",
   "sourceEntry": "src/index.ts",
-  "count": 54,
+  "count": 56,
   "items": [
     {
       "name": "ActionKey",
@@ -39,7 +39,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 445,
+        "line": 554,
         "column": 1
       },
       "summary": "Creates an imperative group controller for many shortcut registrations.",
@@ -137,6 +137,46 @@
       "examples": []
     },
     {
+      "name": "getModifiersFromEvent",
+      "kind": "function",
+      "source": {
+        "file": "src/parser.ts",
+        "line": 146,
+        "column": 1
+      },
+      "summary": "Extract modifier state from a keyboard event",
+      "signature": "(event: KeyboardEvent): ModifierState",
+      "params": [
+        {
+          "name": "event",
+          "description": "- The keyboard event"
+        }
+      ],
+      "returns": "Object with meta, ctrl, alt, shift boolean flags",
+      "examples": []
+    },
+    {
+      "name": "getModifierSymbols",
+      "kind": "function",
+      "source": {
+        "file": "src/formatter.ts",
+        "line": 94,
+        "column": 1
+      },
+      "summary": "Get the modifier key symbols for a platform",
+      "signature": "(platform?: PlatformType): Record<ModifierKeyType, string>",
+      "params": [
+        {
+          "name": "platform",
+          "description": "- Optional platform override (default: auto-detect)"
+        }
+      ],
+      "returns": "Object mapping modifier keys to display symbols",
+      "examples": [
+        "```ts\ngetModifierSymbols(\"mac\") // { meta: \"⌘\", ctrl: \"⌃\", alt: \"⌥\", shift: \"⇧\" }\n```"
+      ]
+    },
+    {
       "name": "HandlerOptions",
       "kind": "type",
       "source": {
@@ -169,7 +209,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 157,
+        "line": 187,
         "column": 1
       },
       "summary": "Check if a keyboard event matches any of the parsed shortcuts",
@@ -192,7 +232,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 135,
+        "line": 162,
         "column": 1
       },
       "summary": "Check if a keyboard event matches a parsed shortcut",
@@ -369,7 +409,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 57,
+        "line": 84,
         "column": 1
       },
       "summary": "Parse a shortcut string into its components",
@@ -390,7 +430,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 108,
+        "line": 135,
         "column": 1
       },
       "summary": "Parse multiple shortcut strings",
@@ -423,10 +463,10 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 191,
+        "line": 231,
         "column": 1
       },
-      "summary": "Registers an object-based shortcut map in one call and returns per-action handles.",
+      "summary": "Registers an object-based shortcut map in one call and returns per-action handles.\n\n`keys` accepts one combo (`\"mod+s\"`), one sequence (`\"g then d\"`), or an\narray of alternatives (`[\"escape\", \"mod+d\"]`) where any alternative fires\nthe handler. Each alternative may itself be a sequence string.",
       "signature": "<T extends ShortcutMap>(builder: ShortcutBuilder, shortcutMap: T): ShortcutMapResult<T>",
       "params": [
         {
@@ -440,7 +480,7 @@
       ],
       "returns": "A result map with one `ShortcutResult` per shortcut id",
       "examples": [
-        "```ts\nconst $ = useShortcut()\nconst group = useShortcutGroup()\n\nuseEffect(() => {\n  const results = registerShortcutMap($, {\n    save: { keys: \"mod+s\", handler: onSave },\n    nav: { keys: \"g then d\", handler: onGoDashboard },\n  })\n  group.addMany(results)\n\n  return () => group.unbindAll()\n}, [$, group, onSave, onGoDashboard])\n```"
+        "```ts\nconst $ = useShortcut()\nconst group = useShortcutGroup()\n\nuseEffect(() => {\n  const results = registerShortcutMap($, {\n    save: { keys: \"mod+s\", handler: onSave },\n    nav: { keys: \"g then d\", handler: onGoDashboard },\n    close: { keys: [\"escape\", \"mod+d\"], handler: onClose },\n  })\n  group.addMany(results)\n\n  return () => group.unbindAll()\n}, [$, group, onSave, onGoDashboard, onClose])\n```"
       ]
     },
     {
@@ -476,7 +516,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 351,
+        "line": 358,
         "column": 1
       },
       "summary": "Declarative single shortcut binding used by `useShortcutBinding`.",
@@ -490,7 +530,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 284,
+        "line": 286,
         "column": 1
       },
       "summary": "The main shortcut builder interface returned by `useShortcut()`",
@@ -602,7 +642,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 362,
+        "line": 369,
         "column": 1
       },
       "summary": "Imperative grouping controller for binding/unbinding many shortcut registrations together.",
@@ -635,7 +675,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 354,
+        "line": 361,
         "column": 1
       },
       "summary": "Bulk registration shape mapping action ids to key+handler definitions.",
@@ -649,7 +689,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 344,
+        "line": 346,
         "column": 1
       },
       "summary": "Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.",
@@ -663,7 +703,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 357,
+        "line": 364,
         "column": 1
       },
       "summary": "Return type for map registrations, keyed by the same ids as the source map.",
@@ -761,7 +801,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 237,
+        "line": 283,
         "column": 1
       },
       "summary": "React hook for registering chainable keyboard shortcuts",
@@ -782,7 +822,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 308,
+        "line": 374,
         "column": 1
       },
       "summary": "React hook for one cleanup-safe shortcut binding.",
@@ -790,7 +830,7 @@
       "params": [
         {
           "name": "keys",
-          "description": "- Shortcut combo string or combo array, such as `\"mod+s\"` or `[\"escape\", \"mod+d\"]`"
+          "description": "- Shortcut combo string, sequence string, or array of alternative combos, such as `\"mod+s\"`, `\"g then d\"`, or `[\"escape\", \"mod+d\"]`"
         },
         {
           "name": "handler",
@@ -824,7 +864,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 483,
+        "line": 592,
         "column": 1
       },
       "summary": "React hook that returns a stable `ShortcutGroup` instance.",
@@ -840,10 +880,10 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 386,
+        "line": 474,
         "column": 1
       },
-      "summary": "React hook that registers a shortcut map and automatically unbinds on cleanup.",
+      "summary": "React hook that registers a shortcut map and automatically unbinds on cleanup.\n\nHandlers are kept in a ref, so inline handler functions never cause\nre-registration. The returned map and its per-id results are stable object\nreferences, safe to destructure at any point in the component lifecycle.",
       "signature": "<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>",
       "params": [
         {
@@ -857,7 +897,7 @@
       ],
       "returns": "A map of `ShortcutResult` keyed by your shortcut ids",
       "examples": [
-        "```ts\nconst shortcuts = useMemo(() => ({\n  save: { keys: \"mod+s\", handler: onSave },\n  close: { keys: \"escape\", handler: onClose },\n}), [onSave, onClose])\n\nconst mapResults = useShortcutMap(shortcuts)\n```"
+        "```ts\nconst { save, close } = useShortcutMap({\n  save: { keys: \"mod+s\", handler: onSave },\n  close: { keys: \"escape\", handler: onClose },\n})\n```"
       ]
     },
     {
@@ -865,7 +905,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 314,
+        "line": 316,
         "column": 1
       },
       "summary": "Options for the `useShortcut` hook",

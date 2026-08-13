@@ -40,8 +40,8 @@ This repository is evolving into a personal tool registry:
 - Support for combos and sequences with complex shortcut patterns
 - Context-aware shortcut management with scopes
 - Parser utilities to parse and validate shortcut strings
-- Built-in shortcut recording functionality
-- ARIA-compliant and keyboard-friendly
+- Built-in shortcut recording functionality (abortable via `AbortSignal`)
+- One shared DOM listener per target across all hook instances
 
 ## Quick Start
 

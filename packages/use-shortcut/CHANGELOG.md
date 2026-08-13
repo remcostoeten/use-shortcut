@@ -5,10 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.5.0] - 2026-08-13
 
 ### Fixed
 
+- Array `keys` in `useShortcutBinding`, `useShortcutMap`, and `registerShortcutMap` now register alternatives (any one fires the handler) as documented, instead of silently becoming a multi-step sequence. Each alternative may itself be a sequence string such as `"g then k"`.
+- Shifted symbol shortcuts such as `shift+2` now match the shifted character the browser reports (`@`), including through the dispatch fast path (US layout).
+- Closed a race where an imperative `.on()` call between paint and the passive-effect flush was mistaken for a render binding and silently reconciled away.
+- `useShortcutBinding` no longer unbinds and re-registers on every render when given inline arrays, options objects, or handler functions; handlers are kept in a ref and keys/options are compared structurally.
+- Unmount now clears pending delayed-handler timeouts and cancels in-flight recordings.
+- `trigger()` respects `isEnabled` and synthesizes the bound key and modifier data on the dispatched event instead of an empty `KeyboardEvent`.
+
+### Added
+
+- One shared DOM listener per `(target, eventType)` across all hook instances, instead of one listener per hook.
+- Conflict detection across hook instances that share a target.
+- `record({ signal })` accepts an `AbortSignal`; recordings also auto-cancel on unmount.
+- `getModifiersFromEvent` and `getModifierSymbols` are exported from the root barrel.
+- `useShortcutMap` results are stable delegating handles, safe to destructure at any point in the component lifecycle.
+
+### Changed
+
+- The chainable builder is a plain object factory instead of a `Proxy`.
+- `ShortcutResult.onAttempt` is now a required property (it was always implemented; the type was optional).
+- `bind()` chain typing returns `KeyChain<string>` instead of `KeyChain<any>`.
 - Conflict detection now consults scopes. Two bindings gated onto scopes that never overlap can share a combo without being reported as conflicting, since they can never be live at the same time. Bindings that share a scope, and unscoped bindings (which are always live), still conflict as before.
 
 ## [2.3.0] - 2026-04-12

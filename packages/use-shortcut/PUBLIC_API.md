@@ -33,6 +33,7 @@ Exports:
 - `parseShortcuts(shortcuts)`
 - `matchesShortcut(event, parsed)`
 - `matchesAnyShortcut(event, parsedShortcuts)`
+- `getModifiersFromEvent(event)`
 
 ### `@remcostoeten/use-shortcut/formatter`
 
@@ -75,12 +76,12 @@ Exports:
 - `parseShortcuts(shortcuts)`
 - `matchesShortcut(event, parsed)`
 - `matchesAnyShortcut(event, parsedShortcuts)`
+- `getModifiersFromEvent(event)`
 
 ### Formatting functions
 
 - `formatShortcut(shortcut, platform?)`
-
-`getModifierSymbols(platform?)` is available from `@remcostoeten/use-shortcut/formatter`.
+- `getModifierSymbols(platform?)`
 
 ### React hooks and registration helpers
 
