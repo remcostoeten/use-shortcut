@@ -2,7 +2,7 @@ import { parseShortcut } from "../parser"
 import type { HandlerOptions, ShortcutAttemptDebugEvent, ShortcutHandler, ShortcutResult } from "../types"
 
 import { _debugLog } from "./debug"
-import { _detectConflict, _emitConflict } from "./conflicts"
+import { _detectConflict, _emitConflict, _scopesDisjoint } from "./conflicts"
 import { _canonicalizeParsed, _formatSequenceDisplay } from "./keys"
 import { _normalizeScopes } from "./guards"
 import { _attachRegistryListener, _detachRegistryListener } from "./listener"
@@ -173,10 +173,12 @@ function _registerBinding(
     }
 
     const ignoredConflictId = existingRenderEntry?.combo === combo ? existingRenderEntry.id : undefined
+    const requiredScopes = new Set(_normalizeScopes(state.scopes ?? handlerOptions.scopes))
 
     for (const [existingCombo, entries] of registry.listeners.entries()) {
         for (const existing of entries) {
             if (existing.id === ignoredConflictId) continue
+            if (_scopesDisjoint(requiredScopes, existing.scopes)) continue
             const reason = _detectConflict(parsedSteps, existing.parsedSteps)
             if (!reason) continue
             _emitConflict(registry, { combo, existingCombo, reason })
@@ -186,7 +188,6 @@ function _registerBinding(
     const isEnabled = !handlerOptions.disabled && !options.disabled
     const delay = handlerOptions.delay ?? options.delay ?? 0
     const sequenceTimeout = handlerOptions.sequenceTimeout ?? options.sequenceTimeout ?? 800
-    const requiredScopes = new Set(_normalizeScopes(state.scopes ?? handlerOptions.scopes))
     const expectedSteps = parsedSteps.map(_canonicalizeParsed)
     const attemptCallbacks = new Set<(matched: boolean, event: KeyboardEvent, details?: ShortcutAttemptDebugEvent) => void>()
 

@@ -27,6 +27,21 @@ export function _detectConflict(newSteps: ParsedShortcut[], existingSteps: Parse
     return null
 }
 
+/**
+ * Whether two bindings are gated onto scopes that never overlap, and so can
+ * never be live at the same time. Two such bindings may share a combo without
+ * competing for it — a scoped app can bind `/` to search on one screen and to
+ * focus on another — so they are not a conflict. An unscoped binding is always
+ * live, and therefore always competes.
+ */
+export function _scopesDisjoint(a: Set<string>, b: Set<string>): boolean {
+    if (a.size === 0 || b.size === 0) return false
+    for (const scope of a) {
+        if (b.has(scope)) return false
+    }
+    return true
+}
+
 export function _emitConflict(registry: ShortcutRegistry, conflict: ShortcutConflict) {
     const conflictWarnings = registry.options.conflictWarnings ?? true
 
