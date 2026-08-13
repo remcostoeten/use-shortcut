@@ -20,7 +20,7 @@ const useShortcutConfig: PackageConfig = {
   description: "a tiny react hook for keyboard shortcuts that feels fluent, stays fully typed, and scales from one save shortcut to full command palettes, sequences, and scoped app navigation.",
   heroSubcopy: "built for real product flows: save actions, editor shortcuts, layered scopes, and fast keyboard-first navigation.",
   heroTitle: "use-shortcut",
-  bundleSizeKb: 5.4,
+  bundleSizeKb: 8.2,
 
   author: {
     name: "Remco Stoeten",
@@ -46,12 +46,12 @@ const useShortcutConfig: PackageConfig = {
 
   why: {
     paragraphs: [
-      "chainable api, sequences, scopes, and conflict checks in about 5.4kb gzipped for a browser bundle importing `useShortcut`, with zero dependencies beyond react.",
+      "chainable api, sequences, scopes, and conflict checks in about 8.2kb gzipped for a browser bundle importing `useShortcut`, with zero dependencies beyond react. all hook instances on the same target share one dom listener.",
     ],
   },
 
   features: [
-    { value: "~5.4kb", label: "gzipped runtime", description: "measured browser bundle importing `useShortcut`; only react is a peer dep." },
+    { value: "~8.2kb", label: "gzipped runtime", description: "measured browser bundle importing `useShortcut`; only react is a peer dep." },
     { value: "chain", label: "chainable api", description: "$.cmd.shift.key('s').on(() => save())" },
     { value: "ts", label: "perfect typescript", description: "intellisense at every step of the chain." },
     { value: "seq", label: "sequences & chords", description: "multi-step bindings like $.key('g').then('d')" },
@@ -180,6 +180,46 @@ $.key("g").then("d").on(goToDashboard)`,
       exampleLanguage: "tsx",
     },
     {
+      name: "useShortcutBinding",
+      kind: "function",
+      summary: "Declarative one-shortcut hook with automatic cleanup.",
+      possible: "Register one combo, sequence, or list of alternative combos without manual effect wiring.",
+      example: 'useShortcutBinding("mod+k", openPalette, { preventDefault: true })\nuseShortcutBinding({ keys: ["escape", "mod+d"], handler: closeDialog })',
+      exampleLanguage: "tsx",
+    },
+    {
+      name: "useShortcutMap",
+      kind: "function",
+      summary: "Bulk declarative shortcut registration with automatic cleanup.",
+      possible: "Register a whole action map at once; results are stable handles safe to destructure.",
+      example: 'const { save, close } = useShortcutMap({\n  save: { keys: "mod+s", handler: onSave },\n  close: { keys: ["escape", "mod+d"], handler: onClose },\n})',
+      exampleLanguage: "tsx",
+    },
+    {
+      name: "registerShortcutMap",
+      kind: "function",
+      summary: "Imperative bulk registration against a builder.",
+      possible: "Register maps inside effects or non-React flows and manage the returned handles yourself.",
+      example: 'const results = registerShortcutMap($, {\n  nav: { keys: "g then d", handler: goToDashboard },\n})',
+      exampleLanguage: "ts",
+    },
+    {
+      name: "createShortcutGroup",
+      kind: "function",
+      summary: "Imperative controller for many shortcut handles.",
+      possible: "Collect registrations and unbind them together in one call.",
+      example: 'const group = createShortcutGroup()\ngroup.add($.mod.key("s").on(onSave))\ngroup.unbindAll()',
+      exampleLanguage: "ts",
+    },
+    {
+      name: "useShortcutGroup",
+      kind: "function",
+      summary: "Stable ShortcutGroup instance tied to the component lifecycle.",
+      possible: "Share one group across effects without recreating it on re-render.",
+      example: "const group = useShortcutGroup()",
+      exampleLanguage: "ts",
+    },
+    {
       name: "formatShortcut",
       kind: "function",
       summary: "Formats shortcut strings for UI display.",
@@ -284,7 +324,18 @@ $.key("g").then("d").on(goToDashboard)`,
         { name: "getScopes", signature: "$.getScopes()", description: "Returns the currently active scopes." },
         { name: "isScopeActive", signature: "$.isScopeActive(scope)", description: "Checks whether a scope is active." },
         { name: "onDebug", signature: "$.onDebug(callback)", description: "Subscribes to every evaluated keypress with structured attempt details." },
-        { name: "record", signature: "$.record(options?)", description: "Records the next non-modifier shortcut combo." },
+        { name: "record", signature: "$.record({ timeoutMs?, signal? })", description: "Records the next non-modifier shortcut combo; abortable and auto-cancelled on unmount." },
+      ],
+    },
+    {
+      title: "declarative hooks (from /react)",
+      description: "React-owned registration with automatic cleanup.",
+      methods: [
+        { name: "useShortcutBinding", signature: "useShortcutBinding(keys, handler, options?, shortcutOptions?)", description: "One binding; keys may be a combo, a sequence, or an array of alternatives." },
+        { name: "useShortcutMap", signature: "useShortcutMap(shortcutMap, options?)", description: "Bulk registration; returns stable per-id handles safe to destructure." },
+        { name: "registerShortcutMap", signature: "registerShortcutMap($, shortcutMap)", description: "Imperative bulk registration returning per-id ShortcutResult handles." },
+        { name: "createShortcutGroup", signature: "createShortcutGroup()", description: "Imperative controller to unbind many registrations together." },
+        { name: "useShortcutGroup", signature: "useShortcutGroup()", description: "Stable group instance tied to the component lifecycle." },
       ],
     },
     {
@@ -318,7 +369,7 @@ $.key("g").then("d").on(goToDashboard)`,
         { name: "isEnabled", signature: "result.isEnabled", description: "Current enabled state flag." },
         { name: "enable", signature: "result.enable()", description: "Enables this shortcut." },
         { name: "disable", signature: "result.disable()", description: "Disables this shortcut." },
-        { name: "onAttempt", signature: "result.onAttempt?.((matched, event, details) => ...)", description: "Subscribes to attempt events with matched state plus structured debug details." },
+        { name: "onAttempt", signature: "result.onAttempt((matched, event, details) => ...)", description: "Subscribes to attempt events with matched state plus structured debug details." },
       ],
     },
     {
@@ -405,6 +456,7 @@ const $ = useShortcut({
         { name: "target", type: "HTMLElement | Window | null", default: "useShortcut target", description: "Target element for recording listener." },
         { name: "eventType", type: "\"keydown\" | \"keyup\"", default: "\"keydown\"", description: "Event type used while recording." },
         { name: "timeoutMs", type: "number", default: "—", description: "Timeout after which recording rejects." },
+        { name: "signal", type: "AbortSignal", default: "—", description: "Abort the recording; the promise rejects on abort. Recordings also auto-cancel on unmount." },
       ],
       usageExample: `const combo = await $.record({
   eventType: "keydown",
@@ -479,6 +531,20 @@ $.key("g").then("d").on(() => goToDashboard())
 
 // steps can include modifiers too
 $.key("g").then("shift+d").on(() => openDebug())`,
+      language: "tsx",
+    },
+    {
+      title: "alternative combos",
+      description: "Use an array of keys when several different shortcuts should fire the same handler; any alternative triggers it.",
+      code: `import { useShortcutBinding, useShortcutMap } from "@remcostoeten/use-shortcut/react"
+
+// either escape or mod+d closes the dialog
+useShortcutBinding({ keys: ["escape", "mod+d"], handler: closeDialog })
+
+// alternatives can be sequences too
+const { palette } = useShortcutMap({
+  palette: { keys: ["mod+k", "g then k"], handler: openPalette },
+})`,
       language: "tsx",
     },
     {
