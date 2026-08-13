@@ -328,7 +328,11 @@ export type UseShortcutOptions = {
     activeScopes?: ShortcutScope
     /** Global timeout in ms for sequence completion */
     sequenceTimeout?: number
-    /** Warn when conflicting shortcuts are registered (default: true) */
+    /**
+     * Warn when conflicting shortcuts are registered (default: true).
+     * Bindings gated onto scopes that never overlap are not treated as
+     * conflicting, since they can never be live at the same time.
+     */
     conflictWarnings?: boolean
     /** Custom conflict callback */
     onConflict?: (conflict: ShortcutConflict) => void

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-26T14:54:03.272Z",
+  "generatedAt": "2026-08-09T18:35:32.400Z",
   "package": "@remcostoeten/use-shortcut",
   "sourceEntry": "src/index.ts",
   "count": 54,
@@ -69,7 +69,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 81,
+        "line": 87,
         "column": 1
       },
       "summary": "Custom predicate for excluding shortcuts in certain conditions",
@@ -88,7 +88,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 91,
+        "line": 97,
         "column": 1
       },
       "summary": "Built-in exception presets for common scenarios\n- \"input\" - Skip when focused on input, textarea, or select\n- \"editable\" - Skip when focused on contentEditable elements\n- \"typing\" - Skip in any text input context (combines input + editable)\n- \"modal\" - Skip when a modal/dialog is open (checks [data-modal] or [role=\"dialog\"])\n- \"disabled\" - Skip when focused element is disabled",
@@ -141,7 +141,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 173,
+        "line": 179,
         "column": 1
       },
       "summary": "Options for shortcut handler registration",
@@ -155,7 +155,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 242,
+        "line": 248,
         "column": 1
       },
       "summary": "Chain state after calling `.key()` - ready to attach a handler",
@@ -169,7 +169,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 155,
+        "line": 157,
         "column": 1
       },
       "summary": "Check if a keyboard event matches any of the parsed shortcuts",
@@ -192,7 +192,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 133,
+        "line": 135,
         "column": 1
       },
       "summary": "Check if a keyboard event matches a parsed shortcut",
@@ -229,7 +229,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 223,
+        "line": 229,
         "column": 1
       },
       "summary": "Chainable modifier builder with type-safe exhaustion\nEach modifier can only be used once in a chain",
@@ -390,7 +390,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 106,
+        "line": 108,
         "column": 1
       },
       "summary": "Parse multiple shortcut strings",
@@ -448,7 +448,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 138,
+        "line": 144,
         "column": 1
       },
       "summary": "Per-shortcut debug payload describing how one registered shortcut was evaluated.",
@@ -462,7 +462,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 104,
+        "line": 110,
         "column": 1
       },
       "summary": "High-level match status for one shortcut attempt against the current keyboard input.",
@@ -476,7 +476,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 341,
+        "line": 351,
         "column": 1
       },
       "summary": "Declarative single shortcut binding used by `useShortcutBinding`.",
@@ -490,7 +490,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 278,
+        "line": 284,
         "column": 1
       },
       "summary": "The main shortcut builder interface returned by `useShortcut()`",
@@ -504,7 +504,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 97,
+        "line": 103,
         "column": 1
       },
       "summary": "Conflict metadata emitted when two registered shortcuts overlap.",
@@ -518,7 +518,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 153,
+        "line": 159,
         "column": 1
       },
       "summary": "Global debug payload emitted for every processed keyboard event.",
@@ -532,7 +532,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 126,
+        "line": 132,
         "column": 1
       },
       "summary": "Normalized view of the keyboard input that triggered debug processing.",
@@ -546,7 +546,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 159,
+        "line": 165,
         "column": 1
       },
       "summary": "Runtime debug configuration for console/debug-stream metadata.",
@@ -560,7 +560,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 117,
+        "line": 123,
         "column": 1
       },
       "summary": "Debug metadata for one step in a combo or multi-step shortcut sequence.",
@@ -574,7 +574,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 110,
+        "line": 116,
         "column": 1
       },
       "summary": "Debug metadata for one expected token in a shortcut step.",
@@ -588,7 +588,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 107,
+        "line": 113,
         "column": 1
       },
       "summary": "Token-level verdict for modifiers and keys inside debug attempt payloads.",
@@ -602,7 +602,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 352,
+        "line": 362,
         "column": 1
       },
       "summary": "Imperative grouping controller for binding/unbinding many shortcut registrations together.",
@@ -616,7 +616,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 74,
+        "line": 80,
         "column": 1
       },
       "summary": "Handler function called when a shortcut is triggered",
@@ -635,7 +635,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 344,
+        "line": 354,
         "column": 1
       },
       "summary": "Bulk registration shape mapping action ids to key+handler definitions.",
@@ -649,7 +649,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 334,
+        "line": 344,
         "column": 1
       },
       "summary": "Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.",
@@ -663,7 +663,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 347,
+        "line": 357,
         "column": 1
       },
       "summary": "Return type for map registrations, keyed by the same ids as the source map.",
@@ -677,7 +677,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 269,
+        "line": 275,
         "column": 1
       },
       "summary": "Options for `ShortcutBuilder.record()` and low-level recording flows.",
@@ -691,7 +691,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 200,
+        "line": 206,
         "column": 1
       },
       "summary": "Result object returned when registering a shortcut\nProvides control over the shortcut and display information",
@@ -705,7 +705,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 94,
+        "line": 100,
         "column": 1
       },
       "summary": "Scope selector used to enable/disable subsets of shortcuts at runtime.",
@@ -865,7 +865,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 308,
+        "line": 314,
         "column": 1
       },
       "summary": "Options for the `useShortcut` hook",

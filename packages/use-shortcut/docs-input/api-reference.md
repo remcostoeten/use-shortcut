@@ -51,7 +51,7 @@ Result is memoized for the page lifecycle.
 ## ExceptPredicate
 
 - Kind: `type`
-- Source: `src/types.ts:81:1`
+- Source: `src/types.ts:87:1`
 
 Custom predicate for excluding shortcuts in certain conditions
 
@@ -63,7 +63,7 @@ Returns: `true` to skip the shortcut, `false` to allow it
 ## ExceptPreset
 
 - Kind: `type`
-- Source: `src/types.ts:91:1`
+- Source: `src/types.ts:97:1`
 
 Built-in exception presets for common scenarios
 - "input" - Skip when focused on input, textarea, or select
@@ -102,21 +102,21 @@ Function keys F1-F12
 ## HandlerOptions
 
 - Kind: `type`
-- Source: `src/types.ts:173:1`
+- Source: `src/types.ts:179:1`
 
 Options for shortcut handler registration
 
 ## KeyChain
 
 - Kind: `type`
-- Source: `src/types.ts:242:1`
+- Source: `src/types.ts:248:1`
 
 Chain state after calling `.key()` - ready to attach a handler
 
 ## matchesAnyShortcut
 
 - Kind: `function`
-- Source: `src/parser.ts:155:1`
+- Source: `src/parser.ts:157:1`
 - Signature: `(event: KeyboardEvent, parsedShortcuts: ParsedShortcut[]): boolean`
 
 Check if a keyboard event matches any of the parsed shortcuts
@@ -130,7 +130,7 @@ Returns: `true` if the event matches any shortcut
 ## matchesShortcut
 
 - Kind: `function`
-- Source: `src/parser.ts:133:1`
+- Source: `src/parser.ts:135:1`
 - Signature: `(event: KeyboardEvent, parsed: ParsedShortcut): boolean`
 
 Check if a keyboard event matches a parsed shortcut
@@ -151,7 +151,7 @@ Alias map from user-facing modifier tokens to canonical modifier keys.
 ## ModifierChain
 
 - Kind: `type`
-- Source: `src/types.ts:223:1`
+- Source: `src/types.ts:229:1`
 
 Chainable modifier builder with type-safe exhaustion
 Each modifier can only be used once in a chain
@@ -241,7 +241,7 @@ const parsed = parseShortcut("cmd+s")
 ## parseShortcuts
 
 - Kind: `function`
-- Source: `src/parser.ts:106:1`
+- Source: `src/parser.ts:108:1`
 - Signature: `(shortcuts: string | string[], platform?: PlatformType): ParsedShortcut[]`
 
 Parse multiple shortcut strings
@@ -291,91 +291,91 @@ useEffect(() => {
 ## ShortcutAttemptDebugEvent
 
 - Kind: `type`
-- Source: `src/types.ts:138:1`
+- Source: `src/types.ts:144:1`
 
 Per-shortcut debug payload describing how one registered shortcut was evaluated.
 
 ## ShortcutAttemptStatus
 
 - Kind: `type`
-- Source: `src/types.ts:104:1`
+- Source: `src/types.ts:110:1`
 
 High-level match status for one shortcut attempt against the current keyboard input.
 
 ## ShortcutBinding
 
 - Kind: `type`
-- Source: `src/types.ts:341:1`
+- Source: `src/types.ts:351:1`
 
 Declarative single shortcut binding used by `useShortcutBinding`.
 
 ## ShortcutBuilder
 
 - Kind: `type`
-- Source: `src/types.ts:278:1`
+- Source: `src/types.ts:284:1`
 
 The main shortcut builder interface returned by `useShortcut()`
 
 ## ShortcutConflict
 
 - Kind: `type`
-- Source: `src/types.ts:97:1`
+- Source: `src/types.ts:103:1`
 
 Conflict metadata emitted when two registered shortcuts overlap.
 
 ## ShortcutDebugEvent
 
 - Kind: `type`
-- Source: `src/types.ts:153:1`
+- Source: `src/types.ts:159:1`
 
 Global debug payload emitted for every processed keyboard event.
 
 ## ShortcutDebugInput
 
 - Kind: `type`
-- Source: `src/types.ts:126:1`
+- Source: `src/types.ts:132:1`
 
 Normalized view of the keyboard input that triggered debug processing.
 
 ## ShortcutDebugOptions
 
 - Kind: `type`
-- Source: `src/types.ts:159:1`
+- Source: `src/types.ts:165:1`
 
 Runtime debug configuration for console/debug-stream metadata.
 
 ## ShortcutDebugStep
 
 - Kind: `type`
-- Source: `src/types.ts:117:1`
+- Source: `src/types.ts:123:1`
 
 Debug metadata for one step in a combo or multi-step shortcut sequence.
 
 ## ShortcutDebugToken
 
 - Kind: `type`
-- Source: `src/types.ts:110:1`
+- Source: `src/types.ts:116:1`
 
 Debug metadata for one expected token in a shortcut step.
 
 ## ShortcutDebugTokenStatus
 
 - Kind: `type`
-- Source: `src/types.ts:107:1`
+- Source: `src/types.ts:113:1`
 
 Token-level verdict for modifiers and keys inside debug attempt payloads.
 
 ## ShortcutGroup
 
 - Kind: `type`
-- Source: `src/types.ts:352:1`
+- Source: `src/types.ts:362:1`
 
 Imperative grouping controller for binding/unbinding many shortcut registrations together.
 
 ## ShortcutHandler
 
 - Kind: `type`
-- Source: `src/types.ts:74:1`
+- Source: `src/types.ts:80:1`
 
 Handler function called when a shortcut is triggered
 
@@ -385,35 +385,35 @@ Parameters:
 ## ShortcutMap
 
 - Kind: `type`
-- Source: `src/types.ts:344:1`
+- Source: `src/types.ts:354:1`
 
 Bulk registration shape mapping action ids to key+handler definitions.
 
 ## ShortcutMapEntry
 
 - Kind: `type`
-- Source: `src/types.ts:334:1`
+- Source: `src/types.ts:344:1`
 
 Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.
 
 ## ShortcutMapResult
 
 - Kind: `type`
-- Source: `src/types.ts:347:1`
+- Source: `src/types.ts:357:1`
 
 Return type for map registrations, keyed by the same ids as the source map.
 
 ## ShortcutRecordingOptions
 
 - Kind: `type`
-- Source: `src/types.ts:269:1`
+- Source: `src/types.ts:275:1`
 
 Options for `ShortcutBuilder.record()` and low-level recording flows.
 
 ## ShortcutResult
 
 - Kind: `type`
-- Source: `src/types.ts:200:1`
+- Source: `src/types.ts:206:1`
 
 Result object returned when registering a shortcut
 Provides control over the shortcut and display information
@@ -421,7 +421,7 @@ Provides control over the shortcut and display information
 ## ShortcutScope
 
 - Kind: `type`
-- Source: `src/types.ts:94:1`
+- Source: `src/types.ts:100:1`
 
 Scope selector used to enable/disable subsets of shortcuts at runtime.
 
@@ -548,7 +548,7 @@ const mapResults = useShortcutMap(shortcuts)
 ## UseShortcutOptions
 
 - Kind: `type`
-- Source: `src/types.ts:308:1`
+- Source: `src/types.ts:314:1`
 
 Options for the `useShortcut` hook
 

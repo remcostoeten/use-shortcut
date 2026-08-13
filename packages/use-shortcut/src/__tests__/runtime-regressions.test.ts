@@ -97,6 +97,36 @@ describe("runtime lifecycle regressions", () => {
         })
     })
 
+    it("does not report a conflict between bindings whose scopes never overlap", () => {
+        const onConflict = vi.fn()
+        const { builder: $ } = createTestShortcut({ onConflict })
+
+        $.key("/").on(() => {}, { scopes: "journal" })
+        $.key("/").on(() => {}, { scopes: "notes" })
+
+        expect(onConflict).not.toHaveBeenCalled()
+    })
+
+    it("still reports a conflict when two bindings share a scope", () => {
+        const onConflict = vi.fn()
+        const { builder: $ } = createTestShortcut({ onConflict })
+
+        $.key("/").on(() => {}, { scopes: ["journal", "notes"] })
+        $.key("/").on(() => {}, { scopes: "notes" })
+
+        expect(onConflict).toHaveBeenCalledTimes(1)
+    })
+
+    it("still reports a conflict when one binding is unscoped and always live", () => {
+        const onConflict = vi.fn()
+        const { builder: $ } = createTestShortcut({ onConflict })
+
+        $.key("/").on(() => {})
+        $.key("/").on(() => {}, { scopes: "notes" })
+
+        expect(onConflict).toHaveBeenCalledTimes(1)
+    })
+
     it("does not run a delayed handler after its binding is unbound", () => {
         vi.useFakeTimers()
         const target = document.createElement("div")
