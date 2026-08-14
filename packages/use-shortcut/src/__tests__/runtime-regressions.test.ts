@@ -144,6 +144,35 @@ describe("runtime lifecycle regressions", () => {
         expect(handler).not.toHaveBeenCalled()
     })
 
+    it("fires a binding registered while the builder was disabled once disabled clears", () => {
+        const target = document.createElement("div")
+        const handler = vi.fn()
+        const { builder: $, registry } = createTestShortcut({ target, disabled: true })
+
+        $.key("g").on(handler)
+        dispatchKey(target, "keydown", "g")
+        expect(handler).not.toHaveBeenCalled()
+
+        registry.options = { ...registry.options, disabled: false }
+
+        dispatchKey(target, "keydown", "g")
+        expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it("stops dispatch and trigger when the builder becomes disabled after registration", () => {
+        const target = document.createElement("div")
+        const handler = vi.fn()
+        const { builder: $, registry } = createTestShortcut({ target })
+
+        const result = $.key("g").on(handler)
+        registry.options = { ...registry.options, disabled: true }
+
+        dispatchKey(target, "keydown", "g")
+        result.trigger()
+
+        expect(handler).not.toHaveBeenCalled()
+    })
+
     it("does not run a delayed handler after its binding is disabled", () => {
         vi.useFakeTimers()
         const target = document.createElement("div")

@@ -130,7 +130,7 @@ function _createResult(entry: RegistryEntry, registry: ShortcutRegistry): Shortc
             return entry.combo
         },
         trigger: () => {
-            if (!entry.isEnabled) return
+            if (!entry.isEnabled || registry.options.disabled) return
             entry.userHandler(_synthesizeTriggerEvent(entry, registry))
         },
         get isEnabled() {
@@ -206,7 +206,12 @@ function _registerBinding(
         scanForConflicts(sibling)
     }
 
-    const isEnabled = !handlerOptions.disabled && !options.disabled
+    // Builder-level `disabled` is enforced live in _dispatchRegistryEvent via
+    // registry.options; baking it here would freeze the value the builder was
+    // created with. In React that is the hook's first render, so a hook mounted
+    // with `disabled: true` (e.g. waiting on a ref target) would leave every
+    // binding permanently disabled even after the option flips to false.
+    const isEnabled = !handlerOptions.disabled
     const delay = handlerOptions.delay ?? options.delay ?? 0
     const sequenceTimeout = handlerOptions.sequenceTimeout ?? options.sequenceTimeout ?? 800
     const expectedSteps = parsedSteps.map(_canonicalizeParsed)

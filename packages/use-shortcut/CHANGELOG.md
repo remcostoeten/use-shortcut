@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `useShortcutBinding` no longer unbinds and re-registers on every render when given inline arrays, options objects, or handler functions; handlers are kept in a ref and keys/options are compared structurally.
 - Unmount now clears pending delayed-handler timeouts and cancels in-flight recordings.
 - `trigger()` respects `isEnabled` and synthesizes the bound key and modifier data on the dispatched event instead of an empty `KeyboardEvent`.
+- Hook-level `disabled` is no longer baked into each binding at registration; it is checked live at dispatch (and in `trigger()`). Previously a hook mounted with `disabled: true` — the common "target ref not attached yet" pattern — registered permanently disabled bindings that never fired even after `disabled` flipped to `false`. A binding's `isEnabled` now reflects only its own `disabled` handler option and `enable()`/`disable()` calls.
 
 ### Added
 
