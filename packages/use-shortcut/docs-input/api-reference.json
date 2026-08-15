@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-13T18:17:08.369Z",
+  "generatedAt": "2026-08-15T11:56:02.491Z",
   "package": "@remcostoeten/use-shortcut",
   "sourceEntry": "src/index.ts",
-  "count": 56,
+  "count": 62,
   "items": [
     {
       "name": "ActionKey",
@@ -35,11 +35,36 @@
       "examples": []
     },
     {
+      "name": "canonicalizeShortcut",
+      "kind": "function",
+      "source": {
+        "file": "src/rebinding.ts",
+        "line": 37,
+        "column": 1
+      },
+      "summary": "Reduce a combo to the canonical form the dispatcher matches on, so two\nspellings of one binding compare and store as the same string. Modifiers are\nordered, aliases resolved, and `mod` is expanded for the target platform.\n\nUse it as the storage form for user rebinds; a recorded `\"Ctrl + K\"` and a\ndefault of `\"mod+k\"` should not persist as two different settings values.",
+      "signature": "(combo: string, platform?: PlatformType): string",
+      "params": [
+        {
+          "name": "combo",
+          "description": "- Shortcut string, chord or sequence"
+        },
+        {
+          "name": "platform",
+          "description": "- Optional platform override (default: auto-detect)"
+        }
+      ],
+      "returns": "Canonical combo string, sequence steps rejoined with `\" then \"`",
+      "examples": [
+        "```ts\ncanonicalizeShortcut(\"Ctrl + K\", \"windows\") // \"ctrl+k\"\ncanonicalizeShortcut(\"mod+k\", \"windows\") // \"ctrl+k\"\ncanonicalizeShortcut(\"g then D\") // \"g then d\"\n```"
+      ]
+    },
+    {
       "name": "createShortcutGroup",
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 554,
+        "line": 539,
         "column": 1
       },
       "summary": "Creates an imperative group controller for many shortcut registrations.",
@@ -65,6 +90,22 @@
       "examples": []
     },
     {
+      "name": "ExceptOption",
+      "kind": "type",
+      "source": {
+        "file": "src/types.ts",
+        "line": 111,
+        "column": 1
+      },
+      "summary": "Everything `except` accepts: one preset, one predicate, or an array mixing\nboth. The array form is what lets an app keep the built-in presets while\nadding a guard of its own, instead of dropping to a lone predicate and\nreimplementing the presets by hand.",
+      "signature": null,
+      "params": [],
+      "returns": null,
+      "examples": [
+        "```ts\nexcept: [\"typing\", \"modal\", event => inSidebarTree(event.target)]\n```"
+      ]
+    },
+    {
       "name": "ExceptPredicate",
       "kind": "type",
       "source": {
@@ -88,29 +129,58 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 97,
+        "line": 98,
         "column": 1
       },
-      "summary": "Built-in exception presets for common scenarios\n- \"input\" - Skip when focused on input, textarea, or select\n- \"editable\" - Skip when focused on contentEditable elements\n- \"typing\" - Skip in any text input context (combines input + editable)\n- \"modal\" - Skip when a modal/dialog is open (checks [data-modal] or [role=\"dialog\"])\n- \"disabled\" - Skip when focused element is disabled",
+      "summary": "Built-in exception presets for common scenarios\n- \"input\" - Skip when focused on input, textarea, or select\n- \"editable\" - Skip when focused on contentEditable elements\n- \"typing\" - Skip in any text input context (combines input + editable)\n- \"modal\" - Skip when a modal is open (a native `dialog` promoted by\n  `showModal()`, `[data-modal=\"true\"]`, or `[role=\"dialog\"]`)\n- \"disabled\" - Skip when focused element is disabled",
       "signature": null,
       "params": [],
       "returns": null,
       "examples": []
     },
     {
+      "name": "findShortcutConflict",
+      "kind": "function",
+      "source": {
+        "file": "src/rebinding.ts",
+        "line": 121,
+        "column": 1
+      },
+      "summary": "The first already-bound combo that `combo` would collide with, or `null` when\nit is free. Wraps {@link shortcutConflict} for the common rebinding-UI case\nof validating one candidate against every existing binding.\n\nUnparseable entries in `existing` are skipped rather than thrown on, so one\nbad stored override cannot break the whole check.",
+      "signature": "(combo: string, existing: readonly string[], platform?: PlatformType): { combo: string; reason: \"exact\" | \"sequence-prefix\"; }",
+      "params": [
+        {
+          "name": "combo",
+          "description": "- The candidate shortcut string"
+        },
+        {
+          "name": "existing",
+          "description": "- Combos already bound elsewhere"
+        },
+        {
+          "name": "platform",
+          "description": "- Optional platform override (default: auto-detect)"
+        }
+      ],
+      "returns": "The colliding combo and reason, or `null` when there is no conflict",
+      "examples": [
+        "```ts\nfindShortcutConflict(\"mod+k\", [\"mod+s\", \"ctrl+k\"], \"windows\")\n// { combo: \"ctrl+k\", reason: \"exact\" }\n```"
+      ]
+    },
+    {
       "name": "formatShortcut",
       "kind": "function",
       "source": {
         "file": "src/formatter.ts",
-        "line": 55,
+        "line": 105,
         "column": 1
       },
-      "summary": "Format a shortcut string for display with platform-aware symbols",
+      "summary": "Format a shortcut string for display with platform-aware symbols\n\nSequences are formatted step by step and rejoined with `\" then \"`, matching\nhow they are written in a combo string.",
       "signature": "(shortcut: string, platform?: PlatformType): string",
       "params": [
         {
           "name": "shortcut",
-          "description": "- Shortcut string (e.g., \"cmd+s\")"
+          "description": "- Shortcut string (e.g., `\"cmd+s\"`, `\"g then d\"`)"
         },
         {
           "name": "platform",
@@ -119,7 +189,32 @@
       ],
       "returns": "Formatted display string (e.g., \"⌘S\" on Mac, \"Ctrl+S\" on Windows)",
       "examples": [
-        "```ts\nformatShortcut(\"cmd+s\") // \"⌘S\" on Mac, \"Ctrl+S\" on Windows\nformatShortcut(\"ctrl+shift+p\", \"mac\") // \"⌃⇧P\"\n```"
+        "```ts\nformatShortcut(\"cmd+s\") // \"⌘S\" on Mac, \"Ctrl+S\" on Windows\nformatShortcut(\"ctrl+shift+p\", \"mac\") // \"⌃⇧P\"\nformatShortcut(\"g then d\", \"windows\") // \"G then D\"\n```"
+      ]
+    },
+    {
+      "name": "formatShortcutSteps",
+      "kind": "function",
+      "source": {
+        "file": "src/formatter.ts",
+        "line": 77,
+        "column": 1
+      },
+      "summary": "Format each step of a shortcut separately, for UIs that render one `<kbd>`\nper step. A plain chord yields a single entry; a sequence yields one entry\nper step, so a cheat sheet never has to re-split a joined string.",
+      "signature": "(shortcut: string, platform?: PlatformType): string[]",
+      "params": [
+        {
+          "name": "shortcut",
+          "description": "- Shortcut string, chord or sequence (e.g., `\"g then d\"`)"
+        },
+        {
+          "name": "platform",
+          "description": "- Optional platform override (default: auto-detect)"
+        }
+      ],
+      "returns": "One formatted display string per sequence step",
+      "examples": [
+        "```ts\nformatShortcutSteps(\"g then d\", \"windows\") // [\"G\", \"D\"]\nformatShortcutSteps(\"mod+s\", \"mac\") // [\"⌘S\"]\n```"
       ]
     },
     {
@@ -141,7 +236,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 146,
+        "line": 167,
         "column": 1
       },
       "summary": "Extract modifier state from a keyboard event",
@@ -160,7 +255,7 @@
       "kind": "function",
       "source": {
         "file": "src/formatter.ts",
-        "line": 94,
+        "line": 126,
         "column": 1
       },
       "summary": "Get the modifier key symbols for a platform",
@@ -181,7 +276,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 179,
+        "line": 196,
         "column": 1
       },
       "summary": "Options for shortcut handler registration",
@@ -195,7 +290,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 248,
+        "line": 265,
         "column": 1
       },
       "summary": "Chain state after calling `.key()` - ready to attach a handler",
@@ -209,7 +304,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 187,
+        "line": 208,
         "column": 1
       },
       "summary": "Check if a keyboard event matches any of the parsed shortcuts",
@@ -232,7 +327,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 162,
+        "line": 183,
         "column": 1
       },
       "summary": "Check if a keyboard event matches a parsed shortcut",
@@ -269,7 +364,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 229,
+        "line": 246,
         "column": 1
       },
       "summary": "Chainable modifier builder with type-safe exhaustion\nEach modifier can only be used once in a chain",
@@ -409,7 +504,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 84,
+        "line": 105,
         "column": 1
       },
       "summary": "Parse a shortcut string into its components",
@@ -430,7 +525,7 @@
       "kind": "function",
       "source": {
         "file": "src/parser.ts",
-        "line": 135,
+        "line": 156,
         "column": 1
       },
       "summary": "Parse multiple shortcut strings",
@@ -463,7 +558,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 231,
+        "line": 216,
         "column": 1
       },
       "summary": "Registers an object-based shortcut map in one call and returns per-action handles.\n\n`keys` accepts one combo (`\"mod+s\"`), one sequence (`\"g then d\"`), or an\narray of alternatives (`[\"escape\", \"mod+d\"]`) where any alternative fires\nthe handler. Each alternative may itself be a sequence string.",
@@ -484,11 +579,40 @@
       ]
     },
     {
+      "name": "sameShortcut",
+      "kind": "function",
+      "source": {
+        "file": "src/rebinding.ts",
+        "line": 58,
+        "column": 1
+      },
+      "summary": "Whether two combos resolve to the same binding. Compares canonical forms\nrather than raw text, so `\"mod+k\"`, `\"Ctrl + K\"`, and a recorded `\"ctrl+k\"`\nare equal on platforms where `mod` means ctrl.",
+      "signature": "(a: string, b: string, platform?: PlatformType): boolean",
+      "params": [
+        {
+          "name": "a",
+          "description": "- First shortcut string"
+        },
+        {
+          "name": "b",
+          "description": "- Second shortcut string"
+        },
+        {
+          "name": "platform",
+          "description": "- Optional platform override (default: auto-detect)"
+        }
+      ],
+      "returns": "`true` when both combos would match the same keystrokes",
+      "examples": [
+        "```ts\nsameShortcut(\"mod+k\", \"ctrl+k\", \"windows\") // true\nsameShortcut(\"mod+k\", \"mod+j\") // false\n```"
+      ]
+    },
+    {
       "name": "ShortcutAttemptDebugEvent",
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 144,
+        "line": 161,
         "column": 1
       },
       "summary": "Per-shortcut debug payload describing how one registered shortcut was evaluated.",
@@ -502,7 +626,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 110,
+        "line": 127,
         "column": 1
       },
       "summary": "High-level match status for one shortcut attempt against the current keyboard input.",
@@ -516,7 +640,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 358,
+        "line": 375,
         "column": 1
       },
       "summary": "Declarative single shortcut binding used by `useShortcutBinding`.",
@@ -530,7 +654,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 286,
+        "line": 303,
         "column": 1
       },
       "summary": "The main shortcut builder interface returned by `useShortcut()`",
@@ -540,11 +664,40 @@
       "examples": []
     },
     {
+      "name": "shortcutConflict",
+      "kind": "function",
+      "source": {
+        "file": "src/rebinding.ts",
+        "line": 92,
+        "column": 1
+      },
+      "summary": "How two combos collide, or `null` when they can coexist. `\"exact\"` means they\nmatch the same keystrokes; `\"sequence-prefix\"` means one is a leading prefix\nof the other, so the shorter would fire before the longer can complete.\n\nThis is the same test the registry applies when it warns about conflicts,\nexposed so a rebinding UI can reject a combo before registering it.",
+      "signature": "(a: string, b: string, platform?: PlatformType): \"exact\" | \"sequence-prefix\"",
+      "params": [
+        {
+          "name": "a",
+          "description": "- First shortcut string"
+        },
+        {
+          "name": "b",
+          "description": "- Second shortcut string"
+        },
+        {
+          "name": "platform",
+          "description": "- Optional platform override (default: auto-detect)"
+        }
+      ],
+      "returns": "The conflict reason, or `null` if the two can be bound together",
+      "examples": [
+        "```ts\nshortcutConflict(\"mod+k\", \"ctrl+k\", \"windows\") // \"exact\"\nshortcutConflict(\"g\", \"g then d\") // \"sequence-prefix\"\nshortcutConflict(\"mod+k\", \"mod+j\") // null\n```"
+      ]
+    },
+    {
       "name": "ShortcutConflict",
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 103,
+        "line": 120,
         "column": 1
       },
       "summary": "Conflict metadata emitted when two registered shortcuts overlap.",
@@ -558,7 +711,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 159,
+        "line": 176,
         "column": 1
       },
       "summary": "Global debug payload emitted for every processed keyboard event.",
@@ -572,7 +725,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 132,
+        "line": 149,
         "column": 1
       },
       "summary": "Normalized view of the keyboard input that triggered debug processing.",
@@ -586,7 +739,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 165,
+        "line": 182,
         "column": 1
       },
       "summary": "Runtime debug configuration for console/debug-stream metadata.",
@@ -600,7 +753,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 123,
+        "line": 140,
         "column": 1
       },
       "summary": "Debug metadata for one step in a combo or multi-step shortcut sequence.",
@@ -614,7 +767,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 116,
+        "line": 133,
         "column": 1
       },
       "summary": "Debug metadata for one expected token in a shortcut step.",
@@ -628,7 +781,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 113,
+        "line": 130,
         "column": 1
       },
       "summary": "Token-level verdict for modifiers and keys inside debug attempt payloads.",
@@ -642,7 +795,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 369,
+        "line": 386,
         "column": 1
       },
       "summary": "Imperative grouping controller for binding/unbinding many shortcut registrations together.",
@@ -675,7 +828,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 361,
+        "line": 378,
         "column": 1
       },
       "summary": "Bulk registration shape mapping action ids to key+handler definitions.",
@@ -689,7 +842,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 346,
+        "line": 363,
         "column": 1
       },
       "summary": "Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.",
@@ -703,7 +856,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 364,
+        "line": 381,
         "column": 1
       },
       "summary": "Return type for map registrations, keyed by the same ids as the source map.",
@@ -717,7 +870,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 275,
+        "line": 292,
         "column": 1
       },
       "summary": "Options for `ShortcutBuilder.record()` and low-level recording flows.",
@@ -731,7 +884,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 206,
+        "line": 223,
         "column": 1
       },
       "summary": "Result object returned when registering a shortcut\nProvides control over the shortcut and display information",
@@ -745,7 +898,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 100,
+        "line": 117,
         "column": 1
       },
       "summary": "Scope selector used to enable/disable subsets of shortcuts at runtime.",
@@ -801,7 +954,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 283,
+        "line": 268,
         "column": 1
       },
       "summary": "React hook for registering chainable keyboard shortcuts",
@@ -822,7 +975,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 374,
+        "line": 359,
         "column": 1
       },
       "summary": "React hook for one cleanup-safe shortcut binding.",
@@ -864,7 +1017,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 592,
+        "line": 577,
         "column": 1
       },
       "summary": "React hook that returns a stable `ShortcutGroup` instance.",
@@ -880,7 +1033,7 @@
       "kind": "function",
       "source": {
         "file": "src/hook.ts",
-        "line": 474,
+        "line": 459,
         "column": 1
       },
       "summary": "React hook that registers a shortcut map and automatically unbinds on cleanup.\n\nHandlers are kept in a ref, so inline handler functions never cause\nre-registration. The returned map and its per-id results are stable object\nreferences, safe to destructure at any point in the component lifecycle.",
@@ -905,7 +1058,7 @@
       "kind": "type",
       "source": {
         "file": "src/types.ts",
-        "line": 316,
+        "line": 333,
         "column": 1
       },
       "summary": "Options for the `useShortcut` hook",

@@ -29,6 +29,7 @@ export type {
     KeyChain,
     ExceptPreset,
     ExceptPredicate,
+    ExceptOption,
     ShortcutScope,
     ShortcutConflict,
     ShortcutAttemptStatus,
@@ -55,7 +56,14 @@ export {
     getModifiersFromEvent,
 } from "./parser"
 
-export { formatShortcut, getModifierSymbols } from "./formatter"
+export { formatShortcut, formatShortcutSteps, getModifierSymbols } from "./formatter"
+
+export {
+    canonicalizeShortcut,
+    sameShortcut,
+    shortcutConflict,
+    findShortcutConflict,
+} from "./rebinding"
 
 export {
     useShortcut,

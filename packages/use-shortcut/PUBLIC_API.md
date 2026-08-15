@@ -42,7 +42,19 @@ Source of truth: `src/formatter.ts`.
 Exports:
 
 - `formatShortcut(shortcut, platform?)`
+- `formatShortcutSteps(shortcut, platform?)`
 - `getModifierSymbols(platform?)`
+
+### `@remcostoeten/use-shortcut/rebinding`
+
+Source of truth: `src/rebinding.ts`.
+
+Exports:
+
+- `canonicalizeShortcut(combo, platform?)`
+- `sameShortcut(a, b, platform?)`
+- `shortcutConflict(a, b, platform?)`
+- `findShortcutConflict(combo, existing, platform?)`
 
 ### `@remcostoeten/use-shortcut/constants`
 
@@ -81,7 +93,15 @@ Exports:
 ### Formatting functions
 
 - `formatShortcut(shortcut, platform?)`
+- `formatShortcutSteps(shortcut, platform?)`
 - `getModifierSymbols(platform?)`
+
+### Rebinding functions
+
+- `canonicalizeShortcut(combo, platform?)`
+- `sameShortcut(a, b, platform?)`
+- `shortcutConflict(a, b, platform?)`
+- `findShortcutConflict(combo, existing, platform?)`
 
 ### React hooks and registration helpers
 
@@ -115,6 +135,7 @@ Exports:
 - `KeyChain`
 - `ExceptPreset`
 - `ExceptPredicate`
+- `ExceptOption`
 - `ShortcutScope`
 - `ShortcutConflict`
 - `ShortcutAttemptStatus`

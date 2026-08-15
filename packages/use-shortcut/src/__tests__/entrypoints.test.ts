@@ -6,6 +6,7 @@ import * as reactEntry from "../react"
 import * as parserEntry from "../parser"
 import * as formatterEntry from "../formatter"
 import * as constantsEntry from "../constants"
+import * as rebindingEntry from "../rebinding"
 
 const packageJson = JSON.parse(
     readFileSync(join(process.cwd(), "package.json"), "utf8"),
@@ -21,6 +22,7 @@ describe("package entrypoints", () => {
             "./parser",
             "./formatter",
             "./constants",
+            "./rebinding",
         ])
     })
 
@@ -42,7 +44,15 @@ describe("package entrypoints", () => {
 
     it("exposes formatter helpers from the formatter entrypoint", () => {
         expect(formatterEntry.formatShortcut).toBeTypeOf("function")
+        expect(formatterEntry.formatShortcutSteps).toBeTypeOf("function")
         expect(formatterEntry.getModifierSymbols).toBeTypeOf("function")
+    })
+
+    it("exposes rebinding helpers from the rebinding entrypoint", () => {
+        expect(rebindingEntry.canonicalizeShortcut).toBeTypeOf("function")
+        expect(rebindingEntry.sameShortcut).toBeTypeOf("function")
+        expect(rebindingEntry.shortcutConflict).toBeTypeOf("function")
+        expect(rebindingEntry.findShortcutConflict).toBeTypeOf("function")
     })
 
     it("exposes platform constants from the constants entrypoint", () => {
@@ -53,6 +63,14 @@ describe("package entrypoints", () => {
         expect(constantsEntry.ModifierDisplayOrder).toBeDefined()
         expect(constantsEntry.Platform).toBeDefined()
         expect(constantsEntry.detectPlatform).toBeTypeOf("function")
+    })
+
+    it("re-exports the formatter and rebinding surfaces from the root barrel", () => {
+        expect(rootEntry.formatShortcutSteps).toBe(formatterEntry.formatShortcutSteps)
+        expect(rootEntry.canonicalizeShortcut).toBe(rebindingEntry.canonicalizeShortcut)
+        expect(rootEntry.sameShortcut).toBe(rebindingEntry.sameShortcut)
+        expect(rootEntry.shortcutConflict).toBe(rebindingEntry.shortcutConflict)
+        expect(rootEntry.findShortcutConflict).toBe(rebindingEntry.findShortcutConflict)
     })
 
     it("keeps the root barrel compatible with the React-first surface", () => {

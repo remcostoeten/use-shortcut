@@ -6,8 +6,7 @@ import type {
     ShortcutDebugEvent,
     ShortcutScope,
     UseShortcutOptions,
-    ExceptPreset,
-    ExceptPredicate,
+    ExceptOption,
     ShortcutHandler,
     ShortcutRecordingOptions,
 } from "./types"
@@ -152,7 +151,7 @@ export function _createShortcutBuilder(options: UseShortcutOptions = {}): {
 
                 return _createChain(newState)
             },
-            except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => {
+            except: (condition: ExceptOption) => {
                 _debugLog(currentState.options.debug, "Chain: .except()", condition)
 
                 return _createChain({ ...currentState, except: condition })

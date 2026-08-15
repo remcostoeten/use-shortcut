@@ -91,10 +91,27 @@ export type ExceptPredicate = (event: KeyboardEvent) => boolean
  * - "input" - Skip when focused on input, textarea, or select
  * - "editable" - Skip when focused on contentEditable elements
  * - "typing" - Skip in any text input context (combines input + editable)
- * - "modal" - Skip when a modal/dialog is open (checks [data-modal] or [role="dialog"])
+ * - "modal" - Skip when a modal is open (a native `dialog` promoted by
+ *   `showModal()`, `[data-modal="true"]`, or `[role="dialog"]`)
  * - "disabled" - Skip when focused element is disabled
  */
 export type ExceptPreset = "input" | "editable" | "typing" | "modal" | "disabled"
+
+/**
+ * Everything `except` accepts: one preset, one predicate, or an array mixing
+ * both. The array form is what lets an app keep the built-in presets while
+ * adding a guard of its own, instead of dropping to a lone predicate and
+ * reimplementing the presets by hand.
+ *
+ * @example
+ * ```ts
+ * except: ["typing", "modal", event => inSidebarTree(event.target)]
+ * ```
+ */
+export type ExceptOption =
+    | ExceptPreset
+    | ExceptPredicate
+    | Array<ExceptPreset | ExceptPredicate>
 
 /** Scope selector used to enable/disable subsets of shortcuts at runtime. */
 export type ShortcutScope = string | string[]
@@ -188,7 +205,7 @@ export type HandlerOptions = {
     /** Disable this specific shortcut */
     disabled?: boolean
     /** Conditions to skip the shortcut */
-    except?: ExceptPreset | ExceptPreset[] | ExceptPredicate
+    except?: ExceptOption
     /** Required named scopes that must be active */
     scopes?: ShortcutScope
     /** Timeout in ms for multi-step sequences */
@@ -253,7 +270,7 @@ export type KeyChain<Key extends string> = {
     /** Bind a combo string mid-chain */
     bind: (combo: string | string[]) => KeyChain<string>
     /** Add exception conditions before attaching handler */
-    except: (condition: ExceptPreset | ExceptPreset[] | ExceptPredicate) => KeyChainWithExcept<Key>
+    except: (condition: ExceptOption) => KeyChainWithExcept<Key>
     /** Add required named scopes */
     in: (scopes: ShortcutScope) => KeyChain<Key>
     /** Add the next step in a sequence */

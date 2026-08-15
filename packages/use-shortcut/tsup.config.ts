@@ -7,6 +7,7 @@ export default defineConfig({
         "src/parser.ts",
         "src/formatter.ts",
         "src/constants.ts",
+        "src/rebinding.ts",
     ],
     format: ["cjs", "esm"],
     dts: true,

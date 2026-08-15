@@ -1,6 +1,6 @@
 {
     "name": "@remcostoeten/use-shortcut",
-    "version": "2.5.0",
+    "version": "2.5.1",
     "description": "Tiny, chainable React keyboard shortcuts with sequences, scopes, and typed debug hooks.",
     "author": "Remco Stoeten",
     "license": "MIT",
@@ -75,6 +75,16 @@
             "require": {
                 "types": "./dist/constants.d.ts",
                 "default": "./dist/constants.js"
+            }
+        },
+        "./rebinding": {
+            "import": {
+                "types": "./dist/rebinding.d.ts",
+                "default": "./dist/rebinding.mjs"
+            },
+            "require": {
+                "types": "./dist/rebinding.d.ts",
+                "default": "./dist/rebinding.js"
             }
         }
     },

@@ -33,6 +33,27 @@ export const _SHIFTED_KEY_MAP: Record<string, string> = {
     "`": "~",
 }
 
+/**
+ * Splits a combo into its sequence steps. `"g then d"` is two steps, and so is
+ * the bare-space form `"g d"`; anything else is a single step. Lives beside the
+ * parser so the dispatcher and the formatter can never disagree about where one
+ * step ends and the next begins.
+ */
+export function _splitSequenceSteps(combo: string): string[] {
+    const trimmed = combo.trim()
+    if (!trimmed) return []
+
+    if (/\sthen\s/i.test(trimmed)) {
+        return trimmed.split(/\s+then\s+/i).map((step) => step.trim()).filter(Boolean)
+    }
+
+    if (trimmed.includes(" ") && !trimmed.includes("+")) {
+        return trimmed.split(/\s+/)
+    }
+
+    return [trimmed]
+}
+
 function _tokenizeShortcut(shortcut: string): string[] {
     const normalized = shortcut.toLowerCase().trim()
 

@@ -2,8 +2,7 @@ import type {
     ModifierFlags,
     ShortcutHandler,
     UseShortcutOptions,
-    ExceptPreset,
-    ExceptPredicate,
+    ExceptOption,
     ShortcutScope,
     ParsedShortcut,
     ShortcutDebugEvent,
@@ -15,7 +14,7 @@ export type BuilderState = {
     steps: string[]
     boundCombos?: string[]
     options: UseShortcutOptions
-    except?: ExceptPreset | ExceptPreset[] | ExceptPredicate
+    except?: ExceptOption
     scopes?: ShortcutScope
 }
 
@@ -34,7 +33,7 @@ export type RegistryEntry = {
     lastMatchedAt: number
     debugHistory: string[]
     lastDebugAt: number
-    except?: ExceptPreset | ExceptPreset[] | ExceptPredicate
+    except?: ExceptOption
     delay: number
     sequenceTimeout: number
     preventDefault: boolean

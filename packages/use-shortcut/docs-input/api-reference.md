@@ -21,10 +21,36 @@ $.mod.key("s") // "s" is an ActionKey
 
 Lowercase letter keys a-z
 
+## canonicalizeShortcut
+
+- Kind: `function`
+- Source: `src/rebinding.ts:37:1`
+- Signature: `(combo: string, platform?: PlatformType): string`
+
+Reduce a combo to the canonical form the dispatcher matches on, so two
+spellings of one binding compare and store as the same string. Modifiers are
+ordered, aliases resolved, and `mod` is expanded for the target platform.
+
+Use it as the storage form for user rebinds; a recorded `"Ctrl + K"` and a
+default of `"mod+k"` should not persist as two different settings values.
+
+Parameters:
+- `combo`: - Shortcut string, chord or sequence
+- `platform`: - Optional platform override (default: auto-detect)
+
+Returns: Canonical combo string, sequence steps rejoined with `" then "`
+
+Examples:
+```ts
+canonicalizeShortcut("Ctrl + K", "windows") // "ctrl+k"
+canonicalizeShortcut("mod+k", "windows") // "ctrl+k"
+canonicalizeShortcut("g then D") // "g then d"
+```
+
 ## createShortcutGroup
 
 - Kind: `function`
-- Source: `src/hook.ts:554:1`
+- Source: `src/hook.ts:539:1`
 - Signature: `(): ShortcutGroup`
 
 Creates an imperative group controller for many shortcut registrations.
@@ -48,6 +74,21 @@ group.unbindAll()
 Detect the current OS platform for modifier normalization and display formatting.
 Result is memoized for the page lifecycle.
 
+## ExceptOption
+
+- Kind: `type`
+- Source: `src/types.ts:111:1`
+
+Everything `except` accepts: one preset, one predicate, or an array mixing
+both. The array form is what lets an app keep the built-in presets while
+adding a guard of its own, instead of dropping to a lone predicate and
+reimplementing the presets by hand.
+
+Examples:
+```ts
+except: ["typing", "modal", event => inSidebarTree(event.target)]
+```
+
 ## ExceptPredicate
 
 - Kind: `type`
@@ -63,25 +104,55 @@ Returns: `true` to skip the shortcut, `false` to allow it
 ## ExceptPreset
 
 - Kind: `type`
-- Source: `src/types.ts:97:1`
+- Source: `src/types.ts:98:1`
 
 Built-in exception presets for common scenarios
 - "input" - Skip when focused on input, textarea, or select
 - "editable" - Skip when focused on contentEditable elements
 - "typing" - Skip in any text input context (combines input + editable)
-- "modal" - Skip when a modal/dialog is open (checks [data-modal] or [role="dialog"])
+- "modal" - Skip when a modal is open (a native `dialog` promoted by
+  `showModal()`, `[data-modal="true"]`, or `[role="dialog"]`)
 - "disabled" - Skip when focused element is disabled
+
+## findShortcutConflict
+
+- Kind: `function`
+- Source: `src/rebinding.ts:121:1`
+- Signature: `(combo: string, existing: readonly string[], platform?: PlatformType): { combo: string; reason: "exact" | "sequence-prefix"; }`
+
+The first already-bound combo that `combo` would collide with, or `null` when
+it is free. Wraps {@link shortcutConflict} for the common rebinding-UI case
+of validating one candidate against every existing binding.
+
+Unparseable entries in `existing` are skipped rather than thrown on, so one
+bad stored override cannot break the whole check.
+
+Parameters:
+- `combo`: - The candidate shortcut string
+- `existing`: - Combos already bound elsewhere
+- `platform`: - Optional platform override (default: auto-detect)
+
+Returns: The colliding combo and reason, or `null` when there is no conflict
+
+Examples:
+```ts
+findShortcutConflict("mod+k", ["mod+s", "ctrl+k"], "windows")
+// { combo: "ctrl+k", reason: "exact" }
+```
 
 ## formatShortcut
 
 - Kind: `function`
-- Source: `src/formatter.ts:55:1`
+- Source: `src/formatter.ts:105:1`
 - Signature: `(shortcut: string, platform?: PlatformType): string`
 
 Format a shortcut string for display with platform-aware symbols
 
+Sequences are formatted step by step and rejoined with `" then "`, matching
+how they are written in a combo string.
+
 Parameters:
-- `shortcut`: - Shortcut string (e.g., "cmd+s")
+- `shortcut`: - Shortcut string (e.g., `"cmd+s"`, `"g then d"`)
 - `platform`: - Optional platform override (default: auto-detect)
 
 Returns: Formatted display string (e.g., "⌘S" on Mac, "Ctrl+S" on Windows)
@@ -90,6 +161,29 @@ Examples:
 ```ts
 formatShortcut("cmd+s") // "⌘S" on Mac, "Ctrl+S" on Windows
 formatShortcut("ctrl+shift+p", "mac") // "⌃⇧P"
+formatShortcut("g then d", "windows") // "G then D"
+```
+
+## formatShortcutSteps
+
+- Kind: `function`
+- Source: `src/formatter.ts:77:1`
+- Signature: `(shortcut: string, platform?: PlatformType): string[]`
+
+Format each step of a shortcut separately, for UIs that render one `<kbd>`
+per step. A plain chord yields a single entry; a sequence yields one entry
+per step, so a cheat sheet never has to re-split a joined string.
+
+Parameters:
+- `shortcut`: - Shortcut string, chord or sequence (e.g., `"g then d"`)
+- `platform`: - Optional platform override (default: auto-detect)
+
+Returns: One formatted display string per sequence step
+
+Examples:
+```ts
+formatShortcutSteps("g then d", "windows") // ["G", "D"]
+formatShortcutSteps("mod+s", "mac") // ["⌘S"]
 ```
 
 ## FunctionKey
@@ -102,7 +196,7 @@ Function keys F1-F12
 ## getModifiersFromEvent
 
 - Kind: `function`
-- Source: `src/parser.ts:146:1`
+- Source: `src/parser.ts:167:1`
 - Signature: `(event: KeyboardEvent): ModifierState`
 
 Extract modifier state from a keyboard event
@@ -115,7 +209,7 @@ Returns: Object with meta, ctrl, alt, shift boolean flags
 ## getModifierSymbols
 
 - Kind: `function`
-- Source: `src/formatter.ts:94:1`
+- Source: `src/formatter.ts:126:1`
 - Signature: `(platform?: PlatformType): Record<ModifierKeyType, string>`
 
 Get the modifier key symbols for a platform
@@ -133,21 +227,21 @@ getModifierSymbols("mac") // { meta: "⌘", ctrl: "⌃", alt: "⌥", shift: "⇧
 ## HandlerOptions
 
 - Kind: `type`
-- Source: `src/types.ts:179:1`
+- Source: `src/types.ts:196:1`
 
 Options for shortcut handler registration
 
 ## KeyChain
 
 - Kind: `type`
-- Source: `src/types.ts:248:1`
+- Source: `src/types.ts:265:1`
 
 Chain state after calling `.key()` - ready to attach a handler
 
 ## matchesAnyShortcut
 
 - Kind: `function`
-- Source: `src/parser.ts:187:1`
+- Source: `src/parser.ts:208:1`
 - Signature: `(event: KeyboardEvent, parsedShortcuts: ParsedShortcut[]): boolean`
 
 Check if a keyboard event matches any of the parsed shortcuts
@@ -161,7 +255,7 @@ Returns: `true` if the event matches any shortcut
 ## matchesShortcut
 
 - Kind: `function`
-- Source: `src/parser.ts:162:1`
+- Source: `src/parser.ts:183:1`
 - Signature: `(event: KeyboardEvent, parsed: ParsedShortcut): boolean`
 
 Check if a keyboard event matches a parsed shortcut
@@ -182,7 +276,7 @@ Alias map from user-facing modifier tokens to canonical modifier keys.
 ## ModifierChain
 
 - Kind: `type`
-- Source: `src/types.ts:229:1`
+- Source: `src/types.ts:246:1`
 
 Chainable modifier builder with type-safe exhaustion
 Each modifier can only be used once in a chain
@@ -253,7 +347,7 @@ Result of parsing a shortcut string
 ## parseShortcut
 
 - Kind: `function`
-- Source: `src/parser.ts:84:1`
+- Source: `src/parser.ts:105:1`
 - Signature: `(shortcut: string, platform?: PlatformType): ParsedShortcut`
 
 Parse a shortcut string into its components
@@ -272,7 +366,7 @@ const parsed = parseShortcut("cmd+s")
 ## parseShortcuts
 
 - Kind: `function`
-- Source: `src/parser.ts:135:1`
+- Source: `src/parser.ts:156:1`
 - Signature: `(shortcuts: string | string[], platform?: PlatformType): ParsedShortcut[]`
 
 Parse multiple shortcut strings
@@ -292,7 +386,7 @@ Public platform constant alias (`Platform.MAC`, `Platform.WINDOWS`, `Platform.LI
 ## registerShortcutMap
 
 - Kind: `function`
-- Source: `src/hook.ts:231:1`
+- Source: `src/hook.ts:216:1`
 - Signature: `<T extends ShortcutMap>(builder: ShortcutBuilder, shortcutMap: T): ShortcutMapResult<T>`
 
 Registers an object-based shortcut map in one call and returns per-action handles.
@@ -324,87 +418,137 @@ useEffect(() => {
 }, [$, group, onSave, onGoDashboard, onClose])
 ```
 
+## sameShortcut
+
+- Kind: `function`
+- Source: `src/rebinding.ts:58:1`
+- Signature: `(a: string, b: string, platform?: PlatformType): boolean`
+
+Whether two combos resolve to the same binding. Compares canonical forms
+rather than raw text, so `"mod+k"`, `"Ctrl + K"`, and a recorded `"ctrl+k"`
+are equal on platforms where `mod` means ctrl.
+
+Parameters:
+- `a`: - First shortcut string
+- `b`: - Second shortcut string
+- `platform`: - Optional platform override (default: auto-detect)
+
+Returns: `true` when both combos would match the same keystrokes
+
+Examples:
+```ts
+sameShortcut("mod+k", "ctrl+k", "windows") // true
+sameShortcut("mod+k", "mod+j") // false
+```
+
 ## ShortcutAttemptDebugEvent
 
 - Kind: `type`
-- Source: `src/types.ts:144:1`
+- Source: `src/types.ts:161:1`
 
 Per-shortcut debug payload describing how one registered shortcut was evaluated.
 
 ## ShortcutAttemptStatus
 
 - Kind: `type`
-- Source: `src/types.ts:110:1`
+- Source: `src/types.ts:127:1`
 
 High-level match status for one shortcut attempt against the current keyboard input.
 
 ## ShortcutBinding
 
 - Kind: `type`
-- Source: `src/types.ts:358:1`
+- Source: `src/types.ts:375:1`
 
 Declarative single shortcut binding used by `useShortcutBinding`.
 
 ## ShortcutBuilder
 
 - Kind: `type`
-- Source: `src/types.ts:286:1`
+- Source: `src/types.ts:303:1`
 
 The main shortcut builder interface returned by `useShortcut()`
+
+## shortcutConflict
+
+- Kind: `function`
+- Source: `src/rebinding.ts:92:1`
+- Signature: `(a: string, b: string, platform?: PlatformType): "exact" | "sequence-prefix"`
+
+How two combos collide, or `null` when they can coexist. `"exact"` means they
+match the same keystrokes; `"sequence-prefix"` means one is a leading prefix
+of the other, so the shorter would fire before the longer can complete.
+
+This is the same test the registry applies when it warns about conflicts,
+exposed so a rebinding UI can reject a combo before registering it.
+
+Parameters:
+- `a`: - First shortcut string
+- `b`: - Second shortcut string
+- `platform`: - Optional platform override (default: auto-detect)
+
+Returns: The conflict reason, or `null` if the two can be bound together
+
+Examples:
+```ts
+shortcutConflict("mod+k", "ctrl+k", "windows") // "exact"
+shortcutConflict("g", "g then d") // "sequence-prefix"
+shortcutConflict("mod+k", "mod+j") // null
+```
 
 ## ShortcutConflict
 
 - Kind: `type`
-- Source: `src/types.ts:103:1`
+- Source: `src/types.ts:120:1`
 
 Conflict metadata emitted when two registered shortcuts overlap.
 
 ## ShortcutDebugEvent
 
 - Kind: `type`
-- Source: `src/types.ts:159:1`
+- Source: `src/types.ts:176:1`
 
 Global debug payload emitted for every processed keyboard event.
 
 ## ShortcutDebugInput
 
 - Kind: `type`
-- Source: `src/types.ts:132:1`
+- Source: `src/types.ts:149:1`
 
 Normalized view of the keyboard input that triggered debug processing.
 
 ## ShortcutDebugOptions
 
 - Kind: `type`
-- Source: `src/types.ts:165:1`
+- Source: `src/types.ts:182:1`
 
 Runtime debug configuration for console/debug-stream metadata.
 
 ## ShortcutDebugStep
 
 - Kind: `type`
-- Source: `src/types.ts:123:1`
+- Source: `src/types.ts:140:1`
 
 Debug metadata for one step in a combo or multi-step shortcut sequence.
 
 ## ShortcutDebugToken
 
 - Kind: `type`
-- Source: `src/types.ts:116:1`
+- Source: `src/types.ts:133:1`
 
 Debug metadata for one expected token in a shortcut step.
 
 ## ShortcutDebugTokenStatus
 
 - Kind: `type`
-- Source: `src/types.ts:113:1`
+- Source: `src/types.ts:130:1`
 
 Token-level verdict for modifiers and keys inside debug attempt payloads.
 
 ## ShortcutGroup
 
 - Kind: `type`
-- Source: `src/types.ts:369:1`
+- Source: `src/types.ts:386:1`
 
 Imperative grouping controller for binding/unbinding many shortcut registrations together.
 
@@ -421,35 +565,35 @@ Parameters:
 ## ShortcutMap
 
 - Kind: `type`
-- Source: `src/types.ts:361:1`
+- Source: `src/types.ts:378:1`
 
 Bulk registration shape mapping action ids to key+handler definitions.
 
 ## ShortcutMapEntry
 
 - Kind: `type`
-- Source: `src/types.ts:346:1`
+- Source: `src/types.ts:363:1`
 
 Single shortcut-map entry used by `registerShortcutMap` and `useShortcutMap`.
 
 ## ShortcutMapResult
 
 - Kind: `type`
-- Source: `src/types.ts:364:1`
+- Source: `src/types.ts:381:1`
 
 Return type for map registrations, keyed by the same ids as the source map.
 
 ## ShortcutRecordingOptions
 
 - Kind: `type`
-- Source: `src/types.ts:275:1`
+- Source: `src/types.ts:292:1`
 
 Options for `ShortcutBuilder.record()` and low-level recording flows.
 
 ## ShortcutResult
 
 - Kind: `type`
-- Source: `src/types.ts:206:1`
+- Source: `src/types.ts:223:1`
 
 Result object returned when registering a shortcut
 Provides control over the shortcut and display information
@@ -457,7 +601,7 @@ Provides control over the shortcut and display information
 ## ShortcutScope
 
 - Kind: `type`
-- Source: `src/types.ts:100:1`
+- Source: `src/types.ts:117:1`
 
 Scope selector used to enable/disable subsets of shortcuts at runtime.
 
@@ -485,7 +629,7 @@ Symbol and punctuation keys
 ## useShortcut
 
 - Kind: `function`
-- Source: `src/hook.ts:283:1`
+- Source: `src/hook.ts:268:1`
 - Signature: `(options?: UseShortcutOptions): ShortcutBuilder`
 
 React hook for registering chainable keyboard shortcuts
@@ -512,7 +656,7 @@ useEffect(() => {
 ## useShortcutBinding
 
 - Kind: `function`
-- Source: `src/hook.ts:374:1`
+- Source: `src/hook.ts:359:1`
 - Signature: `(keys: string | string[], handler: ShortcutHandler, options?: HandlerOptions, shortcutOptions?: UseShortcutOptions): ShortcutResult`
 
 React hook for one cleanup-safe shortcut binding.
@@ -545,7 +689,7 @@ const closeShortcut = useShortcutBinding({
 ## useShortcutGroup
 
 - Kind: `function`
-- Source: `src/hook.ts:592:1`
+- Source: `src/hook.ts:577:1`
 - Signature: `(): ShortcutGroup`
 
 React hook that returns a stable `ShortcutGroup` instance.
@@ -560,7 +704,7 @@ const group = useShortcutGroup()
 ## useShortcutMap
 
 - Kind: `function`
-- Source: `src/hook.ts:474:1`
+- Source: `src/hook.ts:459:1`
 - Signature: `<T extends ShortcutMap>(shortcutMap: T, options?: UseShortcutOptions): ShortcutMapResult<T>`
 
 React hook that registers a shortcut map and automatically unbinds on cleanup.
@@ -586,7 +730,7 @@ const { save, close } = useShortcutMap({
 ## UseShortcutOptions
 
 - Kind: `type`
-- Source: `src/types.ts:316:1`
+- Source: `src/types.ts:333:1`
 
 Options for the `useShortcut` hook
 

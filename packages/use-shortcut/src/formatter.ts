@@ -6,7 +6,7 @@ import {
     type ModifierKeyType,
     type PlatformType,
 } from "./constants"
-import { parseShortcut } from "./parser"
+import { _splitSequenceSteps, parseShortcut } from "./parser"
 
 const _BASE_DISPLAY_NAMES: Record<string, string> = {
     ArrowUp: "↑",
@@ -39,24 +39,10 @@ const _NON_MAC_DISPLAY_NAMES: Record<string, string> = {
     " ": "Space",
 }
 
-/**
- * Format a shortcut string for display with platform-aware symbols
- *
- * @param shortcut - Shortcut string (e.g., "cmd+s")
- * @param platform - Optional platform override (default: auto-detect)
- * @returns Formatted display string (e.g., "⌘S" on Mac, "Ctrl+S" on Windows)
- *
- * @example
- * ```ts
- * formatShortcut("cmd+s") // "⌘S" on Mac, "Ctrl+S" on Windows
- * formatShortcut("ctrl+shift+p", "mac") // "⌃⇧P"
- * ```
- */
-export function formatShortcut(shortcut: string, platform?: PlatformType): string {
-    const targetPlatform = platform ?? detectPlatform()
-    const parsed = parseShortcut(shortcut, targetPlatform)
-    const symbols = ModifierDisplaySymbols[targetPlatform]
-    const order = ModifierDisplayOrder[targetPlatform]
+function _formatStep(step: string, platform: PlatformType): string {
+    const parsed = parseShortcut(step, platform)
+    const symbols = ModifierDisplaySymbols[platform]
+    const order = ModifierDisplayOrder[platform]
 
     const parts: string[] = []
 
@@ -66,12 +52,58 @@ export function formatShortcut(shortcut: string, platform?: PlatformType): strin
         }
     }
 
-    const displayKey = _formatKey(parsed.key, targetPlatform)
-    parts.push(displayKey)
+    parts.push(_formatKey(parsed.key, platform))
 
-    const separator = targetPlatform === OS.MAC ? "" : "+"
+    const separator = platform === OS.MAC ? "" : "+"
 
     return parts.join(separator)
+}
+
+/**
+ * Format each step of a shortcut separately, for UIs that render one `<kbd>`
+ * per step. A plain chord yields a single entry; a sequence yields one entry
+ * per step, so a cheat sheet never has to re-split a joined string.
+ *
+ * @param shortcut - Shortcut string, chord or sequence (e.g., `"g then d"`)
+ * @param platform - Optional platform override (default: auto-detect)
+ * @returns One formatted display string per sequence step
+ *
+ * @example
+ * ```ts
+ * formatShortcutSteps("g then d", "windows") // ["G", "D"]
+ * formatShortcutSteps("mod+s", "mac") // ["⌘S"]
+ * ```
+ */
+export function formatShortcutSteps(shortcut: string, platform?: PlatformType): string[] {
+    const targetPlatform = platform ?? detectPlatform()
+    const steps = _splitSequenceSteps(shortcut)
+
+    if (steps.length === 0) {
+        throw new Error(`Invalid shortcut: "${shortcut}"`)
+    }
+
+    return steps.map(step => _formatStep(step, targetPlatform))
+}
+
+/**
+ * Format a shortcut string for display with platform-aware symbols
+ *
+ * Sequences are formatted step by step and rejoined with `" then "`, matching
+ * how they are written in a combo string.
+ *
+ * @param shortcut - Shortcut string (e.g., `"cmd+s"`, `"g then d"`)
+ * @param platform - Optional platform override (default: auto-detect)
+ * @returns Formatted display string (e.g., "⌘S" on Mac, "Ctrl+S" on Windows)
+ *
+ * @example
+ * ```ts
+ * formatShortcut("cmd+s") // "⌘S" on Mac, "Ctrl+S" on Windows
+ * formatShortcut("ctrl+shift+p", "mac") // "⌃⇧P"
+ * formatShortcut("g then d", "windows") // "G then D"
+ * ```
+ */
+export function formatShortcut(shortcut: string, platform?: PlatformType): string {
+    return formatShortcutSteps(shortcut, platform).join(" then ")
 }
 
 function _formatKey(key: string, platform: PlatformType): string {

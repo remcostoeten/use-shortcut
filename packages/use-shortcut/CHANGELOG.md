@@ -5,7 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-08-15
+
+### Fixed
+
+- The `modal` except-preset now detects native dialogs. It previously matched only `[data-modal="true"]` and `[role="dialog"]`, so a `<dialog>` opened with `showModal()` — the accessible, top-layer-correct way to build a modal — did not suppress shortcuts, and global keys kept firing underneath it. Where the `:modal` pseudo-class is supported the preset matches only dialogs actually promoted to the top layer; elsewhere it falls back to `dialog[open]`.
+
+### Added
+
+- `except` accepts an array mixing built-in presets and custom predicates, for example `["typing", "modal", event => inSidebarTree(event.target)]`. Previously a binding that needed one app-specific guard had to pass a lone predicate and reimplement the presets by hand. The single-preset, preset-array, and single-predicate forms are unchanged. The combined type is exported as `ExceptOption`.
+- `formatShortcutSteps(shortcut, platform?)` returns one display string per sequence step, for cheat sheets that render a `<kbd>` per step.
+- New `@remcostoeten/use-shortcut/rebinding` entrypoint, also re-exported from the root barrel, with the primitives a "customize shortcuts" UI needs after recording a combo: `canonicalizeShortcut` for a storage-safe canonical form, `sameShortcut` for equality by meaning rather than text, and `shortcutConflict` / `findShortcutConflict` to reject a candidate before registering it. These apply the same canonicalization and conflict rules the registry uses internally.
+
+### Changed
+
+- `formatShortcut` understands sequences. `formatShortcut("g then d")` previously parsed the whole string as a single chord and returned garbage (`"THENGT"`); it now formats each step and rejoins with `" then "`. It also throws `Invalid shortcut` on a blank combo, matching `parseShortcut`.
+
 ## [2.5.0] - 2026-08-13
+
+Prepared but never published to npm; its entries ship as part of 2.5.1.
 
 ### Fixed
 

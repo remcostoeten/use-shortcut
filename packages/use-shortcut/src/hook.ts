@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useMemo } from "react"
 import { _createShortcutBuilder } from "./builder"
-import { parseShortcut } from "./parser"
+import { _splitSequenceSteps, parseShortcut } from "./parser"
 import { _combineShortcutResults, _removeRegistryEntry } from "./runtime/binding"
 import { _attachRegistryListener, _detachRegistryListener } from "./runtime/listener"
 import type {
@@ -91,21 +91,6 @@ function _areShortcutMapsEquivalent(a: ShortcutMap, b: ShortcutMap): boolean {
     }
 
     return true
-}
-
-function _splitSequenceSteps(combo: string): string[] {
-    const trimmed = combo.trim()
-    if (!trimmed) return []
-
-    if (/\sthen\s/i.test(trimmed)) {
-        return trimmed.split(/\s+then\s+/i).map((step) => step.trim()).filter(Boolean)
-    }
-
-    if (trimmed.includes(" ") && !trimmed.includes("+")) {
-        return trimmed.split(/\s+/)
-    }
-
-    return [trimmed]
 }
 
 /**
