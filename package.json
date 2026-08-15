@@ -20,7 +20,9 @@
     "docs:test": "turbo run test --filter=@remcostoeten/use-shortcut-docs",
     "package:build": "turbo run build --filter=@remcostoeten/use-shortcut",
     "package:test": "turbo run test --filter=@remcostoeten/use-shortcut",
-    "package:typecheck": "turbo run typecheck --filter=@remcostoeten/use-shortcut"
+    "package:typecheck": "turbo run typecheck --filter=@remcostoeten/use-shortcut",
+    "release": "node scripts/release.mjs",
+    "release:dry": "node scripts/release.mjs --dry-run"
   },
   "devDependencies": {
     "prettier": "^3.5.3",
