@@ -1,6 +1,6 @@
 import { createChain } from "../chain/chain"
 import type { Shortcut } from "../chain/stages"
-import type { Scope } from "../shared/types/semantic"
+import type { Host, Scope } from "../shared/types/semantic"
 import { ShortcutBoundary } from "./boundary"
 import { useBinding, useShortcutList } from "./hooks"
 import { ShortcutProvider } from "./provider"
@@ -8,7 +8,7 @@ import { ShortcutProvider } from "./provider"
 type Props<S extends readonly Scope[]> = { scopes?: S }
 
 export type ReactShortcuts<S extends readonly Scope[]> = {
-    shortcut: Shortcut<S[number]>
+    shortcut: Shortcut<S[number] | Host>
     ShortcutProvider: typeof ShortcutProvider
     ShortcutBoundary: typeof ShortcutBoundary
     useShortcutList: typeof useShortcutList

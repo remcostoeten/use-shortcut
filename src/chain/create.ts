@@ -1,13 +1,13 @@
 import { createRegistry } from "../registry/registry"
 import type { Registry, RegistryOptions } from "../registry/registry"
-import type { Scope } from "../shared/types/semantic"
+import type { Host, Scope } from "../shared/types/semantic"
 import { createChain } from "./chain"
 import type { Shortcut } from "./stages"
 
 type Props<S extends readonly Scope[]> = Omit<RegistryOptions, "scopes"> & { scopes?: S }
 
 export type Shortcuts<S extends readonly Scope[]> = {
-    shortcut: Shortcut<S[number]>
+    shortcut: Shortcut<S[number] | Host>
     registry: Registry
 }
 

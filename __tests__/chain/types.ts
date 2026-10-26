@@ -43,7 +43,14 @@ expectTypeOf(mixed.combo).toEqualTypeOf<"mod+rshift+f then hold meta+g">()
 
 expectTypeOf(shortcut.key("a").in)
     .parameter(0)
-    .toEqualTypeOf<"app" | "nav" | "palette" | readonly ("app" | "nav" | "palette")[]>()
+    .toEqualTypeOf<
+        | "app"
+        | "nav"
+        | "palette"
+        | "web"
+        | "desktop"
+        | readonly ("app" | "nav" | "palette" | "web" | "desktop")[]
+    >()
 
 shortcut
     .key("g")
@@ -53,6 +60,15 @@ shortcut
     .priority(1)
     .allowInInputs()
     .describe("Dashboard")
+    .on(() => {})
+
+shortcut.mod
+    .key("n")
+    .in("desktop")
+    .on(() => {})
+shortcut.mod.shift
+    .key("n")
+    .in("web")
     .on(() => {})
 
 const partial = shortcut.mod

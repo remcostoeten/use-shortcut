@@ -122,8 +122,13 @@ describe("autocomplete", () => {
         ])
     })
 
-    test("scope names come from createChain", () => {
-        expect(probe.completions('shortcut.key("a").in("|")')).toEqual(["app", "nav"])
+    test("scope names come from createChain plus the hosts", () => {
+        expect(probe.completions('shortcut.key("a").in("|")')).toEqual([
+            "app",
+            "desktop",
+            "nav",
+            "web",
+        ])
     })
 
     test("key names are a closed union", () => {

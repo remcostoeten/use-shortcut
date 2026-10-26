@@ -3,6 +3,7 @@ import type { StepInput } from "../core/step"
 import type { BindingDefinition, Handle, Handler, ShortcutEvent } from "../registry/registry"
 import type {
     Combo,
+    Host,
     KeyName,
     Milliseconds,
     Modifier,
@@ -152,7 +153,7 @@ function stage(state: State, bind: Bind): Runtime {
  * chain such as `shortcut.mod` can be reused. `on` turns the chain into a `BindingDefinition` and
  * hands it to `bind`: `registry.add` for plain JavaScript, `useBinding` in React so that `.on()`
  * registers inside an effect and unbinds on unmount. Scope names in `.in()` are the literal union
- * of `scopes`.
+ * of `scopes` plus the built-in `web` and `desktop`.
  *
  * @example
  * const shortcut = createChain(["app", "palette"], registry.add)
@@ -162,6 +163,6 @@ function stage(state: State, bind: Bind): Runtime {
 export function createChain<const S extends readonly Scope[]>(
     scopes: S,
     bind: Bind,
-): Shortcut<S[number]> {
+): Shortcut<S[number] | Host> {
     return stage({ alternatives: [], steps: [], pending: EMPTY_PENDING, options: {} }, bind)
 }

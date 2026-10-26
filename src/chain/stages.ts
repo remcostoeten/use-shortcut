@@ -178,7 +178,8 @@ interface OptionDocs<
     /**
      * @name in
      * @description Limits the binding to one or more scopes. It fires only while at least one of them
-     * is enabled. Scope names come from `createChain`, so a typo fails to compile.
+     * is enabled. Scope names come from `createChain` plus the built-in `web` and `desktop`, so a
+     * typo fails to compile.
      *
      * @example
      * shortcut.mod.key("k").in("app").on(openPalette)
