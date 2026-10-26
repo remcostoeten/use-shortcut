@@ -4,6 +4,15 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0-beta.1] - Unreleased
+
+### Fixed
+
+- `.in("web")` and `.in("desktop")` type-check without listing the host scopes
+  in `scopes`. Listing them enabled both hosts at once.
+- The release workflow runs the tests before setting up npm, so the browser
+  install no longer hangs.
+
 ## [3.0.0-beta.0] - 2026-10-26
 
 Written from scratch. Nothing is carried over from 2.x, and the API is not
