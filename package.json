@@ -1,6 +1,6 @@
 {
     "name": "@remcostoeten/use-shortcut",
-    "version": "3.0.0-beta.0",
+    "version": "3.0.0-beta.1",
     "description": "Typed keyboard shortcuts for React and plain JavaScript: combos, sequences, holds, waits and scopes.",
     "keywords": [
         "hotkeys",
