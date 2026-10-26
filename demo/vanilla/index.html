@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>use-shortcut</title>
+        <link rel="stylesheet" href="./style.css" />
+    </head>
+    <body>
+        <main class="page">
+            <header class="header">
+                <h1>use-shortcut</h1>
+                <p>Keyboard shortcuts for React and plain JavaScript.</p>
+            </header>
+
+            <section class="panel visualizer" aria-label="Key visualizer">
+                <div class="caps" id="caps">
+                    <span class="cap" data-modifier="ctrl"></span>
+                    <span class="cap" data-modifier="alt"></span>
+                    <span class="cap" data-modifier="shift"></span>
+                    <span class="cap" data-modifier="meta"></span>
+                    <span class="cap cap-key" id="last-key">key</span>
+                </div>
+                <p class="status">
+                    Page: <strong id="page">No page</strong>
+                    <span class="sep">&middot;</span>
+                    j then k count: <strong id="jump-count">0</strong>
+                </p>
+            </section>
+
+            <section class="panel">
+                <h2>Try these</h2>
+                <ul class="rows" id="rows">
+                    <li class="row" data-row="palette">
+                        <kbd data-keys></kbd>
+                        <span>Open the command palette</span>
+                        <span class="dot" data-dot></span>
+                    </li>
+                    <li class="row" data-row="dashboard">
+                        <kbd data-keys></kbd>
+                        <span>Go to Dashboard</span>
+                        <span class="dot" data-dot></span>
+                    </li>
+                    <li class="row" data-row="settings">
+                        <kbd data-keys></kbd>
+                        <span>Go to Settings</span>
+                        <span class="dot" data-dot></span>
+                    </li>
+                    <li class="row" data-row="peek">
+                        <kbd data-keys></kbd>
+                        <span>Hold to peek, release to hide</span>
+                        <span class="dot" data-dot></span>
+                    </li>
+                    <li class="row" data-row="jump">
+                        <kbd data-keys></kbd>
+                        <span>Wait at least 300 ms between the keys</span>
+                        <span class="dot" data-dot></span>
+                    </li>
+                    <li class="row" data-row="close">
+                        <kbd data-keys></kbd>
+                        <span>Close the palette, or clear the page</span>
+                        <span class="dot" data-dot></span>
+                    </li>
+                    <li class="row" data-row="bold">
+                        <kbd data-keys></kbd>
+                        <span>Bold, only while the editor scope is on</span>
+                        <label class="switch">
+                            <input type="checkbox" id="editor-toggle" checked />
+                            <span class="track"></span>
+                            <span class="switch-label">editor</span>
+                        </label>
+                        <span class="dot" data-dot></span>
+                    </li>
+                </ul>
+            </section>
+
+            <div class="columns">
+                <section class="panel">
+                    <h2>Active bindings</h2>
+                    <ul class="bindings" id="bindings"></ul>
+                </section>
+
+                <section class="panel">
+                    <h2>Event log</h2>
+                    <ol class="log" id="log"></ol>
+                </section>
+            </div>
+
+            <section class="panel">
+                <label class="field">
+                    <span>Type here: shortcuts stay quiet</span>
+                    <textarea
+                        id="typing"
+                        rows="3"
+                        placeholder="g then d does nothing in here"
+                    ></textarea>
+                </label>
+            </section>
+        </main>
+
+        <div class="palette" id="palette" hidden>
+            <div class="palette-box" role="dialog" aria-modal="true" aria-label="Command palette">
+                <input
+                    id="palette-input"
+                    type="text"
+                    placeholder="Type g here: nothing fires"
+                    autocomplete="off"
+                />
+                <ul class="commands">
+                    <li>New note</li>
+                    <li>Toggle theme</li>
+                    <li>Open settings</li>
+                </ul>
+                <p class="hint">Escape closes this</p>
+            </div>
+        </div>
+
+        <aside class="peek" id="peek" aria-live="polite">
+            <strong>Peek</strong>
+            <span id="peek-time">0 ms</span>
+        </aside>
+
+        <script type="module" src="./main.ts"></script>
+    </body>
+</html>

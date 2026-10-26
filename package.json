@@ -1,0 +1,92 @@
+{
+    "name": "@remcostoeten/use-shortcut",
+    "version": "3.0.0-beta.0",
+    "description": "Typed keyboard shortcuts for React and plain JavaScript: combos, sequences, holds, waits and scopes.",
+    "keywords": [
+        "hotkeys",
+        "keybindings",
+        "keyboard",
+        "react",
+        "sequences",
+        "shortcuts",
+        "tauri",
+        "typescript"
+    ],
+    "homepage": "https://github.com/remcostoeten/use-shortcut/tree/v3#readme",
+    "bugs": {
+        "url": "https://github.com/remcostoeten/use-shortcut/issues"
+    },
+    "license": "MIT",
+    "author": {
+        "name": "Remco Stoeten",
+        "url": "https://remcostoeten.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/remcostoeten/use-shortcut.git"
+    },
+    "files": [
+        "dist"
+    ],
+    "type": "module",
+    "sideEffects": false,
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./react": {
+            "types": "./dist/react.d.ts",
+            "default": "./dist/react.js"
+        }
+    },
+    "publishConfig": {
+        "access": "public",
+        "tag": "beta"
+    },
+    "scripts": {
+        "typecheck": "tsc",
+        "lint": "oxlint",
+        "format": "oxfmt",
+        "format:check": "oxfmt --check",
+        "test": "bun test __tests__",
+        "e2e": "playwright test",
+        "check": "bun run typecheck && bun run lint && bun run format:check && bun run test",
+        "build": "tsdown",
+        "check:package": "bun run build && publint && attw --pack . --profile esm-only",
+        "prepublishOnly": "bun run check:package",
+        "release": "bun scripts/release.ts",
+        "demo:vanilla": "vite demo/vanilla",
+        "demo:react": "vite demo/react"
+    },
+    "devDependencies": {
+        "@arethetypeswrong/cli": "^0.18.5",
+        "@happy-dom/global-registrator": "^21.0.4",
+        "@playwright/test": "^1.64.1",
+        "@testing-library/react": "^16.3.3",
+        "@types/bun": "^1.4.4",
+        "@types/react": "^19.3.0",
+        "@types/react-dom": "^19.3.0",
+        "@vitejs/plugin-react": "^6.1.2",
+        "oxfmt": "^0.74.0",
+        "oxlint": "^1.89.0",
+        "publint": "^0.3.25",
+        "react": "^19.3.1",
+        "react-dom": "^19.3.1",
+        "tsdown": "^0.23.2",
+        "typescript": "6",
+        "vite": "^8.3.5"
+    },
+    "peerDependencies": {
+        "react": ">=18",
+        "react-dom": ">=18"
+    },
+    "peerDependenciesMeta": {
+        "react": {
+            "optional": true
+        },
+        "react-dom": {
+            "optional": true
+        }
+    }
+}

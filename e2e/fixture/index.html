@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>use-shortcut fixture</title>
+        <style>
+            body {
+                min-height: 400vh;
+                margin: 0;
+                padding: 16px;
+                font-family: monospace;
+            }
+        </style>
+    </head>
+    <body>
+        <input id="field" type="text" placeholder="field" />
+        <textarea id="area"></textarea>
+        <button id="button" type="button">button</button>
+        <button id="open-modal" type="button">open modal</button>
+        <dialog id="modal">
+            <p>modal</p>
+            <button id="close-modal" type="button">close</button>
+        </dialog>
+        <pre id="log"></pre>
+        <pre id="keys"></pre>
+        <script type="module" src="./app.js"></script>
+    </body>
+</html>

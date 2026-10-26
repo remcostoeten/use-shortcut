@@ -1,0 +1,16 @@
+import { StrictMode } from "react"
+import { createRoot } from "react-dom/client"
+import { App } from "./App"
+import { ShortcutProvider } from "./shortcuts"
+
+const root = document.getElementById("root")
+
+if (root !== null) {
+    createRoot(root).render(
+        <StrictMode>
+            <ShortcutProvider>
+                <App />
+            </ShortcutProvider>
+        </StrictMode>,
+    )
+}
