@@ -4,7 +4,7 @@ All notable changes to this project are recorded here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0-beta.0] - Unreleased
+## [3.0.0-beta.0] - 2026-10-26
 
 Written from scratch. Nothing is carried over from 2.x, and the API is not
 compatible. The reasoning behind each rule is in [DECISIONS.md](DECISIONS.md).
